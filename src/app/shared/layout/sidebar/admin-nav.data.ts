@@ -17,8 +17,9 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     label: 'Configuration',
     icon: 'config',
     children: [
-      { label: 'Devices', route: '/administration/configuration/devices' },
       { label: 'Project', route: '/administration/configuration/project' },
+      { label: 'Devices', route: '/administration/configuration/devices' },
+
       {
         label: 'Environment Master',
         children: [
@@ -66,18 +67,19 @@ export const ADMIN_SECTIONS: AdminSection[] = [
       }
     ]
   },
+    {
+    label: 'Licence Management',
+    icon: 'licence',
+    route: '/licence-management'
+  },
   {
     label: 'User Management',
     icon: 'users',
     children: [
+      
+      { label: 'User', route: '/user' },
       { label: 'Role', route: '/role' },
-      { label: 'User', route: '/user' }
     ]
-  },
-  {
-    label: 'Licence Management',
-    icon: 'licence',
-    route: '/licence-management'
   }
 ];
 

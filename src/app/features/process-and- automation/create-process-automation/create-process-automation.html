@@ -28,16 +28,20 @@
       <h2 class="pa-form-title">Add Automation Rule</h2>
       <div class="pa-divider"></div>
 
-      <label class="pa-field-label">Title</label>
-      <input
-        type="text"
-        class="pa-text-input"
-        [class.invalid]="submitted && !title.trim()"
-        [(ngModel)]="title"
-        placeholder="e.g. Night Zone Escalation"
-      />
-      <div class="pa-error" *ngIf="submitted && !title.trim()">Title is required</div>
+      <div class="pa-rule-grid">
+        <div class="pa-rule-left">
+          <label class="pa-field-label">Title</label>
+          <input
+            type="text"
+            class="pa-text-input"
+            [class.invalid]="submitted && !title.trim()"
+            [(ngModel)]="title"
+            placeholder="e.g. Night Zone Escalation"
+          />
+          <div class="pa-error" *ngIf="submitted && !title.trim()">Title is required</div>
+        </div>
 
+        <div class="pa-rule-right">
       <div class="pa-section-row">
         <span class="pa-section-label">Conditions</span>
         <span class="pa-relationship">Relationship: {{ relationshipLabel }}</span>
@@ -231,6 +235,9 @@
         <button *ngIf="i > 0" class="pa-icon-btn danger" type="button" aria-label="remove action" (click)="removeAction(row.id)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
+      </div>
+
+        </div>
       </div>
 
       <div class="pa-form-footer">

@@ -1,0 +1,29 @@
+<app-generic-popup [isOpen]="isOpen" title="Device Health" (closed)="close()">
+  <div class="health-rows" *ngIf="health">
+    <div class="health-row">
+      <span class="health-label">Connectivity</span>
+      <span class="health-value"><span class="health-dot"></span>{{ health.connectivity }}</span>
+    </div>
+    <div class="health-row">
+      <span class="health-label">Battery</span>
+      <span class="health-value">{{ health.battery }}%</span>
+    </div>
+    <div class="health-row">
+      <span class="health-label">Signal</span>
+      <span class="health-value">{{ health.signal }}</span>
+    </div>
+    <div class="health-row">
+      <span class="health-label">Last Communication</span>
+      <span class="health-value">{{ health.lastCommunication }}</span>
+    </div>
+    <div class="health-row">
+      <span class="health-label">Data Quality</span>
+      <span class="health-value">{{ health.dataQuality }}</span>
+    </div>
+  </div>
+
+  <ng-container popupFooter>
+    <button class="btn-secondary" type="button" (click)="close()">Close</button>
+    <button class="btn-primary" type="button" (click)="onViewDevice()">View Device</button>
+  </ng-container>
+</app-generic-popup>

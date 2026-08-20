@@ -1,0 +1,153 @@
+<div class="master-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <app-generic-table
+    title="Connectivity Profile Master"
+    searchPlaceholder="Search Connectivity Profiles"
+    [columns]="columns"
+    [rows]="rows"
+    (add)="openAdd()"
+    (edit)="openEdit($event)"
+    (delete)="deleteRow($event)"
+  ></app-generic-table>
+
+  <app-generic-popup
+    [isOpen]="popupOpen"
+    [title]="editingRow ? 'Edit Connectivity Profile' : 'Add Connectivity Profile'"
+    (closed)="closePopup()"
+  >
+    <form [formGroup]="form" class="master-form">
+
+      <div class="field">
+        <label>Profile Code</label>
+        <input type="text" formControlName="profileCode" placeholder="e.g. CNP-LORA-OUT" />
+      </div>
+
+      <div class="field">
+        <label>Profile Name</label>
+        <input type="text" formControlName="profileName" placeholder="e.g. LoRaWAN Outdoor Sensor Profile" />
+      </div>
+
+      <div class="field">
+        <label>Communication Technology</label>
+        <select formControlName="communicationTechnology">
+          <option value="" disabled>Select technology</option>
+          <option *ngFor="let t of communicationTechnologies" [value]="t">{{ t }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Protocol</label>
+        <select formControlName="protocol">
+          <option value="" disabled>Select protocol</option>
+          <option *ngFor="let p of protocols" [value]="p">{{ p }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Network Type</label>
+        <select formControlName="networkType">
+          <option value="" disabled>Select network type</option>
+          <option *ngFor="let n of networkTypes" [value]="n">{{ n }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Gateway Required</label>
+        <app-form-toggle formControlName="gatewayRequired" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Server / Broker Address</label>
+        <input type="text" formControlName="serverAddress" placeholder="e.g. mqtt.env360.io" />
+      </div>
+
+      <div class="field">
+        <label>Port</label>
+        <input type="number" formControlName="port" />
+      </div>
+
+      <div class="field span-2">
+        <label>Topic / Endpoint</label>
+        <input type="text" formControlName="topicEndpoint" placeholder="e.g. env360/outdoor/+/data" />
+      </div>
+
+      <div class="field">
+        <label>Authentication Type</label>
+        <select formControlName="authenticationType">
+          <option *ngFor="let a of authenticationTypes" [value]="a">{{ a }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Username</label>
+        <input type="text" formControlName="username" />
+      </div>
+
+      <div class="field">
+        <label>Credential Reference</label>
+        <input type="text" formControlName="credentialReference" placeholder="e.g. VAULT-CNP-001" />
+      </div>
+
+      <div class="field">
+        <label>Encryption</label>
+        <input type="text" formControlName="encryption" placeholder="e.g. TLS 1.2" />
+      </div>
+
+      <div class="field">
+        <label>TLS Enabled</label>
+        <app-form-toggle formControlName="tlsEnabled" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Certificate Required</label>
+        <app-form-toggle formControlName="certificateRequired" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>QoS</label>
+        <select formControlName="qos">
+          <option *ngFor="let q of qosLevels" [value]="q">{{ q }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Keep Alive</label>
+        <input type="number" formControlName="keepAlive" />
+      </div>
+
+      <div class="field">
+        <label>Polling Interval</label>
+        <input type="text" formControlName="pollingInterval" placeholder="e.g. 5 min" />
+      </div>
+
+      <div class="field">
+        <label>Retry Count</label>
+        <input type="number" formControlName="retryCount" />
+      </div>
+
+      <div class="field">
+        <label>Timeout</label>
+        <input type="number" formControlName="timeout" />
+      </div>
+
+      <div class="field span-2">
+        <label>Description</label>
+        <textarea formControlName="description" rows="2"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <app-form-toggle formControlName="status"></app-form-toggle>
+      </div>
+
+    </form>
+
+    <ng-container popupFooter>
+      <button class="btn-secondary" type="button" (click)="closePopup()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="save()">Save</button>
+    </ng-container>
+  </app-generic-popup>
+
+</div>

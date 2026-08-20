@@ -1,0 +1,170 @@
+<aside class="sidebar" [class.collapsed]="isCollapsed">
+
+  <div class="sidebar-header">
+    <div class="logo">
+      <img class="logo-icon" src="/assets/PurpleIQLOGOPurpleBright.png" alt="PurpleIQ Logo" />
+      <span class="logo-text" *ngIf="!isCollapsed">Purple IQ</span>
+    </div>
+    <button class="collapse-btn" (click)="toggleCollapse()" aria-label="collapse sidebar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" [class.rotated]="isCollapsed">
+        <path d="M15 18l-6-6 6-6" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <nav class="sidebar-nav">
+    <ul>
+      <li *ngFor="let item of navItems" class="nav-item">
+
+        <a
+          *ngIf="!item.hasFlyout"
+          [routerLink]="item.route"
+          [class.active]="isNavItemActive(item)"
+          class="nav-link"
+          (click)="closeAdminPanel()"
+        >
+          <span class="icon-wrap" [ngSwitch]="item.icon">
+            <!-- Dashboard: grid -->
+            <svg *ngSwitchCase="'dashboard'" width="19" height="19" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/>
+              <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/>
+              <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/>
+              <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <!-- Locating: map pin -->
+            <svg *ngSwitchCase="'locating'" width="19" height="19" viewBox="0 0 24 24" fill="none">
+              <path d="M12 21s7-6.5 7-11.5A7 7 0 105 9.5C5 14.5 12 21 12 21z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+              <circle cx="12" cy="9.5" r="2.4" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <!-- Events: calendar -->
+            <svg *ngSwitchCase="'events'" width="19" height="19" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
+              <path d="M3 9h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <!-- Report: bar chart -->
+            <svg *ngSwitchCase="'report'" width="19" height="19" viewBox="0 0 24 24" fill="none">
+              <path d="M4 20V10M12 20V4M20 20v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <!-- Process & Automation: settings -->
+            <svg *ngSwitchCase="'process'" width="19" height="19" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+              <path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.6-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3h0a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5h0a1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9v0a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span *ngIf="!isCollapsed">{{ item.label }}</span>
+        </a>
+
+        <div
+          *ngIf="item.hasFlyout"
+          class="nav-link parent"
+          [class.active]="adminPanelOpen || isAdminActive"
+          (click)="onNavItemClick(item)"
+        >
+          <span class="icon-wrap">
+            <!-- Administration: users -->
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+              <path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span *ngIf="!isCollapsed">{{ item.label }}</span>
+          <svg *ngIf="!isCollapsed" class="chevron" [class.open]="adminPanelOpen" width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Administration flyout panel -->
+  <div class="admin-flyout" *ngIf="adminPanelOpen">
+    <div class="admin-flyout-header">
+      <span>Administration</span>
+      <button class="flyout-close" (click)="closeAdminPanel()" aria-label="close">×</button>
+    </div>
+
+    <ul class="admin-flyout-list">
+      <li *ngFor="let section of adminSections">
+
+        <a
+          *ngIf="!section.children"
+          [routerLink]="section.route"
+          routerLinkActive="active"
+          class="flyout-link"
+          (click)="closeAdminPanel()"
+        >
+          <span class="icon-wrap" [ngSwitch]="section.icon">
+            <svg *ngSwitchCase="'licence'" width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
+              <path d="M7 9h10M7 13h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span>{{ section.label }}</span>
+        </a>
+
+        <div
+          *ngIf="section.children"
+          class="flyout-link parent"
+          [class.active]="expandedAdminSection === section.label"
+          (click)="toggleAdminSection(section)"
+        >
+          <span class="icon-wrap" [ngSwitch]="section.icon">
+            <svg *ngSwitchCase="'config'" width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+              <path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.6-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3h0a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5h0a1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9v0a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <svg *ngSwitchCase="'users'" width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span>{{ section.label }}</span>
+          <svg class="chevron" [class.open]="expandedAdminSection === section.label" width="13" height="13" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <ul class="flyout-submenu" *ngIf="section.children && expandedAdminSection === section.label">
+          <li *ngFor="let child of section.children">
+
+            <a
+              *ngIf="!child.children"
+              [routerLink]="child.route"
+              routerLinkActive="active"
+              (click)="closeAdminPanel()"
+            >
+              <span>{{ child.label }}</span>
+              <svg *ngIf="child.addIcon" class="add-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </a>
+
+            <div
+              *ngIf="child.children"
+              class="flyout-subgroup"
+              [class.active]="expandedConfigGroup === child.label"
+              (click)="toggleConfigGroup(child)"
+            >
+              <span>{{ child.label }}</span>
+              <svg class="chevron" [class.open]="expandedConfigGroup === child.label" width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+
+            <ul class="flyout-subsubmenu" *ngIf="child.children && expandedConfigGroup === child.label">
+              <li *ngFor="let grandchild of child.children">
+                <a [routerLink]="grandchild.route" routerLinkActive="active" (click)="closeAdminPanel()">
+                  <span>{{ grandchild.label }}</span>
+                </a>
+              </li>
+            </ul>
+
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+</aside>

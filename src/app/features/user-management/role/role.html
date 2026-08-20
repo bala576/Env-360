@@ -1,0 +1,15 @@
+<div class="master-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <app-generic-table
+    title="Role"
+    searchPlaceholder="Search Roles"
+    [columns]="columns"
+    [rows]="rows"
+    (add)="openAdd()"
+    (edit)="openEdit($event)"
+    (delete)="deleteRow($event)"
+  ></app-generic-table>
+
+</div>

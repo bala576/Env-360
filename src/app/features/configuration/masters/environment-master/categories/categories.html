@@ -1,0 +1,85 @@
+<div class="master-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <app-generic-table
+    title="Environment Category Master"
+    searchPlaceholder="Search Categories"
+    [columns]="columns"
+    [rows]="rows"
+    (add)="openAdd()"
+    (edit)="openEdit($event)"
+    (delete)="deleteRow($event)"
+  ></app-generic-table>
+
+  <app-generic-popup
+    [isOpen]="popupOpen"
+    [title]="editingRow ? 'Edit Environment Category' : 'Add Environment Category'"
+    (closed)="closePopup()"
+  >
+    <form [formGroup]="form" class="master-form">
+
+      <div class="field">
+        <label>Category Code</label>
+        <input type="text" formControlName="code" placeholder="e.g. AIR" />
+      </div>
+
+      <div class="field">
+        <label>Category Name</label>
+        <input type="text" formControlName="name" placeholder="e.g. Air Quality" />
+      </div>
+
+      <div class="field">
+        <label>Icon</label>
+        <input type="text" formControlName="icon" placeholder="Icon name / URL" />
+      </div>
+
+      <div class="field">
+        <label>Color</label>
+        <input type="color" formControlName="color" />
+      </div>
+
+      <div class="field">
+        <label>Default Parameter Groups</label>
+        <input type="text" formControlName="defaultParameterGroups" placeholder="e.g. Air Pollutants, Climate" />
+      </div>
+
+      <div class="field">
+        <label>Default Sensor Types</label>
+        <input type="text" formControlName="defaultSensorTypes" placeholder="e.g. PM2.5, PM10, CO2" />
+      </div>
+
+      <div class="field">
+        <label>Default Dashboard Template</label>
+        <input type="text" formControlName="defaultDashboardTemplate" placeholder="e.g. Air Quality Overview" />
+      </div>
+
+      <div class="field">
+        <label>Default Compliance Standard</label>
+        <input type="text" formControlName="defaultComplianceStandard" placeholder="e.g. CPCB NAAQS" />
+      </div>
+
+      <div class="field span-2">
+        <label>Description</label>
+        <textarea formControlName="description" rows="2"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <app-form-toggle formControlName="status"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Display Order</label>
+        <input type="number" formControlName="displayOrder" />
+      </div>
+
+    </form>
+
+    <ng-container popupFooter>
+      <button class="btn-secondary" type="button" (click)="closePopup()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="save()">Save</button>
+    </ng-container>
+  </app-generic-popup>
+
+</div>

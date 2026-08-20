@@ -1,0 +1,127 @@
+<div class="master-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <app-generic-table
+    title="Data Quality Profile Master"
+    searchPlaceholder="Search Data Quality Profiles"
+    [columns]="columns"
+    [rows]="rows"
+    (add)="openAdd()"
+    (edit)="openEdit($event)"
+    (delete)="deleteRow($event)"
+  ></app-generic-table>
+
+  <app-generic-popup
+    [isOpen]="popupOpen"
+    [title]="editingRow ? 'Edit Data Quality Profile' : 'Add Data Quality Profile'"
+    (closed)="closePopup()"
+  >
+    <form [formGroup]="form" class="master-form">
+
+      <div class="field">
+        <label>Profile Code</label>
+        <input type="text" formControlName="code" placeholder="e.g. DQP-TEMP" />
+      </div>
+
+      <div class="field">
+        <label>Profile Name</label>
+        <input type="text" formControlName="name" placeholder="e.g. Temperature Data Quality" />
+      </div>
+
+      <div class="field">
+        <label>Parameter</label>
+        <input type="text" formControlName="parameter" placeholder="e.g. Temperature" />
+      </div>
+
+      <div class="field">
+        <label>Minimum Valid Value</label>
+        <input type="number" formControlName="minimumValidValue" />
+      </div>
+
+      <div class="field">
+        <label>Maximum Valid Value</label>
+        <input type="number" formControlName="maximumValidValue" />
+      </div>
+
+      <div class="field">
+        <label>Maximum Rate of Change</label>
+        <input type="number" formControlName="maximumRateOfChange" />
+      </div>
+
+      <div class="field">
+        <label>Stale Data Timeout</label>
+        <input type="text" formControlName="staleDataTimeout" placeholder="e.g. 15 min" />
+      </div>
+
+      <div class="field">
+        <label>Missing Data Timeout</label>
+        <input type="text" formControlName="missingDataTimeout" placeholder="e.g. 30 min" />
+      </div>
+
+      <div class="field">
+        <label>Expected Sampling Interval</label>
+        <input type="text" formControlName="expectedSamplingInterval" placeholder="e.g. 5 min" />
+      </div>
+
+      <div class="field">
+        <label>Data Gap Tolerance</label>
+        <input type="text" formControlName="dataGapTolerance" placeholder="e.g. 10 min" />
+      </div>
+
+      <div class="field">
+        <label>Quality Score Threshold</label>
+        <input type="number" formControlName="qualityScoreThreshold" />
+      </div>
+
+      <div class="field">
+        <label>Invalid Data Action</label>
+        <select formControlName="invalidDataAction">
+          <option *ngFor="let a of invalidDataActions" [value]="a">{{ a }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Duplicate Detection</label>
+        <app-form-toggle formControlName="duplicateDetection" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Spike Detection</label>
+        <app-form-toggle formControlName="spikeDetection" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Flatline Detection</label>
+        <app-form-toggle formControlName="flatlineDetection" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Outlier Detection</label>
+        <app-form-toggle formControlName="outlierDetection" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Timestamp Validation</label>
+        <app-form-toggle formControlName="timestampValidation" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <app-form-toggle formControlName="status"></app-form-toggle>
+      </div>
+
+      <div class="field span-2">
+        <label>Description</label>
+        <textarea formControlName="description" rows="2"></textarea>
+      </div>
+
+    </form>
+
+    <ng-container popupFooter>
+      <button class="btn-secondary" type="button" (click)="closePopup()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="save()">Save</button>
+    </ng-container>
+  </app-generic-popup>
+
+</div>

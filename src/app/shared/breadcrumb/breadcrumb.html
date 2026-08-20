@@ -1,0 +1,29 @@
+<nav class="breadcrumb" *ngIf="items.length">
+  <div class="crumb-item" *ngFor="let item of items; let i = index; let last = last">
+
+    <span class="crumb-group" [class.has-dropdown]="item.children?.length" (click)="item.children?.length && toggleDropdown(i)">
+      <a *ngIf="item.route; else plainLabel" [routerLink]="item.route" class="crumb-label" [class.current]="last">{{ item.label }}</a>
+      <ng-template #plainLabel>
+        <span class="crumb-label" [class.current]="last">{{ item.label }}</span>
+      </ng-template>
+
+      <svg *ngIf="item.children?.length" class="crumb-chevron-down" [class.open]="openIndex === i" width="12" height="12" viewBox="0 0 24 24" fill="none">
+        <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+
+      <div class="crumb-dropdown" *ngIf="openIndex === i">
+        <a
+          *ngFor="let child of item.children"
+          [routerLink]="child.route"
+          routerLinkActive="active"
+          class="crumb-dropdown-item"
+          (click)="closeDropdown()"
+        >{{ child.label }}</a>
+      </div>
+    </span>
+
+    <span class="crumb-sep" *ngIf="!last">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+  </div>
+</nav>

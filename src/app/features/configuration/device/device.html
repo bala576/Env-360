@@ -1,0 +1,66 @@
+<div class="master-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <div class="devices-header">
+    <div>
+      <h2>Devices</h2>
+
+    </div>
+    <button class="btn-primary" type="button" (click)="openWizard()">+ Add Device</button>
+  </div>
+
+
+  <div class="devices-filters">
+    <div class="filter-field">
+      <label>Project</label>
+      <select [(ngModel)]="selectedProject">
+        <option *ngFor="let p of projectOptions" [value]="p">{{ p }}</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label>Environment</label>
+      <select [(ngModel)]="selectedEnvironment">
+        <option *ngFor="let e of environmentOptions" [value]="e">{{ e }}</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label>Device Model</label>
+      <select [(ngModel)]="selectedDeviceModel">
+        <option *ngFor="let m of deviceModelOptions" [value]="m">{{ m }}</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label>Status</label>
+      <select [(ngModel)]="selectedStatus">
+        <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+      </select>
+    </div>
+  </div>
+
+  <app-generic-table
+    title="All Devices"
+    searchPlaceholder="Search devices..."
+    [columns]="columns"
+    [rows]="filteredRows"
+    (rowClick)="goToDetails($event)"
+    (edit)="goToDetails($event)"
+    (delete)="deleteRow($event)"
+    (cellAction)="openHealth($event)"
+  ></app-generic-table>
+
+  <app-device-health-popup
+    [isOpen]="healthPopupOpen"
+    [deviceId]="healthPopupDevice?.id ?? ''"
+    [health]="healthPopupDevice?.health ?? null"
+    (closed)="closeHealthPopup()"
+    (viewDevice)="viewDeviceFromHealth()"
+  ></app-device-health-popup>
+
+  <app-add-device-wizard
+    [isOpen]="wizardOpen"
+    (closed)="closeWizard()"
+    (created)="onDeviceCreated($event)"
+  ></app-add-device-wizard>
+
+</div>

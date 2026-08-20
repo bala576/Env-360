@@ -1,0 +1,84 @@
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 12px;
+  font-size: 13px;
+  margin-top: -10px;
+}
+
+.crumb-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crumb-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.crumb-group.has-dropdown {
+  cursor: pointer;
+}
+
+.crumb-label {
+  color: #7030a0;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.crumb-label.current {
+  color: #111827;
+  font-weight: 600;
+}
+
+.crumb-chevron-down {
+  color: #7030a0;
+  transition: transform 0.15s ease;
+}
+
+.crumb-chevron-down.open {
+  transform: rotate(180deg);
+}
+
+.crumb-sep {
+  display: inline-flex;
+  align-items: center;
+  color: #9ca3af;
+}
+
+.crumb-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  min-width: 200px;
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 14px;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.14);
+  padding: 8px;
+  z-index: 50;
+}
+
+.crumb-dropdown-item {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: #7030a0;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.crumb-dropdown-item:hover {
+  background: #faf5ff;
+}
+
+.crumb-dropdown-item.active {
+  background: #ede4fd;
+  color: #6d28d9;
+  font-weight: 600;
+}

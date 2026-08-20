@@ -1,0 +1,116 @@
+<div class="master-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <app-generic-table
+    title="Data Collection Profile Master"
+    searchPlaceholder="Search Data Collection Profiles"
+    [columns]="columns"
+    [rows]="rows"
+    (add)="openAdd()"
+    (edit)="openEdit($event)"
+    (delete)="deleteRow($event)"
+  ></app-generic-table>
+
+  <app-generic-popup
+    [isOpen]="popupOpen"
+    [title]="editingRow ? 'Edit Data Collection Profile' : 'Add Data Collection Profile'"
+    (closed)="closePopup()"
+  >
+    <form [formGroup]="form" class="master-form">
+
+      <div class="field">
+        <label>Profile Code</label>
+        <input type="text" formControlName="profileCode" placeholder="e.g. DCP-IND-HF" />
+      </div>
+
+      <div class="field">
+        <label>Profile Name</label>
+        <input type="text" formControlName="profileName" placeholder="e.g. High Frequency Indoor Sensors" />
+      </div>
+
+      <div class="field">
+        <label>Sampling Interval</label>
+        <input type="text" formControlName="samplingInterval" placeholder="e.g. 1 min" />
+      </div>
+
+      <div class="field">
+        <label>Reporting Interval</label>
+        <input type="text" formControlName="reportingInterval" placeholder="e.g. 5 min" />
+      </div>
+
+      <div class="field">
+        <label>Aggregation Interval</label>
+        <input type="text" formControlName="aggregationInterval" placeholder="e.g. 15 min" />
+      </div>
+
+      <div class="field">
+        <label>Aggregation Method</label>
+        <select formControlName="aggregationMethod">
+          <option *ngFor="let m of aggregationMethods" [value]="m">{{ m }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Raw Data Retention</label>
+        <input type="text" formControlName="rawDataRetention" placeholder="e.g. 30 days" />
+      </div>
+
+      <div class="field">
+        <label>Aggregated Data Retention</label>
+        <input type="text" formControlName="aggregatedDataRetention" placeholder="e.g. 1 year" />
+      </div>
+
+      <div class="field">
+        <label>Timezone</label>
+        <input type="text" formControlName="timezone" placeholder="e.g. Asia/Kolkata (GMT+5:30)" />
+      </div>
+
+      <div class="field">
+        <label>Timestamp Source</label>
+        <select formControlName="timestampSource">
+          <option *ngFor="let t of timestampSources" [value]="t">{{ t }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Buffering Enabled</label>
+        <app-form-toggle formControlName="bufferingEnabled" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Offline Storage Duration</label>
+        <input type="text" formControlName="offlineStorageDuration" placeholder="e.g. 24 hours" />
+      </div>
+
+      <div class="field">
+        <label>Batch Size</label>
+        <input type="number" formControlName="batchSize" />
+      </div>
+
+      <div class="field">
+        <label>Transmission Mode</label>
+        <select formControlName="transmissionMode">
+          <option *ngFor="let m of transmissionModes" [value]="m">{{ m }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <app-form-toggle formControlName="status"></app-form-toggle>
+      </div>
+
+      <div class="field span-2">
+        <label>Description</label>
+        <textarea formControlName="description" rows="2"></textarea>
+      </div>
+
+    </form>
+
+    <ng-container popupFooter>
+      <button class="btn-secondary" type="button" (click)="closePopup()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="save()">Save</button>
+    </ng-container>
+  </app-generic-popup>
+
+</div>

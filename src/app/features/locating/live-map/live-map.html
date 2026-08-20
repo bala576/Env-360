@@ -1,0 +1,40 @@
+<div class="locating-page">
+  <h1 class="locating-title">Locating</h1>
+
+  <div class="locating-layout">
+    <div class="tree-panel">
+      <div class="tree-heading">Track People</div>
+
+      <div class="tree-scroll">
+        <app-location-tree-node
+          *ngFor="let root of trackers"
+          [node]="root"
+          [depth]="0"
+          [selectedId]="selectedNode?.id ?? null"
+          [showActions]="false"
+          (select)="selectNode($event)"
+        ></app-location-tree-node>
+      </div>
+    </div>
+
+    <div class="map-panel">
+      <div class="map-toolbar">
+        <div class="field-select">
+          <label>Select Device</label>
+          <select [(ngModel)]="deviceType">
+            <option *ngFor="let d of deviceTypes" [value]="d">{{ d }}</option>
+          </select>
+        </div>
+
+        <div class="field-select">
+          <label>Select Parameter</label>
+          <select [(ngModel)]="parameter">
+            <option *ngFor="let p of parameters" [value]="p">{{ p }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div #mapContainer class="map-container"></div>
+    </div>
+  </div>
+</div>

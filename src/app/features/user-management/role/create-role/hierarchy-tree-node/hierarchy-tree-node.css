@@ -1,0 +1,48 @@
+.hierarchy-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 4px;
+  border-bottom: 1px solid #f4f5f7;
+}
+
+.chevron-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.chevron-btn.hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.chevron-btn svg {
+  transition: transform 0.15s ease;
+}
+
+.chevron-btn svg.open {
+  transform: rotate(90deg);
+}
+
+.hierarchy-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: #374151;
+  cursor: pointer;
+  font-weight: 400;
+}
+
+.hierarchy-children {
+  margin-left: 6px;
+}

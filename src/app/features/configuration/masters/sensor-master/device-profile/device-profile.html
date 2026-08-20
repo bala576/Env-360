@@ -1,0 +1,133 @@
+<div class="master-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <app-generic-table
+    title="Device Profile Master"
+    searchPlaceholder="Search Device Profiles"
+    [columns]="columns"
+    [rows]="rows"
+    (add)="openAdd()"
+    (edit)="openEdit($event)"
+    (delete)="deleteRow($event)"
+  ></app-generic-table>
+
+  <app-generic-popup
+    [isOpen]="popupOpen"
+    [title]="editingRow ? 'Edit Device Profile' : 'Add Device Profile'"
+    (closed)="closePopup()"
+  >
+    <form [formGroup]="form" class="master-form">
+
+      <div class="field">
+        <label>Profile Code</label>
+        <input type="text" formControlName="profileCode" placeholder="e.g. DVP-IAQ" />
+      </div>
+
+      <div class="field">
+        <label>Profile Name</label>
+        <input type="text" formControlName="profileName" placeholder="e.g. Indoor Air Quality Profile" />
+      </div>
+
+      <div class="field">
+        <label>Device Type</label>
+        <input type="text" formControlName="deviceType" placeholder="e.g. Wireless Sensor" />
+      </div>
+
+      <div class="field">
+        <label>Device Model</label>
+        <input type="text" formControlName="deviceModel" placeholder="e.g. ClimaTech CT-100" />
+      </div>
+
+      <div class="field">
+        <label>Environment Category</label>
+        <select formControlName="environmentCategory">
+          <option value="" disabled>Select category</option>
+          <option *ngFor="let c of environmentCategories" [value]="c">{{ c }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Environment Type</label>
+        <input type="text" formControlName="environmentType" placeholder="e.g. Indoor Air Quality" />
+      </div>
+
+      <div class="field">
+        <label>Parameter Group</label>
+        <input type="text" formControlName="parameterGroup" placeholder="e.g. Air Quality Group" />
+      </div>
+
+      <div class="field">
+        <label>Sensor Channels</label>
+        <input type="number" formControlName="sensorChannels" />
+      </div>
+
+      <div class="field">
+        <label>Reporting Interval</label>
+        <input type="text" formControlName="reportingInterval" placeholder="e.g. 5 min" />
+      </div>
+
+      <div class="field">
+        <label>Sampling Interval</label>
+        <input type="text" formControlName="samplingInterval" placeholder="e.g. 1 min" />
+      </div>
+
+      <div class="field">
+        <label>Threshold Profile</label>
+        <input type="text" formControlName="thresholdProfile" />
+      </div>
+
+      <div class="field">
+        <label>Data Quality Profile</label>
+        <input type="text" formControlName="dataQualityProfile" />
+      </div>
+
+      <div class="field">
+        <label>Data Collection Profile</label>
+        <input type="text" formControlName="dataCollectionProfile" />
+      </div>
+
+      <div class="field">
+        <label>Notification Profile</label>
+        <input type="text" formControlName="notificationProfile" />
+      </div>
+
+      <div class="field">
+        <label>Calibration Profile</label>
+        <input type="text" formControlName="calibrationProfile" />
+      </div>
+
+      <div class="field">
+        <label>Maintenance Profile</label>
+        <input type="text" formControlName="maintenanceProfile" />
+      </div>
+
+      <div class="field">
+        <label>Default Dashboard</label>
+        <input type="text" formControlName="defaultDashboard" />
+      </div>
+
+      <div class="field">
+        <label>Version</label>
+        <input type="text" formControlName="version" placeholder="e.g. v1.0" />
+      </div>
+
+      <div class="field span-2">
+        <label>Description</label>
+        <textarea formControlName="description" rows="2"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <app-form-toggle formControlName="status"></app-form-toggle>
+      </div>
+
+    </form>
+
+    <ng-container popupFooter>
+      <button class="btn-secondary" type="button" (click)="closePopup()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="save()">Save</button>
+    </ng-container>
+  </app-generic-popup>
+
+</div>

@@ -1,0 +1,56 @@
+<div class="master-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <div class="role-form-panel">
+    <h2>{{ isEdit ? 'Edit Role' : 'Create New Role' }}</h2>
+
+    <form [formGroup]="form" class="role-top-fields">
+      <div class="field">
+        <label>Role Name <span class="required">*</span></label>
+        <input type="text" formControlName="roleName" placeholder="Enter Role Name" />
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <input type="text" formControlName="description" placeholder="Enter description" />
+      </div>
+    </form>
+
+    <div class="role-columns">
+      <div class="role-column">
+        <h3>Hierarchy Permission</h3>
+        <div class="hierarchy-tree">
+          <app-hierarchy-tree-node
+            *ngFor="let project of projects"
+            [node]="project"
+            [depth]="0"
+            [selectedIds]="hierarchySelectedIds"
+            (toggle)="toggleHierarchy($event)"
+          ></app-hierarchy-tree-node>
+        </div>
+      </div>
+
+      <div class="role-column">
+        <h3>Access Permission</h3>
+        <div class="access-table">
+          <div class="access-head">
+            <span class="access-module-head"></span>
+            <span class="access-check-head">View</span>
+            <span class="access-check-head">Edit</span>
+          </div>
+          <div class="access-row" *ngFor="let entry of access">
+            <span class="access-module">{{ entry.module }}</span>
+            <span class="access-check"><input type="checkbox" [(ngModel)]="entry.view" [ngModelOptions]="{standalone: true}" /></span>
+            <span class="access-check"><input type="checkbox" [(ngModel)]="entry.edit" [ngModelOptions]="{standalone: true}" /></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="role-form-footer">
+      <button class="btn-secondary" type="button" (click)="cancel()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="save()">Save Role</button>
+    </div>
+  </div>
+
+</div>

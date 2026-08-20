@@ -1,0 +1,286 @@
+<div class="dashboard-page">
+
+  <!-- Top stat row -->
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-head">
+        <div class="stat-icon bg-orange">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 9l1-5h16l1 5M4 9v10a1 1 0 001 1h14a1 1 0 001-1V9M4 9h16M9 21v-6h6v6" stroke="#f97316" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <span class="stat-label">Total Outlets</span>
+      </div>
+      <div class="stat-value">124</div>
+      <div class="stat-sub up">▲ 3 vs yesterday</div>
+      <div class="stat-split">
+        <span>Online <b class="green">112</b></span>
+        <span>Offline <b class="red">12</b></span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-head">
+        <div class="stat-icon bg-red">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2v12M9 14a3 3 0 106 0" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="17" r="3" stroke="#ef4444" stroke-width="1.8"/></svg>
+        </div>
+        <span class="stat-label">Avg. Temperature</span>
+      </div>
+      <div class="stat-value">4.2 <small>°C</small></div>
+      <div class="stat-sub neutral">Normal</div>
+      <div class="stat-split">
+        <span>Min <b>1.1 °C</b></span>
+        <span>Max <b>8.7 °C</b></span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-head">
+        <div class="stat-icon bg-blue">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3s6 6.5 6 10.5a6 6 0 11-12 0C6 9.5 12 3 12 3z" stroke="#3b82f6" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        </div>
+        <span class="stat-label">Avg. Humidity</span>
+      </div>
+      <div class="stat-value">58.6 <small>%RH</small></div>
+      <div class="stat-sub neutral">Normal</div>
+      <div class="stat-split">
+        <span>Min <b>32%</b></span>
+        <span>Max <b>72%</b></span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-head">
+        <div class="stat-icon bg-green">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <span class="stat-label">Comfort Index</span>
+      </div>
+      <div class="stat-value">92 <small>/100</small></div>
+      <div class="stat-sub good">Good</div>
+      <div class="stat-split single">▲ 4 vs yesterday</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-head">
+        <div class="stat-icon bg-red">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M18 8a6 6 0 10-12 0c0 3.5-1 5-2 7h16c-1-2-2-3.5-2-7z" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 18a2.5 2.5 0 005 0" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <span class="stat-label">Active Alarms</span>
+      </div>
+      <div class="stat-value red-text">12</div>
+      <div class="stat-sub down">▲ 4 vs yesterday</div>
+      <div class="stat-split">
+        <span>Critical <b class="red">5</b></span>
+        <span>Major <b class="orange">4</b></span>
+        <span>Minor <b class="yellow">3</b></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Middle row: chart, map, right column -->
+  <div class="main-row">
+
+    <div class="panel chart-panel">
+      <div class="panel-head">
+        <h3>Temperature Trend (°C)</h3>
+        <select class="range-select">
+          <option>Last 24 Hours</option>
+        </select>
+      </div>
+      <div class="chart-legend">
+        <span class="dot" style="background:#3b82f6"></span> Avg Temp
+        <span class="dot" style="background:#22d3ee"></span> Min Temp
+        <span class="dot" style="background:#f97316"></span> Max Temp
+      </div>
+      <div class="chart-body">
+        <div class="chart-y-axis">
+          <span *ngFor="let y of chartYLabels">{{ y }}°C</span>
+        </div>
+        <svg viewBox="0 0 560 160" preserveAspectRatio="none" class="line-chart">
+          <line *ngFor="let y of [0,1,2,3,4]" [attr.y1]="y*40" x2="560" [attr.y2]="y*40" x1="0" stroke="#f0f0f0" stroke-width="1"/>
+          <polyline [attr.points]="maxPoints" fill="none" stroke="#f97316" stroke-width="2"/>
+          <polyline [attr.points]="avgPoints" fill="none" stroke="#3b82f6" stroke-width="2"/>
+          <polyline [attr.points]="minPoints" fill="none" stroke="#22d3ee" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="chart-x-axis">
+        <span *ngFor="let x of chartLabels">{{ x }}</span>
+      </div>
+    </div>
+
+    <div class="panel map-panel">
+      <div class="panel-head">
+        <h3>Outlet Status Map</h3>
+        <div class="map-controls">
+          <button aria-label="layers">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2l9 5-9 5-9-5 9-5z" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/><path d="M3 12l9 5 9-5" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          </button>
+          <button aria-label="fullscreen">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="#6b7280" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="map-canvas">
+        <div
+          class="map-pin"
+          [class]="'pin-' + pin.type"
+          *ngFor="let pin of mapPins"
+          [style.top]="pin.top"
+          [style.left]="pin.left"
+        >
+          <ng-container *ngIf="pin.type === 'ok'">✓</ng-container>
+          <ng-container *ngIf="pin.type === 'critical'">!</ng-container>
+          <ng-container *ngIf="pin.type === 'warning'">{{ pin.label }}</ng-container>
+        </div>
+
+        <div class="map-zoom">
+          <button aria-label="zoom in">+</button>
+          <button aria-label="zoom out">−</button>
+        </div>
+      </div>
+
+      <div class="map-legend">
+        <span *ngFor="let item of mapLegend">
+          <i [style.background]="item.color"></i>{{ item.label }} ({{ item.count }})
+        </span>
+      </div>
+    </div>
+
+    <div class="right-col">
+      <div class="panel donut-panel">
+        <h3>Comfort Index Distribution</h3>
+        <div class="donut-row">
+          <div class="donut" [style.background]="conicGradient(comfortDistribution)">
+            <div class="donut-hole">
+              <strong>{{ totalOf(comfortDistribution) }}</strong>
+              <span>Outlets</span>
+            </div>
+          </div>
+          <ul class="donut-legend">
+            <li *ngFor="let s of comfortDistribution">
+              <i [style.background]="s.color"></i>
+              <span class="legend-label">{{ s.label }}</span>
+              <span class="legend-value">{{ s.value }} ({{ s.percent }}%)</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="panel donut-panel">
+        <h3>Alarms by Severity</h3>
+        <div class="donut-row">
+          <div class="donut" [style.background]="conicGradient(alarmsBySeverity)">
+            <div class="donut-hole">
+              <strong>{{ totalOf(alarmsBySeverity) }}</strong>
+              <span>Total</span>
+            </div>
+          </div>
+          <ul class="donut-legend">
+            <li *ngFor="let s of alarmsBySeverity">
+              <i [style.background]="s.color"></i>
+              <span class="legend-label">{{ s.label }}</span>
+              <span class="legend-value">{{ s.value }} ({{ s.percent }}%)</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Bottom stat row -->
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-head">
+        <div class="stat-icon bg-red">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2v12M9 14a3 3 0 106 0" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="17" r="3" stroke="#ef4444" stroke-width="1.8"/></svg>
+        </div>
+        <span class="stat-label">Temperature Violations</span>
+      </div>
+      <div class="stat-value">6</div>
+      <div class="stat-sub up">▲ 2 vs yesterday</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-head">
+        <div class="stat-icon bg-blue">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3s6 6.5 6 10.5a6 6 0 11-12 0C6 9.5 12 3 12 3z" stroke="#3b82f6" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        </div>
+        <span class="stat-label">Humidity Violations</span>
+      </div>
+      <div class="stat-value">4</div>
+      <div class="stat-sub up">▲ 1 vs yesterday</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-head">
+        <div class="stat-icon bg-purple">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12a10 10 0 0114 0M8.5 15.5a5.5 5.5 0 017 0M12 19h.01" stroke="#7030a0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <span class="stat-label">Sensors Online</span>
+      </div>
+      <div class="stat-value">1,256 <small>/ 1,386</small></div>
+      <div class="stat-sub neutral">90.6%</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-head">
+        <div class="stat-icon bg-green">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="2" y="8" width="18" height="8" rx="2" stroke="#22c55e" stroke-width="1.8"/><path d="M22 10v4" stroke="#22c55e" stroke-width="1.8" stroke-linecap="round"/><rect x="4" y="10" width="10" height="4" fill="#22c55e"/></svg>
+        </div>
+        <span class="stat-label">Battery OK</span>
+      </div>
+      <div class="stat-value">1,198 <small>/ 1,386</small></div>
+      <div class="stat-sub neutral">86.4%</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-head">
+        <div class="stat-icon bg-blue">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#3b82f6" stroke-width="1.8"/><path d="M9 12l2 2 4-4" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <span class="stat-label">Data Quality</span>
+      </div>
+      <div class="stat-value">98.2 <small>%</small></div>
+      <div class="stat-sub up">▲ 1.3% vs yesterday</div>
+    </div>
+  </div>
+
+  <!-- Violations table -->
+  <div class="panel table-panel">
+    <div class="panel-head">
+      <h3>Top Outlets with Temperature / Humidity Violations</h3>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Outlet Name</th>
+            <th>Area</th>
+            <th>Temperature (°C)</th>
+            <th>Humidity (%RH)</th>
+            <th>Violation</th>
+            <th>Severity</th>
+            <th>Last Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of violationRows; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td>{{ row.outlet }}</td>
+            <td>{{ row.area }}</td>
+            <td [class.red-text]="row.temperature >= 8" [class.blue-text]="row.temperature < 2">{{ row.temperature }}</td>
+            <td>{{ row.humidity }}</td>
+            <td>{{ row.violation }}</td>
+            <td><span class="severity-badge" [class]="'sev-' + row.severity">{{ row.severity }}</span></td>
+            <td>{{ row.updated }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <a class="view-all" href="javascript:void(0)">View All Violations →</a>
+  </div>
+
+  <footer class="dashboard-footer">© 2025 Purple IQ Environment360. All rights reserved.</footer>
+</div>

@@ -1,0 +1,13 @@
+<div class="form-toggle-field">
+  <button
+    type="button"
+    class="status-toggle"
+    [class.on]="checked"
+    [attr.aria-pressed]="checked"
+    [disabled]="disabled"
+    (click)="toggle()"
+  >
+    <span class="status-toggle-knob"></span>
+  </button>
+  <span class="toggle-label">{{ checked ? onLabel : offLabel }}</span>
+</div>

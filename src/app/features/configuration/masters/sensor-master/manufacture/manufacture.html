@@ -1,0 +1,98 @@
+<div class="master-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <app-generic-table
+    title="Manufacturer Master"
+    searchPlaceholder="Search Manufacturers"
+    [columns]="columns"
+    [rows]="rows"
+    (add)="openAdd()"
+    (edit)="openEdit($event)"
+    (delete)="deleteRow($event)"
+  ></app-generic-table>
+
+  <app-generic-popup
+    [isOpen]="popupOpen"
+    [title]="editingRow ? 'Edit Manufacturer' : 'Add Manufacturer'"
+    (closed)="closePopup()"
+  >
+    <form [formGroup]="form" class="master-form">
+
+      <div class="field">
+        <label>Manufacturer Code</label>
+        <input type="text" formControlName="code" placeholder="e.g. SENTECH" />
+      </div>
+
+      <div class="field">
+        <label>Manufacturer Name</label>
+        <input type="text" formControlName="name" placeholder="e.g. SenTech Industries" />
+      </div>
+
+      <div class="field">
+        <label>Manufacturer Type</label>
+        <select formControlName="manufacturerType">
+          <option value="" disabled>Select type</option>
+          <option *ngFor="let t of manufacturerTypes" [value]="t">{{ t }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Country</label>
+        <input type="text" formControlName="country" placeholder="e.g. Germany" />
+      </div>
+
+      <div class="field">
+        <label>Website</label>
+        <input type="text" formControlName="website" placeholder="https://..." />
+      </div>
+
+      <div class="field">
+        <label>Support Email</label>
+        <input type="email" formControlName="supportEmail" placeholder="support@example.com" />
+      </div>
+
+      <div class="field">
+        <label>Support Phone</label>
+        <input type="text" formControlName="supportPhone" />
+      </div>
+
+      <div class="field">
+        <label>Contact Person</label>
+        <input type="text" formControlName="contactPerson" />
+      </div>
+
+      <div class="field">
+        <label>Logo</label>
+        <input type="text" formControlName="logo" placeholder="Logo URL" />
+      </div>
+
+      <div class="field">
+        <label>Display Order</label>
+        <input type="number" formControlName="displayOrder" />
+      </div>
+
+      <div class="field span-2">
+        <label>Address</label>
+        <textarea formControlName="address" rows="2"></textarea>
+      </div>
+
+      <div class="field span-2">
+        <label>Description</label>
+        <textarea formControlName="description" rows="2"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <app-form-toggle formControlName="status"></app-form-toggle>
+      </div>
+
+    </form>
+
+    <ng-container popupFooter>
+      <button class="btn-secondary" type="button" (click)="closePopup()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="save()">Save</button>
+    </ng-container>
+  </app-generic-popup>
+
+</div>

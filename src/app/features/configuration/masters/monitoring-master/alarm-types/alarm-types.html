@@ -1,0 +1,112 @@
+<div class="master-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <app-generic-table
+    title="Alarm Type Master"
+    searchPlaceholder="Search Alarm Types"
+    [columns]="columns"
+    [rows]="rows"
+    (add)="openAdd()"
+    (edit)="openEdit($event)"
+    (delete)="deleteRow($event)"
+  ></app-generic-table>
+
+  <app-generic-popup
+    [isOpen]="popupOpen"
+    [title]="editingRow ? 'Edit Alarm Type' : 'Add Alarm Type'"
+    (closed)="closePopup()"
+  >
+    <form [formGroup]="form" class="master-form">
+
+      <div class="field">
+        <label>Alarm Code</label>
+        <input type="text" formControlName="code" placeholder="e.g. ALM-HTEMP" />
+      </div>
+
+      <div class="field">
+        <label>Alarm Name</label>
+        <input type="text" formControlName="name" placeholder="e.g. High Temperature Alarm" />
+      </div>
+
+      <div class="field">
+        <label>Alarm Category</label>
+        <input type="text" formControlName="alarmCategory" placeholder="e.g. Threshold Breach" />
+      </div>
+
+      <div class="field">
+        <label>Environment Category</label>
+        <select formControlName="environmentCategory">
+          <option value="" disabled>Select category</option>
+          <option *ngFor="let c of environmentCategories" [value]="c">{{ c }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Parameter</label>
+        <input type="text" formControlName="parameter" placeholder="e.g. Temperature" />
+      </div>
+
+      <div class="field">
+        <label>Default Severity</label>
+        <select formControlName="defaultSeverity">
+          <option *ngFor="let s of severities" [value]="s">{{ s }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Trigger Type</label>
+        <select formControlName="triggerType">
+          <option *ngFor="let t of triggerTypes" [value]="t">{{ t }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>SLA</label>
+        <input type="text" formControlName="sla" placeholder="e.g. 15 min" />
+      </div>
+
+      <div class="field">
+        <label>Default Notification Profile</label>
+        <input type="text" formControlName="defaultNotificationProfile" placeholder="e.g. Critical Alert Profile" />
+      </div>
+
+      <div class="field">
+        <label>Auto Clear Duration</label>
+        <input type="text" formControlName="autoClearDuration" placeholder="e.g. 10 min" />
+      </div>
+
+      <div class="field span-2">
+        <label>Description</label>
+        <textarea formControlName="description" rows="2"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Acknowledgement Required</label>
+        <app-form-toggle formControlName="acknowledgementRequired" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Auto Clear Enabled</label>
+        <app-form-toggle formControlName="autoClearEnabled" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <app-form-toggle formControlName="status"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Display Order</label>
+        <input type="number" formControlName="displayOrder" />
+      </div>
+
+    </form>
+
+    <ng-container popupFooter>
+      <button class="btn-secondary" type="button" (click)="closePopup()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="save()">Save</button>
+    </ng-container>
+  </app-generic-popup>
+
+</div>

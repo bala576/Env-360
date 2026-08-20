@@ -1,0 +1,88 @@
+<div class="master-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <app-generic-table
+    title="Document Type Master"
+    searchPlaceholder="Search Document Types"
+    [columns]="columns"
+    [rows]="rows"
+    (add)="openAdd()"
+    (edit)="openEdit($event)"
+    (delete)="deleteRow($event)"
+  ></app-generic-table>
+
+  <app-generic-popup
+    [isOpen]="popupOpen"
+    [title]="editingRow ? 'Edit Document Type' : 'Add Document Type'"
+    (closed)="closePopup()"
+  >
+    <form [formGroup]="form" class="master-form">
+
+      <div class="field">
+        <label>Document Type Code</label>
+        <input type="text" formControlName="code" placeholder="e.g. CAL-CERT" />
+      </div>
+
+      <div class="field">
+        <label>Document Type Name</label>
+        <input type="text" formControlName="name" placeholder="e.g. Calibration Certificate" />
+      </div>
+
+      <div class="field">
+        <label>Document Category</label>
+        <select formControlName="category">
+          <option value="" disabled>Select category</option>
+          <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Allowed File Types</label>
+        <input type="text" formControlName="allowedFileTypes" placeholder="e.g. PDF, JPG" />
+      </div>
+
+      <div class="field">
+        <label>Maximum File Size</label>
+        <input type="text" formControlName="maximumFileSize" placeholder="e.g. 5 MB" />
+      </div>
+
+      <div class="field">
+        <label>Retention Period</label>
+        <input type="text" formControlName="retentionPeriod" placeholder="e.g. 5 Years" />
+      </div>
+
+      <div class="field span-2">
+        <label>Description</label>
+        <textarea formControlName="description" rows="2"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Mandatory</label>
+        <app-form-toggle formControlName="mandatory" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Expiry Applicable</label>
+        <app-form-toggle formControlName="expiryApplicable" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <app-form-toggle formControlName="status"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Display Order</label>
+        <input type="number" formControlName="displayOrder" />
+      </div>
+
+    </form>
+
+    <ng-container popupFooter>
+      <button class="btn-secondary" type="button" (click)="closePopup()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="save()">Save</button>
+    </ng-container>
+  </app-generic-popup>
+
+</div>

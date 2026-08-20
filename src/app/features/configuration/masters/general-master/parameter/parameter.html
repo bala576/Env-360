@@ -1,0 +1,142 @@
+<div class="master-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <app-generic-table
+    title="Parameter Master"
+    searchPlaceholder="Search Parameters"
+    [columns]="columns"
+    [rows]="rows"
+    (add)="openAdd()"
+    (edit)="openEdit($event)"
+    (delete)="deleteRow($event)"
+  ></app-generic-table>
+
+  <app-generic-popup
+    [isOpen]="popupOpen"
+    [title]="editingRow ? 'Edit Parameter' : 'Add Parameter'"
+    (closed)="closePopup()"
+  >
+    <form [formGroup]="form" class="master-form">
+
+      <div class="field">
+        <label>Parameter Code</label>
+        <input type="text" formControlName="code" placeholder="e.g. TEMP" />
+      </div>
+
+      <div class="field">
+        <label>Parameter Name</label>
+        <input type="text" formControlName="name" placeholder="e.g. Temperature" />
+      </div>
+
+      <div class="field">
+        <label>Short Name</label>
+        <input type="text" formControlName="shortName" placeholder="e.g. Temp" />
+      </div>
+
+      <div class="field">
+        <label>Parameter Category</label>
+        <select formControlName="category">
+          <option value="" disabled>Select category</option>
+          <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Parameter Group</label>
+        <input type="text" formControlName="group" placeholder="e.g. Climate" />
+      </div>
+
+      <div class="field">
+        <label>Data Type</label>
+        <select formControlName="dataType">
+          <option *ngFor="let t of dataTypes" [value]="t">{{ t }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Unit</label>
+        <input type="text" formControlName="unit" placeholder="e.g. Celsius" />
+      </div>
+
+      <div class="field">
+        <label>Default Unit</label>
+        <input type="text" formControlName="defaultUnit" placeholder="e.g. Celsius" />
+      </div>
+
+      <div class="field">
+        <label>Minimum Possible Value</label>
+        <input type="number" formControlName="minimumPossibleValue" />
+      </div>
+
+      <div class="field">
+        <label>Maximum Possible Value</label>
+        <input type="number" formControlName="maximumPossibleValue" />
+      </div>
+
+      <div class="field">
+        <label>Default Decimal Precision</label>
+        <input type="number" formControlName="defaultDecimalPrecision" />
+      </div>
+
+      <div class="field">
+        <label>Aggregation Method</label>
+        <select formControlName="aggregationMethod">
+          <option *ngFor="let a of aggregationMethods" [value]="a">{{ a }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Rate of Change Supported</label>
+        <app-form-toggle formControlName="rateOfChangeSupported" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Trend Supported</label>
+        <app-form-toggle formControlName="trendSupported" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Calculated Parameter</label>
+        <app-form-toggle formControlName="calculatedParameter" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Higher Is Better</label>
+        <app-form-toggle formControlName="higherIsBetter" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Lower Is Better</label>
+        <app-form-toggle formControlName="lowerIsBetter" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Icon</label>
+        <input type="text" formControlName="icon" placeholder="Icon name / URL" />
+      </div>
+
+      <div class="field span-2">
+        <label>Description</label>
+        <textarea formControlName="description" rows="2"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <app-form-toggle formControlName="status"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Display Order</label>
+        <input type="number" formControlName="displayOrder" />
+      </div>
+
+    </form>
+
+    <ng-container popupFooter>
+      <button class="btn-secondary" type="button" (click)="closePopup()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="save()">Save</button>
+    </ng-container>
+  </app-generic-popup>
+
+</div>

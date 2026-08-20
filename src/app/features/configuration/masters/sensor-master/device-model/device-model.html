@@ -1,0 +1,140 @@
+<div class="master-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <app-generic-table
+    title="Device Model Master"
+    searchPlaceholder="Search Device Models"
+    [columns]="columns"
+    [rows]="rows"
+    (add)="openAdd()"
+    (edit)="openEdit($event)"
+    (delete)="deleteRow($event)"
+  ></app-generic-table>
+
+  <app-generic-popup
+    [isOpen]="popupOpen"
+    [title]="editingRow ? 'Edit Device Model' : 'Add Device Model'"
+    (closed)="closePopup()"
+  >
+    <form [formGroup]="form" class="master-form">
+
+      <div class="field">
+        <label>Device Model Code</label>
+        <input type="text" formControlName="code" placeholder="e.g. CT-100" />
+      </div>
+
+      <div class="field">
+        <label>Model Name</label>
+        <input type="text" formControlName="modelName" placeholder="e.g. ClimaTech CT-100 Temp/Humidity Sensor" />
+      </div>
+
+      <div class="field">
+        <label>Manufacturer</label>
+        <select formControlName="manufacturer">
+          <option value="" disabled>Select manufacturer</option>
+          <option *ngFor="let m of manufacturers" [value]="m">{{ m }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Device Type</label>
+        <input type="text" formControlName="deviceType" placeholder="e.g. Wireless Sensor" />
+      </div>
+
+      <div class="field">
+        <label>Sensor Type</label>
+        <input type="text" formControlName="sensorType" placeholder="e.g. Temperature & Humidity" />
+      </div>
+
+      <div class="field">
+        <label>Model Number</label>
+        <input type="text" formControlName="modelNumber" placeholder="e.g. CT100-2024" />
+      </div>
+
+      <div class="field">
+        <label>Communication Profile</label>
+        <input type="text" formControlName="communicationProfile" placeholder="e.g. LoRaWAN" />
+      </div>
+
+      <div class="field">
+        <label>Power Type</label>
+        <select formControlName="powerType">
+          <option *ngFor="let p of powerTypes" [value]="p">{{ p }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Battery Type</label>
+        <input type="text" formControlName="batteryType" placeholder="e.g. AA Lithium" />
+      </div>
+
+      <div class="field">
+        <label>Expected Battery Life</label>
+        <input type="text" formControlName="expectedBatteryLife" placeholder="e.g. 2 years" />
+      </div>
+
+      <div class="field">
+        <label>Operating Temperature</label>
+        <input type="text" formControlName="operatingTemperature" placeholder="e.g. -20°C to 60°C" />
+      </div>
+
+      <div class="field">
+        <label>Operating Humidity</label>
+        <input type="text" formControlName="operatingHumidity" placeholder="e.g. 0% to 95% RH" />
+      </div>
+
+      <div class="field">
+        <label>IP Rating</label>
+        <input type="text" formControlName="ipRating" placeholder="e.g. IP54" />
+      </div>
+
+      <div class="field">
+        <label>Firmware Family</label>
+        <input type="text" formControlName="firmwareFamily" placeholder="e.g. CT-FW-1.x" />
+      </div>
+
+      <div class="field">
+        <label>Default Reporting Interval</label>
+        <input type="text" formControlName="defaultReportingInterval" placeholder="e.g. 5 min" />
+      </div>
+
+      <div class="field">
+        <label>Datasheet</label>
+        <input type="text" formControlName="datasheet" placeholder="Datasheet URL" />
+      </div>
+
+      <div class="field">
+        <label>Image</label>
+        <input type="text" formControlName="image" placeholder="Image URL" />
+      </div>
+
+      <div class="field span-2">
+        <label>Description</label>
+        <textarea formControlName="description" rows="2"></textarea>
+      </div>
+
+      <div class="field span-2">
+        <label>Supported Parameters</label>
+        <textarea formControlName="supportedParameters" rows="2" placeholder="Comma-separated list"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <app-form-toggle formControlName="status"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Display Order</label>
+        <input type="number" formControlName="displayOrder" />
+      </div>
+
+    </form>
+
+    <ng-container popupFooter>
+      <button class="btn-secondary" type="button" (click)="closePopup()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="save()">Save</button>
+    </ng-container>
+  </app-generic-popup>
+
+</div>

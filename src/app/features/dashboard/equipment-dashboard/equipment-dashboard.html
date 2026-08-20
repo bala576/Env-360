@@ -1,0 +1,203 @@
+<div class="dashboard-page">
+
+  <div class="top-grid">
+    <div class="top-left">
+
+      <!-- Top stat row -->
+      <div class="stat-row">
+        <div class="stat-card" *ngFor="let card of statCards">
+          <div class="stat-head">
+            <div class="stat-icon" [class]="card.iconBg">
+              <svg *ngIf="card.icon === 'sites'" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.5 7-11.5A7 7 0 105 9.5C5 14.5 12 21 12 21z" [attr.stroke]="card.color" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="9.5" r="2.4" [attr.stroke]="card.color" stroke-width="1.8"/></svg>
+              <svg *ngIf="card.icon === 'devices'" width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="12" rx="1.5" [attr.stroke]="card.color" stroke-width="1.8"/><path d="M9 20h6M12 15v5" [attr.stroke]="card.color" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <svg *ngIf="card.icon === 'sensors'" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M5 12a10 10 0 0114 0M8.5 15.5a5.5 5.5 0 017 0M12 19h.01" [attr.stroke]="card.color" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg *ngIf="card.icon === 'alarms'" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M18 8a6 6 0 10-12 0c0 3.5-1 5-2 7h16c-1-2-2-3.5-2-7z" [attr.stroke]="card.color" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 18a2.5 2.5 0 005 0" [attr.stroke]="card.color" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <svg *ngIf="card.icon === 'compliance'" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" [attr.stroke]="card.color" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" [attr.stroke]="card.color" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <span class="stat-label">{{ card.label }}</span>
+          </div>
+          <div class="stat-value">{{ card.value }}</div>
+          <div class="stat-sub" [class]="card.subType">{{ card.sub }}</div>
+        </div>
+      </div>
+
+      <!-- Middle row: donuts + trend -->
+      <div class="middle-row">
+        <div class="panel donut-panel">
+          <h3>Alarms Summary</h3>
+          <div class="donut-row">
+            <div class="donut" [style.background]="conicGradient(alarmsSummary)">
+              <div class="donut-hole">
+                <strong>{{ totalOf(alarmsSummary) }}</strong>
+                <span>Total</span>
+              </div>
+            </div>
+            <ul class="donut-legend">
+              <li *ngFor="let s of alarmsSummary">
+                <i [style.background]="s.color"></i>
+                <span class="legend-label">{{ s.label }}</span>
+                <span class="legend-value">{{ s.value }}</span>
+              </li>
+            </ul>
+          </div>
+          <a class="view-all" href="javascript:void(0)">View All Alarms →</a>
+        </div>
+
+        <div class="panel donut-panel">
+          <h3>Sensors by Status</h3>
+          <div class="donut-row">
+            <div class="donut" [style.background]="conicGradient(sensorsByStatus)">
+              <div class="donut-hole">
+                <strong>{{ totalOf(sensorsByStatus) }}</strong>
+                <span>Total</span>
+              </div>
+            </div>
+            <ul class="donut-legend">
+              <li *ngFor="let s of sensorsByStatus">
+                <i [style.background]="s.color"></i>
+                <span class="legend-label">{{ s.label }}</span>
+                <span class="legend-value">{{ s.value }} ({{ s.percent }}%)</span>
+              </li>
+            </ul>
+          </div>
+          <a class="view-all" href="javascript:void(0)">View All Sensors →</a>
+        </div>
+
+        <div class="panel chart-panel">
+          <div class="panel-head">
+            <h3>Alarms Trend <span class="sub-title">(Last 7 Days)</span></h3>
+          </div>
+          <div class="chart-legend">
+            <span class="dot" style="background:#ef4444"></span> Critical
+            <span class="dot" style="background:#f97316"></span> Major
+            <span class="dot" style="background:#eab308"></span> Minor
+          </div>
+          <div class="chart-body">
+            <div class="chart-y-axis">
+              <span>30</span><span>20</span><span>10</span><span>0</span>
+            </div>
+            <svg viewBox="0 0 540 200" preserveAspectRatio="none" class="line-chart">
+              <line *ngFor="let y of [0,1,2,3]" [attr.y1]="y*60" x2="540" [attr.y2]="y*60" x1="0" stroke="#f0f0f0" stroke-width="1"/>
+              <polyline [attr.points]="minorPoints" fill="none" stroke="#eab308" stroke-width="2"/>
+              <polyline [attr.points]="majorPoints" fill="none" stroke="#f97316" stroke-width="2"/>
+              <polyline [attr.points]="criticalPoints" fill="none" stroke="#ef4444" stroke-width="2"/>
+            </svg>
+          </div>
+          <div class="chart-x-axis">
+            <span *ngFor="let x of trendLabels">{{ x }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel priority-panel">
+      <h3>Priority Sensor <span class="sub-title">- Primary Application</span></h3>
+      <ul class="priority-list">
+        <li *ngFor="let s of prioritySensors">
+          <div class="priority-icon" [class]="s.iconBg">
+            <svg *ngIf="s.icon === 'temp'" width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 2v12M9 14a3 3 0 106 0" [attr.stroke]="s.color" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="17" r="3" [attr.stroke]="s.color" stroke-width="1.8"/></svg>
+            <svg *ngIf="s.icon === 'humidity'" width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 3s6 6.5 6 10.5a6 6 0 11-12 0C6 9.5 12 3 12 3z" [attr.stroke]="s.color" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            <svg *ngIf="s.icon === 'water'" width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 3s6 6.5 6 10.5a6 6 0 11-12 0C6 9.5 12 3 12 3z" [attr.stroke]="s.color" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            <svg *ngIf="s.icon === 'energy'" width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" [attr.stroke]="s.color" stroke-width="1.6" stroke-linejoin="round"/></svg>
+            <svg *ngIf="s.icon === 'door'" width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="1" [attr.stroke]="s.color" stroke-width="1.6"/><circle cx="15" cy="12" r="1" [attr.fill]="s.color"/></svg>
+            <svg *ngIf="s.icon === 'refrigerant'" width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M4.5 6l15 12M19.5 6l-15 12" [attr.stroke]="s.color" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <svg *ngIf="s.icon === 'gas'" width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 2c2 3-2 4-2 7a4 4 0 108 0c0-1-.5-2-1-2 .3 2-1 3-2 3-1.5 0-2-1.3-1-2.5C15 6 13 4 12 2z" [attr.stroke]="s.color" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            <svg *ngIf="s.icon === 'co'" width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" [attr.stroke]="s.color" stroke-width="1.6"/><text x="12" y="15" text-anchor="middle" font-size="8" font-weight="700" [attr.fill]="s.color">CO</text></svg>
+          </div>
+          <div class="priority-body">
+            <span class="priority-badge">CRITICAL</span>
+            <span class="priority-title">{{ s.title }}</span>
+            <span class="priority-desc">{{ s.description }}</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Environment Overview -->
+  <div class="panel env-panel">
+    <div class="panel-head">
+      <h3>Environment Overview</h3>
+    </div>
+    <div class="env-grid">
+      <div class="env-tile" *ngFor="let t of envTiles">
+        <div class="env-tile-top">
+          <div class="env-tile-icon">
+            <svg *ngIf="t.icon === 'temp'" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2v12M9 14a3 3 0 106 0" [attr.stroke]="t.color" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="17" r="3" [attr.stroke]="t.color" stroke-width="1.8"/></svg>
+            <svg *ngIf="t.icon === 'humidity'" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3s6 6.5 6 10.5a6 6 0 11-12 0C6 9.5 12 3 12 3z" [attr.stroke]="t.color" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            <svg *ngIf="t.icon === 'energy'" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" [attr.stroke]="t.color" stroke-width="1.6" stroke-linejoin="round"/></svg>
+            <svg *ngIf="t.icon === 'water'" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3s6 6.5 6 10.5a6 6 0 11-12 0C6 9.5 12 3 12 3z" [attr.stroke]="t.color" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            <svg *ngIf="t.icon === 'refrigerant'" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M4.5 6l15 12M19.5 6l-15 12" [attr.stroke]="t.color" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <svg *ngIf="t.icon === 'gas'" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2c2 3-2 4-2 7a4 4 0 108 0c0-1-.5-2-1-2 .3 2-1 3-2 3-1.5 0-2-1.3-1-2.5C15 6 13 4 12 2z" [attr.stroke]="t.color" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            <svg *ngIf="t.icon === 'co'" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" [attr.stroke]="t.color" stroke-width="1.6"/><text x="12" y="15" text-anchor="middle" font-size="8" font-weight="700" [attr.fill]="t.color">CO</text></svg>
+            <svg *ngIf="t.icon === 'door'" width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="1" [attr.stroke]="t.color" stroke-width="1.6"/><circle cx="15" cy="12" r="1" [attr.fill]="t.color"/></svg>
+          </div>
+          <svg class="env-tile-spark" viewBox="0 0 75 24" preserveAspectRatio="none">
+            <polyline [attr.points]="t.points" fill="none" [attr.stroke]="t.color" stroke-width="1.6"/>
+          </svg>
+        </div>
+        <div class="env-tile-label">{{ t.label }}</div>
+        <div class="env-tile-value">{{ t.value }}</div>
+        <div class="env-tile-status" [class]="t.status">{{ t.status === 'normal' ? 'Normal' : 'Critical' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom row -->
+  <div class="bottom-row">
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Top Sites by Active Alarms</h3>
+      </div>
+      <ul class="rank-list">
+        <li *ngFor="let site of topSites; let i = index">
+          <span class="rank-index">{{ i + 1 }}</span>
+          <span class="rank-name site-name">{{ site.name }}</span>
+          <div class="rank-bar-wrap">
+            <div class="rank-bar" [style.width.%]="site.percent" [style.background]="site.barColor"></div>
+          </div>
+          <span class="rank-value">{{ site.count }}</span>
+        </li>
+      </ul>
+      <a class="view-all" href="javascript:void(0)">View All →</a>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Quick Actions</h3>
+      </div>
+      <div class="quick-actions-grid">
+        <button class="quick-action" type="button" *ngFor="let a of quickActions">
+          <span class="quick-action-icon">
+            <svg *ngIf="a.icon === 'site'" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.5 7-11.5A7 7 0 105 9.5C5 14.5 12 21 12 21z" stroke="#7030a0" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 8v3M12 8h.01" stroke="#7030a0" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <svg *ngIf="a.icon === 'device'" width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="12" rx="1.5" stroke="#7030a0" stroke-width="1.8"/><path d="M9 20h6M12 15v5M12 8v2" stroke="#7030a0" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <svg *ngIf="a.icon === 'sensor'" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M5 12a10 10 0 0114 0M8.5 15.5a5.5 5.5 0 017 0M12 19h.01" stroke="#7030a0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg *ngIf="a.icon === 'rule'" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M18 8a6 6 0 10-12 0c0 3.5-1 5-2 7h16c-1-2-2-3.5-2-7z" stroke="#7030a0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 3v1" stroke="#7030a0" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <svg *ngIf="a.icon === 'report'" width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="1.5" stroke="#7030a0" stroke-width="1.8"/><path d="M8 8h8M8 12h8M8 16h5" stroke="#7030a0" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <svg *ngIf="a.icon === 'map'" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z" stroke="#7030a0" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 4v14M15 6v14" stroke="#7030a0" stroke-width="1.6"/></svg>
+          </span>
+          <span class="quick-action-label">{{ a.label }}</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="panel alarms-panel">
+      <div class="panel-head">
+        <h3>Recent Events</h3>
+      </div>
+      <ul class="event-list">
+        <li *ngFor="let e of recentEvents">
+          <span class="event-time">{{ e.time }}</span>
+          <div class="event-body">
+            <span class="event-title">{{ e.title }}</span>
+            <span class="event-location">{{ e.location }}</span>
+          </div>
+        </li>
+      </ul>
+      <a class="view-all" href="javascript:void(0)">View All Events →</a>
+    </div>
+  </div>
+
+  <footer class="dashboard-footer">© 2025 Purple IQ Environment360. All rights reserved.</footer>
+</div>

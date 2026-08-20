@@ -1,0 +1,39 @@
+<div
+  class="tree-row"
+  [class.selected]="node.id === selectedId"
+  [style.paddingLeft.px]="16 + depth * 20"
+  (click)="onRowClick()"
+>
+  <span class="tree-label">{{ node.name }}</span>
+
+  <span class="tree-actions">
+    <ng-container *ngIf="showActions">
+      <button type="button" class="tree-icon-btn" aria-label="add child" (click)="addChild.emit({ node, depth }); $event.stopPropagation()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+      <button type="button" class="tree-icon-btn" aria-label="edit" (click)="editNode.emit({ node, depth }); $event.stopPropagation()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button type="button" class="tree-icon-btn danger" aria-label="delete" (click)="deleteNode.emit({ node, depth }); $event.stopPropagation()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </ng-container>
+    <span class="tree-chevron-btn" [class.open]="node.expanded">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+  </span>
+</div>
+
+<div class="tree-children" *ngIf="node.expanded">
+  <app-location-tree-node
+    *ngFor="let child of node.children"
+    [node]="child"
+    [depth]="depth + 1"
+    [selectedId]="selectedId"
+    [showActions]="showActions"
+    (select)="select.emit($event)"
+    (addChild)="addChild.emit($event)"
+    (editNode)="editNode.emit($event)"
+    (deleteNode)="deleteNode.emit($event)"
+  ></app-location-tree-node>
+</div>

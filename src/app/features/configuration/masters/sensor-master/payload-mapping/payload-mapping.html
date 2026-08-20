@@ -1,0 +1,175 @@
+<div class="master-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <app-generic-table
+    title="Payload Mapping Master"
+    searchPlaceholder="Search Payload Mappings"
+    [columns]="columns"
+    [rows]="rows"
+    (add)="openAdd()"
+    (edit)="openEdit($event)"
+    (delete)="deleteRow($event)"
+  ></app-generic-table>
+
+  <app-generic-popup
+    [isOpen]="popupOpen"
+    [title]="editingRow ? 'Edit Payload Mapping' : 'Add Payload Mapping'"
+    (closed)="closePopup()"
+  >
+    <form [formGroup]="form" class="master-form">
+
+      <div class="field">
+        <label>Mapping Code</label>
+        <input type="text" formControlName="mappingCode" placeholder="e.g. MAP-TEMP" />
+      </div>
+
+      <div class="field">
+        <label>Mapping Name</label>
+        <input type="text" formControlName="mappingName" placeholder="e.g. Temperature Mapping" />
+      </div>
+
+      <div class="field">
+        <label>Device Model</label>
+        <input type="text" formControlName="deviceModel" placeholder="e.g. ClimaTech CT-100" />
+      </div>
+
+      <div class="field">
+        <label>Protocol</label>
+        <select formControlName="protocol">
+          <option value="" disabled>Select protocol</option>
+          <option *ngFor="let p of protocols" [value]="p">{{ p }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Payload Format</label>
+        <select formControlName="payloadFormat">
+          <option value="" disabled>Select format</option>
+          <option *ngFor="let f of payloadFormats" [value]="f">{{ f }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Data Encoding</label>
+        <select formControlName="dataEncoding">
+          <option value="" disabled>Select encoding</option>
+          <option *ngFor="let e of dataEncodings" [value]="e">{{ e }}</option>
+        </select>
+      </div>
+
+      <div class="field span-2">
+        <label>Payload Structure</label>
+        <input type="text" formControlName="payloadStructure" placeholder="e.g. { data: { temp: 0.0 } }" />
+      </div>
+
+      <div class="field">
+        <label>Timestamp Field</label>
+        <input type="text" formControlName="timestampField" placeholder="e.g. data.ts" />
+      </div>
+
+      <div class="field">
+        <label>Device ID Field</label>
+        <input type="text" formControlName="deviceIdField" placeholder="e.g. data.deviceId" />
+      </div>
+
+      <div class="field">
+        <label>Parameter Key</label>
+        <input type="text" formControlName="parameterKey" placeholder="e.g. temp" />
+      </div>
+
+      <div class="field">
+        <label>JSON Path / Register Address</label>
+        <input type="text" formControlName="jsonPathOrRegisterAddress" placeholder="e.g. $.data.temp or 40001" />
+      </div>
+
+      <div class="field">
+        <label>Parameter</label>
+        <input type="text" formControlName="parameter" placeholder="e.g. Temperature" />
+      </div>
+
+      <div class="field">
+        <label>Unit</label>
+        <input type="text" formControlName="unit" placeholder="e.g. Celsius" />
+      </div>
+
+      <div class="field">
+        <label>Data Type</label>
+        <select formControlName="dataType">
+          <option *ngFor="let t of dataTypes" [value]="t">{{ t }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Multiplier</label>
+        <input type="number" formControlName="multiplier" />
+      </div>
+
+      <div class="field">
+        <label>Offset</label>
+        <input type="number" formControlName="offset" />
+      </div>
+
+      <div class="field span-2">
+        <label>Conversion Formula</label>
+        <input type="text" formControlName="conversionFormula" placeholder="e.g. x * 0.1" />
+      </div>
+
+      <div class="field">
+        <label>Byte Order</label>
+        <select formControlName="byteOrder">
+          <option *ngFor="let b of byteOrders" [value]="b">{{ b }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Bit Position</label>
+        <input type="number" formControlName="bitPosition" />
+      </div>
+
+      <div class="field">
+        <label>Validation Rule</label>
+        <input type="text" formControlName="validationRule" placeholder="e.g. 0 <= x <= 100" />
+      </div>
+
+      <div class="field">
+        <label>Default Value</label>
+        <input type="text" formControlName="defaultValue" />
+      </div>
+
+      <div class="field">
+        <label>Invalid Value Handling</label>
+        <select formControlName="invalidValueHandling">
+          <option *ngFor="let h of invalidValueHandlingOptions" [value]="h">{{ h }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Version</label>
+        <input type="text" formControlName="version" placeholder="e.g. v1.0" />
+      </div>
+
+      <div class="field span-2">
+        <label>Example Payload</label>
+        <textarea formControlName="examplePayload" rows="2" placeholder="Sample raw payload"></textarea>
+      </div>
+
+      <div class="field span-2">
+        <label>Description</label>
+        <textarea formControlName="description" rows="2"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <app-form-toggle formControlName="status"></app-form-toggle>
+      </div>
+
+    </form>
+
+    <ng-container popupFooter>
+      <button class="btn-secondary" type="button" (click)="closePopup()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="save()">Save</button>
+    </ng-container>
+  </app-generic-popup>
+
+</div>

@@ -1,0 +1,110 @@
+<div class="master-page" *ngIf="device">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+
+  <div class="details-header">
+    <div class="details-title">
+      <span class="device-id">{{ device.id }}</span>
+      <span class="status-badge" [class.status-active]="device.status === 'Active'" [class.status-inactive]="device.status !== 'Active'">
+        ● {{ device.status }}
+      </span>
+      <button class="health-pill" type="button" [disabled]="!device.health" (click)="openHealth()">
+        ♥ Health
+      </button>
+    </div>
+    <p class="device-subtitle">{{ device.name }} — {{ device.deviceModel }}</p>
+  </div>
+
+  <div class="tabs-row">
+    <button *ngFor="let tab of tabs" class="tab-btn" [class.active]="activeTab === tab" type="button" (click)="setTab(tab)">
+      {{ tab }}
+    </button>
+  </div>
+
+  <div class="tab-panel" *ngIf="activeTab === 'Overview'">
+    <h3>Device Information</h3>
+    <div class="info-grid">
+      <div class="info-row"><span class="info-label">Device ID</span><span class="info-value">{{ device.id }}</span></div>
+      <div class="info-row"><span class="info-label">Device Model</span><span class="info-value">{{ device.deviceModel }}</span></div>
+      <div class="info-row"><span class="info-label">Manufacturer</span><span class="info-value">{{ device.manufacturer }}</span></div>
+      <div class="info-row"><span class="info-label">Project</span><span class="info-value">{{ device.project }}</span></div>
+      <div class="info-row"><span class="info-label">Location Path</span><span class="info-value">{{ device.locationLabel }}</span></div>
+      <div class="info-row"><span class="info-label">Monitoring Point</span><span class="info-value">{{ device.installationLocation }}</span></div>
+      <div class="info-row"><span class="info-label">Environment</span><span class="info-value">{{ device.deviceProfile }}</span></div>
+      <div class="info-row"><span class="info-label">Installed Date</span><span class="info-value">{{ device.installationDate }}</span></div>
+    </div>
+  </div>
+
+  <div class="tab-panel" *ngIf="activeTab === 'Parameters'">
+    <app-generic-table
+      title="Sensor Parameters"
+      searchPlaceholder="Search parameters..."
+      [columns]="parameterColumns"
+      [rows]="device.parameters"
+      [showActions]="true"
+      (add)="openAddParameter()"
+      (statusToggle)="onParameterToggle($event)"
+      (delete)="deleteParameter($event)"
+    ></app-generic-table>
+  </div>
+
+  <div class="tab-panel empty-panel" *ngIf="activeTab === 'Live Data'">No live data available yet.</div>
+  <div class="tab-panel empty-panel" *ngIf="activeTab === 'History'">No history available yet.</div>
+  <div class="tab-panel empty-panel" *ngIf="activeTab === 'Events'">No events recorded yet.</div>
+  <div class="tab-panel empty-panel" *ngIf="activeTab === 'Configuration'">No additional configuration yet.</div>
+
+  <app-generic-popup [isOpen]="parameterPopupOpen" title="Add Parameter" (closed)="closeParameterPopup()">
+    <form [formGroup]="parameterForm" class="master-form">
+      <div class="field">
+        <label>Parameter *</label>
+        <select formControlName="parameter" (change)="onParameterChange()">
+          <option value="" disabled>Select parameter</option>
+          <option *ngFor="let p of parameterOptions" [value]="p">{{ p }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Unit</label>
+        <input type="text" formControlName="unit" readonly />
+      </div>
+      <div class="field">
+        <label>Threshold Profile</label>
+        <select formControlName="thresholdProfile">
+          <option value="">None</option>
+          <option *ngFor="let t of thresholdProfileOptions" [value]="t">{{ t }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Data Collection Profile</label>
+        <select formControlName="dataCollectionProfile">
+          <option value="">None</option>
+          <option *ngFor="let d of dataCollectionProfileOptions" [value]="d">{{ d }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Data Quality Profile</label>
+        <select formControlName="dataQualityProfile">
+          <option value="">None</option>
+          <option *ngFor="let d of dataQualityProfileOptions" [value]="d">{{ d }}</option>
+        </select>
+      </div>
+      <div class="field checkbox-field">
+        <label><input type="checkbox" formControlName="enabled" /> Enabled</label>
+      </div>
+    </form>
+
+    <ng-container popupFooter>
+      <button class="btn-secondary" type="button" (click)="closeParameterPopup()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="saveParameter()">Save</button>
+    </ng-container>
+  </app-generic-popup>
+
+  <app-device-health-popup
+    [isOpen]="healthPopupOpen"
+    [deviceId]="device.id"
+    [health]="device.health"
+    (closed)="closeHealthPopup()"
+    (viewDevice)="closeHealthPopup()"
+  ></app-device-health-popup>
+
+</div>

@@ -1,0 +1,68 @@
+<div class="master-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <app-generic-table
+    title="User"
+    searchPlaceholder="Search Users"
+    [columns]="columns"
+    [rows]="rows"
+    (add)="openAdd()"
+    (edit)="openEdit($event)"
+    (delete)="deleteRow($event)"
+  ></app-generic-table>
+
+  <app-generic-popup
+    [isOpen]="popupOpen"
+    [title]="editingRow ? 'Edit User' : 'Add User'"
+    (closed)="closePopup()"
+  >
+    <form [formGroup]="form" class="master-form">
+
+      <div class="field">
+        <label>User Name</label>
+        <input type="text" formControlName="userName" placeholder="e.g. Rahul Mehta" />
+      </div>
+
+      <div class="field">
+        <label>Short Name</label>
+        <input type="text" formControlName="shortName" placeholder="e.g. RMehta" />
+      </div>
+
+      <div class="field">
+        <label>Contact No</label>
+        <input type="text" formControlName="contactNo" placeholder="e.g. +91 98765 43210" />
+      </div>
+
+      <div class="field">
+        <label>Email Id</label>
+        <input type="email" formControlName="emailId" placeholder="e.g. rahul.mehta@env360.com" />
+      </div>
+
+      <div class="field">
+        <label>Role</label>
+        <select formControlName="role" (change)="onRoleChange()">
+          <option value="" disabled>Select role</option>
+          <option *ngFor="let r of roleOptions" [value]="r">{{ r }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Role Name</label>
+        <input type="text" formControlName="roleName" readonly />
+      </div>
+
+      <div class="field">
+        <label>AD User Name</label>
+        <input type="text" formControlName="adUserName" placeholder="e.g. ENV360\rmehta" />
+      </div>
+
+    </form>
+
+<ng-container popupFooter>
+      <button class="btn-secondary" type="button" (click)="closePopup()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="save()">Save</button>
+    </ng-container>
+  </app-generic-popup>
+
+</div>

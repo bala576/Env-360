@@ -1,0 +1,83 @@
+<div class="master-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <app-generic-table
+    title="Status Master"
+    searchPlaceholder="Search Statuses"
+    [columns]="columns"
+    [rows]="rows"
+    (add)="openAdd()"
+    (edit)="openEdit($event)"
+    (delete)="deleteRow($event)"
+  ></app-generic-table>
+
+  <app-generic-popup
+    [isOpen]="popupOpen"
+    [title]="editingRow ? 'Edit Status' : 'Add Status'"
+    (closed)="closePopup()"
+  >
+    <form [formGroup]="form" class="master-form">
+
+      <div class="field">
+        <label>Status Code</label>
+        <input type="text" formControlName="code" placeholder="e.g. OPEN" />
+      </div>
+
+      <div class="field">
+        <label>Status Name</label>
+        <input type="text" formControlName="name" placeholder="e.g. Open" />
+      </div>
+
+      <div class="field">
+        <label>Status Type</label>
+        <select formControlName="statusType">
+          <option value="" disabled>Select type</option>
+          <option *ngFor="let t of statusTypes" [value]="t">{{ t }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Color</label>
+        <input type="color" formControlName="color" />
+      </div>
+
+      <div class="field">
+        <label>Icon</label>
+        <input type="text" formControlName="icon" placeholder="Icon name / URL" />
+      </div>
+
+      <div class="field">
+        <label>Display Order</label>
+        <input type="number" formControlName="displayOrder" />
+      </div>
+
+      <div class="field span-2">
+        <label>Description</label>
+        <textarea formControlName="description" rows="2"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Is Default</label>
+        <app-form-toggle formControlName="isDefault" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Is Terminal</label>
+        <app-form-toggle formControlName="isTerminal" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <app-form-toggle formControlName="recordStatus"></app-form-toggle>
+      </div>
+
+    </form>
+
+    <ng-container popupFooter>
+      <button class="btn-secondary" type="button" (click)="closePopup()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="save()">Save</button>
+    </ng-container>
+  </app-generic-popup>
+
+</div>

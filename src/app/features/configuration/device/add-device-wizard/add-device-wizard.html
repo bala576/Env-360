@@ -1,0 +1,68 @@
+<app-generic-popup [isOpen]="isOpen" title="Add Device" (closed)="close()">
+
+  <div class="wizard-steps">
+    <span *ngFor="let label of stepLabels; let i = index" class="wizard-step" [class.active]="i === currentStep" [class.done]="i < currentStep">
+      {{ i + 1 }}. {{ label }}
+    </span>
+  </div>
+
+  <form [formGroup]="form" class="master-form">
+
+    <ng-container *ngIf="currentStep === 0">
+      <div class="field" *ngFor="let level of locationLevelNames; let i = index" [hidden]="!isLevelVisible(i)">
+        <label>{{ level }}</label>
+        <select #levelSelect (change)="selectAtLevel(i, levelSelect.value)">
+          <option value="" disabled [selected]="!selectedPath[i]">Select {{ level }}</option>
+          <option *ngFor="let node of optionsAtLevel(i)" [value]="node.id" [selected]="selectedPath[i]?.id === node.id">{{ node.name }}</option>
+        </select>
+      </div>
+    </ng-container>
+
+    <div class="field" *ngIf="currentStep === 1">
+      <label>Device Model</label>
+      <select formControlName="deviceModel" (change)="onDeviceModelChange()">
+        <option value="" disabled>Select device model</option>
+        <option *ngFor="let m of deviceModelOptions" [value]="m">{{ m }}</option>
+      </select>
+    </div>
+
+    <div class="field" *ngIf="currentStep === 2">
+      <label>Device ID</label>
+      <input type="text" formControlName="deviceId" />
+    </div>
+
+    <div class="field" *ngIf="currentStep === 3">
+      <label>Parameters</label>
+      <div class="wizard-checkbox-list">
+        <label class="wizard-checkbox" *ngFor="let p of parameterOptions">
+          <input type="checkbox" [checked]="isParameterSelected(p)" (change)="toggleParameter(p)" />
+          {{ p }}
+        </label>
+      </div>
+    </div>
+
+    <div class="field" *ngIf="currentStep === 4">
+      <label>Connectivity</label>
+      <select formControlName="connectivity">
+        <option value="" disabled>Select connectivity</option>
+        <option *ngFor="let c of connectivityOptions" [value]="c">{{ c }}</option>
+      </select>
+    </div>
+
+    <div class="field" *ngIf="currentStep === 5">
+      <label>Device Profile</label>
+      <select formControlName="deviceProfile">
+        <option value="" disabled>Select device profile</option>
+        <option *ngFor="let d of deviceProfileOptions" [value]="d">{{ d }}</option>
+      </select>
+    </div>
+
+  </form>
+
+  <ng-container popupFooter>
+    <button class="btn-secondary" type="button" (click)="close()">Cancel</button>
+    <button class="btn-secondary" type="button" *ngIf="currentStep > 0" (click)="back()">Back</button>
+    <button class="btn-primary" type="button" *ngIf="currentStep < stepLabels.length - 1" [disabled]="!canGoNext" (click)="next()">Next</button>
+    <button class="btn-primary" type="button" *ngIf="currentStep === stepLabels.length - 1" (click)="save()">Save & Activate</button>
+  </ng-container>
+</app-generic-popup>

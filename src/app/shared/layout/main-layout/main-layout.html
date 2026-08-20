@@ -1,0 +1,12 @@
+<div class="app-shell">
+  <app-sidebar></app-sidebar>
+
+  <div class="app-main">
+    <app-topbar [pageTitle]="pageTitle"></app-topbar>
+    <app-dashboard-tabs></app-dashboard-tabs>
+
+    <main class="page-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

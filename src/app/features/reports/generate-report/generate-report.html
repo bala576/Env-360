@@ -1,0 +1,128 @@
+<div class="create-report-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <div class="create-report-layout">
+
+    <div class="tree-panel">
+      <div class="search-box">
+        <input type="text" placeholder="Search..." [(ngModel)]="treeSearch" (ngModelChange)="onTreeSearch()" />
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+      <div class="tree-scroll">
+        <app-location-tree-node
+          *ngFor="let root of trackers"
+          [node]="root"
+          [depth]="0"
+          [selectedId]="selectedNode?.id ?? null"
+          [showActions]="false"
+          (select)="selectNode($event)"
+        ></app-location-tree-node>
+      </div>
+    </div>
+
+    <div class="report-form-panel">
+      <h2 class="form-title">New Reports</h2>
+      <div class="form-divider"></div>
+
+      <div class="form-grid">
+
+        <div class="form-col">
+          <div class="section-label">Create Reports</div>
+
+          <label class="field-label">Report Name</label>
+          <input type="text" class="text-input" [(ngModel)]="reportName" placeholder="e.g. Weekly Air Quality Summary" />
+
+          <div class="section-label">Select Module</div>
+          <label class="radio-line" *ngFor="let m of moduleOptions">
+            <input type="radio" name="module" [value]="m" [(ngModel)]="selectedModule" />
+            <span class="radio-dot"></span>
+            {{ m }}
+          </label>
+
+          <div class="section-label">Select Template</div>
+          <select class="text-input" [(ngModel)]="selectedTemplate">
+            <option value="">Choose a template</option>
+            <option *ngFor="let t of templateOptions" [value]="t">{{ t }}</option>
+          </select>
+        </div>
+
+        <div class="form-col">
+          <div class="time-range-row">
+            <span class="section-label inline">Time Range :</span>
+            <select class="time-unit-select" [(ngModel)]="timeRangeUnit">
+              <option value=""></option>
+              <option *ngFor="let u of timeRangeUnits" [value]="u">{{ u }}</option>
+            </select>
+            <button
+              *ngFor="let p of timeRangePresets"
+              type="button"
+              class="pill-btn"
+              [class.active]="selectedPreset === p"
+              (click)="selectPreset(p)"
+            >{{ p }}</button>
+          </div>
+
+          <div class="section-label">Choose Format</div>
+          <label class="radio-line" *ngFor="let f of formats">
+            <input type="radio" name="format" [value]="f" [(ngModel)]="selectedFormat" />
+            <span class="radio-dot"></span>
+            <ng-container [ngSwitch]="f">
+              <ng-container *ngSwitchCase="'CSV'">Also download raw data in CSV Format</ng-container>
+              <ng-container *ngSwitchDefault>{{ f }}</ng-container>
+            </ng-container>
+          </label>
+
+          <div class="section-label">Recurrence of Report</div>
+
+          <label class="radio-line">
+            <input type="radio" name="recurrence" value="Once" [(ngModel)]="selectedRecurrence" />
+            <span class="radio-dot"></span>
+            Once
+          </label>
+
+          <label class="radio-line with-input">
+            <input type="radio" name="recurrence" value="Daily" [(ngModel)]="selectedRecurrence" />
+            <span class="radio-dot"></span>
+            Daily
+            <input type="time" class="inline-input" [(ngModel)]="dailyTime" [disabled]="selectedRecurrence !== 'Daily'" />
+          </label>
+
+          <label class="radio-line">
+            <input type="radio" name="recurrence" value="Weekly" [(ngModel)]="selectedRecurrence" />
+            <span class="radio-dot"></span>
+            Weekly On
+          </label>
+          <select class="text-input indent" [(ngModel)]="weeklyDay" [disabled]="selectedRecurrence !== 'Weekly'">
+            <option *ngFor="let d of weekDays" [value]="d">{{ d }}</option>
+          </select>
+          <div class="indent at-row">
+            <span>at</span>
+            <input type="time" class="inline-input" [(ngModel)]="weeklyTime" [disabled]="selectedRecurrence !== 'Weekly'" />
+          </div>
+
+          <label class="radio-line">
+            <input type="radio" name="recurrence" value="Monthly" [(ngModel)]="selectedRecurrence" />
+            <span class="radio-dot"></span>
+            Monthly
+            <input type="date" class="inline-input" [(ngModel)]="monthlyDate" [disabled]="selectedRecurrence !== 'Monthly'" />
+            <span>at</span>
+            <input type="time" class="inline-input" [(ngModel)]="monthlyTime" [disabled]="selectedRecurrence !== 'Monthly'" />
+          </label>
+
+          <div class="section-label">Share With</div>
+          <textarea class="text-input textarea" rows="3" [(ngModel)]="shareWith" placeholder="Enter Comma-Separated Email Addresses"></textarea>
+        </div>
+
+      </div>
+
+      <div class="form-footer">
+        <button class="btn-secondary" type="button" (click)="cancel()">Cancel</button>
+        <button class="btn-primary" type="button" (click)="createReport()">Create Report</button>
+      </div>
+    </div>
+
+  </div>
+
+</div>

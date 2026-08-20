@@ -1,0 +1,81 @@
+<div class="generic-table-panel">
+  <div class="generic-table-head">
+    <h3>{{ title }}</h3>
+
+    <div class="generic-table-tools">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input type="text" [placeholder]="searchPlaceholder" [(ngModel)]="searchTerm" />
+      </div>
+
+      <button *ngIf="showAdd" class="circle-btn" type="button" aria-label="add" (click)="add.emit()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+      <button class="circle-btn" type="button" aria-label="refresh" (click)="onRefresh()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 4v6h6M20 20v-6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 15a8 8 0 0014.7 2.7M19 9A8 8 0 004.3 6.3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button *ngIf="showDownload" class="circle-btn" type="button" aria-label="download" (click)="onDownload()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 21h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="generic-table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th *ngFor="let col of columns">{{ col.label }}</th>
+          <th *ngIf="showActions" class="actions-col">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of filteredRows" (click)="rowClick.emit(row)">
+          <td *ngFor="let col of columns">
+            <span
+              *ngIf="col.type === 'badge'"
+              class="status-badge"
+              [class.status-active]="isActiveValue(row[col.key])"
+              [class.status-inactive]="!isActiveValue(row[col.key])"
+            >{{ row[col.key] }}</span>
+
+            <button
+              *ngIf="col.type === 'toggle'"
+              type="button"
+              class="status-toggle"
+              [class.on]="isActiveValue(row[col.key])"
+              [attr.aria-pressed]="isActiveValue(row[col.key])"
+              (click)="$event.stopPropagation(); toggleStatus(row, col)"
+            >
+              <span class="status-toggle-knob"></span>
+            </button>
+
+            <button
+              *ngIf="col.type === 'health'"
+              type="button"
+              class="health-cell"
+              [class.inactive]="!row[col.key]"
+              [disabled]="!row[col.key]"
+              (click)="$event.stopPropagation(); onCellAction(row, col)"
+            >
+              <ng-container *ngIf="row[col.key]">♥</ng-container>
+              <ng-container *ngIf="!row[col.key]">—</ng-container>
+            </button>
+
+            <ng-container *ngIf="col.type !== 'badge' && col.type !== 'toggle' && col.type !== 'health'">{{ displayValue(row[col.key]) }}</ng-container>
+          </td>
+          <td *ngIf="showActions" class="actions-col">
+            <button class="icon-btn" type="button" aria-label="edit" (click)="$event.stopPropagation(); edit.emit(row)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="icon-btn danger" type="button" aria-label="delete" (click)="$event.stopPropagation(); delete.emit(row)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="!filteredRows.length">
+          <td class="empty-row" [attr.colspan]="columns.length + (showActions ? 1 : 0)">{{ emptyMessage }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

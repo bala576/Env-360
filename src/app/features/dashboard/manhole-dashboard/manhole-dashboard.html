@@ -1,0 +1,297 @@
+<div class="dashboard-page">
+
+  <!-- Top stat row -->
+  <div class="stat-row">
+    <div class="stat-card" *ngFor="let card of statCards">
+      <div class="stat-head">
+        <div class="stat-icon" [class]="card.iconBg">
+          <svg *ngIf="card.icon === 'manhole'" width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" [attr.stroke]="card.color" stroke-width="1.8"/><circle cx="12" cy="12" r="4" [attr.stroke]="card.color" stroke-width="1.8"/></svg>
+          <svg *ngIf="card.icon === 'check'" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" [attr.stroke]="card.color" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg *ngIf="card.icon === 'warning'" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3L2 20h20L12 3z" [attr.stroke]="card.color" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v4M12 17h.01" [attr.stroke]="card.color" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <svg *ngIf="card.icon === 'critical'" width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" [attr.stroke]="card.color" stroke-width="1.8"/><path d="M12 8v5M12 16h.01" [attr.stroke]="card.color" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <svg *ngIf="card.icon === 'offline'" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 3l18 18M8.5 8.5a10 10 0 0110.6 2M5 12a10 10 0 012.3-2.7M8.5 15.5a5.5 5.5 0 015-1.5M12 19h.01" [attr.stroke]="card.color" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg *ngIf="card.icon === 'overflow'" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2a7 7 0 017 7c0 4-3 6-3 10H8c0-4-3-6-3-10a7 7 0 017-7z" [attr.stroke]="card.color" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 22h6" [attr.stroke]="card.color" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </div>
+        <span class="stat-label">{{ card.label }}</span>
+      </div>
+      <div class="stat-value">{{ card.value }} <small *ngIf="card.percent">{{ card.percent }}</small></div>
+      <div class="stat-sub" [class]="card.subType">{{ card.sub }}</div>
+      <a *ngIf="card.link" class="view-all" href="javascript:void(0)">{{ card.link }}</a>
+    </div>
+  </div>
+
+  <!-- Middle row: map, water level trend, prediction -->
+  <div class="main-row">
+
+    <div class="panel map-panel">
+      <div class="panel-head">
+        <h3>Manhole Status Map</h3>
+        <div class="map-controls">
+          <button aria-label="layers">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2l9 5-9 5-9-5 9-5z" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/><path d="M3 12l9 5 9-5" stroke="#6b7280" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          </button>
+          <button aria-label="settings">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#6b7280" stroke-width="1.6"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9M4.6 9a1.7 1.7 0 00-.3-1.9" stroke="#6b7280" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="map-canvas">
+        <span class="zone-label" *ngFor="let z of zoneLabels" [style.top]="z.top" [style.left]="z.left">{{ z.label }}</span>
+
+        <div
+          class="zone-bubble"
+          [class]="'zone-' + b.type"
+          *ngFor="let b of zoneBubbles"
+          [style.top]="b.top"
+          [style.left]="b.left"
+          [style.width.px]="b.size"
+          [style.height.px]="b.size"
+        >{{ b.count }}</div>
+
+        <div class="map-zoom">
+          <button aria-label="zoom in">+</button>
+          <button aria-label="zoom out">−</button>
+        </div>
+      </div>
+
+      <div class="map-legend">
+        <span *ngFor="let item of mapLegend">
+          <i [style.background]="item.color"></i>{{ item.label }} ({{ item.count }})
+        </span>
+      </div>
+    </div>
+
+    <div class="panel chart-panel">
+      <div class="panel-head">
+        <h3>Water Level Trend <span class="sub-title">(Selected Manhole)</span></h3>
+        <select class="range-select">
+          <option>{{ selectedManhole }}</option>
+        </select>
+      </div>
+      <div class="chart-legend">
+        <span class="dot" style="background:#7030a0"></span> Water Level
+        <span class="dot" style="background:#c4b5fd"></span> Rainfall
+        <span class="dot dash" style="background:#f97316"></span> Warning Level
+        <span class="dot dash" style="background:#ef4444"></span> Critical Level
+      </div>
+      <div class="chart-body">
+        <div class="chart-y-axis">
+          <span>2.5</span><span>2.0</span><span>1.5</span><span>1.0</span><span>0.5</span><span>0</span>
+        </div>
+        <svg viewBox="0 0 560 200" preserveAspectRatio="none" class="line-chart">
+          <line *ngFor="let y of [0,1,2,3,4,5]" [attr.y1]="y*40" x2="560" [attr.y2]="y*40" x1="0" stroke="#f0f0f0" stroke-width="1"/>
+          <rect *ngFor="let v of rainfallBars; let i = index" [attr.x]="i*80+30" [attr.y]="200-(v/50*70)" width="18" [attr.height]="v/50*70" fill="#e9d8fd"/>
+          <line x1="0" x2="560" [attr.y1]="warningLevelY" [attr.y2]="warningLevelY" stroke="#f97316" stroke-width="1.5" stroke-dasharray="5,4"/>
+          <line x1="0" x2="560" [attr.y1]="criticalLevelY" [attr.y2]="criticalLevelY" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,4"/>
+          <polyline [attr.points]="waterLevelPoints" fill="none" stroke="#7030a0" stroke-width="2.5"/>
+        </svg>
+      </div>
+      <div class="chart-x-axis">
+        <span *ngFor="let x of waterChartLabels">{{ x }}</span>
+      </div>
+
+      <div class="mini-stat-row">
+        <div class="mini-stat">
+          <span class="mini-label">Current Level</span>
+          <span class="mini-value">{{ currentLevel }} m</span>
+        </div>
+        <div class="mini-stat">
+          <span class="mini-label">% Full</span>
+          <span class="mini-value">{{ percentFull }}%</span>
+        </div>
+        <div class="mini-stat">
+          <span class="mini-label">Trend</span>
+          <span class="mini-value trend-up">Rising ▲</span>
+        </div>
+        <div class="mini-stat">
+          <span class="mini-label">Predicted (1h)</span>
+          <span class="mini-value">{{ predicted1h }} m</span>
+        </div>
+        <div class="mini-stat">
+          <span class="mini-label">Predicted (6h)</span>
+          <span class="mini-value">{{ predicted6h }} m</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel chart-panel">
+      <div class="panel-head">
+        <h3>Level Prediction <span class="sub-title">(Next 6 Hours)</span></h3>
+      </div>
+      <div class="chart-legend">
+        <span class="dot" style="background:#7030a0"></span> Observed
+        <span class="dot dash" style="background:#a78bfa"></span> Predicted
+      </div>
+      <div class="chart-body">
+        <div class="chart-y-axis">
+          <span>3.0</span><span>2.0</span><span>1.0</span><span>0</span>
+        </div>
+        <svg viewBox="0 0 560 200" preserveAspectRatio="none" class="line-chart">
+          <line *ngFor="let y of [0,1,2,3,4,5]" [attr.y1]="y*40" x2="560" [attr.y2]="y*40" x1="0" stroke="#f0f0f0" stroke-width="1"/>
+          <line x1="0" x2="560" [attr.y1]="criticalLevelY" [attr.y2]="criticalLevelY" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,4"/>
+          <text x="555" [attr.y]="criticalLevelY-6" text-anchor="end" class="threshold-label critical">Critical (2.20 m)</text>
+          <line x1="0" x2="560" [attr.y1]="warningLevelY" [attr.y2]="warningLevelY" stroke="#f97316" stroke-width="1.5" stroke-dasharray="5,4"/>
+          <text x="555" [attr.y]="warningLevelY+14" text-anchor="end" class="threshold-label warning">Warning (1.80 m)</text>
+          <polyline [attr.points]="observedPoints" fill="none" stroke="#7030a0" stroke-width="2.5"/>
+          <polyline [attr.points]="predictedPoints" fill="none" stroke="#a78bfa" stroke-width="2.5" stroke-dasharray="6,5"/>
+        </svg>
+      </div>
+      <div class="chart-x-axis">
+        <span *ngFor="let x of predictionLabels">{{ x }}</span>
+      </div>
+
+      <div class="prediction-summary">
+        <div class="pred-box">
+          <span class="mini-label">Probability of Overflow</span>
+          <div class="pred-value critical">{{ overflowProbability }}%</div>
+          <span class="pred-tag critical">High Risk</span>
+        </div>
+        <div class="pred-box">
+          <span class="mini-label">Expected Time</span>
+          <div class="pred-value">{{ expectedTimeHours }} hours</div>
+          <span class="pred-tag neutral">({{ expectedTimeLabel }})</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sensors table + Recent alarms -->
+  <div class="sensors-row">
+    <div class="panel table-panel">
+      <div class="panel-head">
+        <h3>Level Sensors (All)</h3>
+        <input class="search-box" type="text" placeholder="Search manhole or sensor..." />
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Manhole ID</th>
+              <th>Location</th>
+              <th>Sensor ID</th>
+              <th>Current Level</th>
+              <th>% Full</th>
+              <th>Status</th>
+              <th>Battery</th>
+              <th>Signal</th>
+              <th>Last Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of sensorRows">
+              <td>{{ row.manholeId }}</td>
+              <td>{{ row.location }}</td>
+              <td>{{ row.sensorId }}</td>
+              <td>{{ row.level }} m</td>
+              <td>{{ row.percentFull }}%</td>
+              <td><span class="severity-badge" [class]="'sev-' + row.status">{{ row.status }}</span></td>
+              <td>{{ row.battery }}%</td>
+              <td>
+                <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+                  <rect x="0" y="7" width="3" height="5" fill="#22c55e"/>
+                  <rect x="4.5" y="4" width="3" height="8" fill="#22c55e"/>
+                  <rect x="9" y="2" width="3" height="10" fill="#22c55e"/>
+                  <rect x="13" y="0" width="3" height="12" fill="#22c55e"/>
+                </svg>
+              </td>
+              <td>{{ row.updated }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <a class="view-all" href="javascript:void(0)">View All Manholes →</a>
+    </div>
+
+    <div class="panel alarms-panel">
+      <div class="panel-head">
+        <h3>Recent Alarms</h3>
+        <a class="view-all" href="javascript:void(0)">View All</a>
+      </div>
+      <ul class="alarm-list">
+        <li *ngFor="let alarm of recentAlarms">
+          <span class="alarm-icon" [class]="alarm.severity">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3L2 20h20L12 3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v4M12 17h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </span>
+          <div class="alarm-body">
+            <span class="alarm-title">{{ alarm.title }}</span>
+            <span class="alarm-sub">{{ alarm.manholeId }} | {{ alarm.location }}</span>
+          </div>
+          <div class="alarm-meta">
+            <span class="alarm-time">{{ alarm.time }}</span>
+            <span class="alarm-sev" [class]="alarm.severity">{{ alarm.severity === 'critical' ? 'Critical' : 'Warning' }}</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Bottom row -->
+  <div class="bottom-row">
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Top 5 Manholes by Level</h3>
+      </div>
+      <ul class="rank-list">
+        <li *ngFor="let m of topLevels; let i = index">
+          <span class="rank-index">{{ i + 1 }}</span>
+          <div class="rank-info">
+            <span class="rank-name">{{ m.manholeId }}</span>
+            <span class="rank-location">{{ m.location }}</span>
+          </div>
+          <div class="rank-bar-wrap">
+            <div class="rank-bar" [style.width.%]="m.percent" [style.background]="m.barColor"></div>
+          </div>
+          <span class="rank-value">{{ m.level }} m</span>
+          <span class="rank-percent">{{ m.percent }}%</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="panel donut-panel">
+      <h3>Overflow Risk <span class="sub-title">(Next 6 Hours)</span></h3>
+      <div class="donut-row">
+        <div class="donut" [style.background]="conicGradient(overflowRisk)">
+          <div class="donut-hole">
+            <strong>{{ totalOf(overflowRisk) }}</strong>
+            <span>Total</span>
+          </div>
+        </div>
+        <ul class="donut-legend">
+          <li *ngFor="let s of overflowRisk">
+            <i [style.background]="s.color"></i>
+            <span class="legend-label">{{ s.label }}</span>
+            <span class="legend-value">{{ s.value }} ({{ s.percent }}%)</span>
+          </li>
+        </ul>
+      </div>
+      <a class="view-all" href="javascript:void(0)">View All Predictions →</a>
+    </div>
+
+      <div class="panel maintenance-panel">
+        <h3>Maintenance Summary</h3>
+        <div class="icon-stat-row">
+          <div class="icon-stat" *ngFor="let s of maintenanceStats">
+            <div class="icon-stat-circle">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#7030a0" stroke-width="1.8"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.6-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3h0a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5h0a1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9v0a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" stroke="#7030a0" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="icon-stat-value">{{ s.value }}</div>
+            <div class="icon-stat-label">{{ s.label }}</div>
+          </div>
+        </div>
+        <a class="view-all" href="javascript:void(0)">View All Work Orders →</a>
+      </div>
+
+      <div class="panel rainfall-panel">
+        <ul class="rainfall-list">
+          <li *ngFor="let r of rainfallStats">
+            <span class="rainfall-label">{{ r.label }}</span>
+            <span class="rainfall-value">{{ r.value }}</span>
+          </li>
+        </ul>
+      </div>
+  </div>
+
+  <footer class="dashboard-footer">© 2025 Purple IQ Environment360. All rights reserved.</footer>
+</div>

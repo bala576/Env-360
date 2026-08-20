@@ -1,0 +1,100 @@
+<div class="process-page">
+
+  <div class="process-panel">
+
+    <div class="process-head">
+      <h1 class="process-title">Process&amp;Automation</h1>
+
+      <div class="process-tools">
+        <div class="search-box">
+          <input type="text" placeholder="Search" [(ngModel)]="searchTerm" />
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+
+        <button class="circle-btn" type="button" aria-label="add" (click)="addRule()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
+
+        <!-- <label class="circle-btn" for="ruleUpload" aria-label="upload">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 21V9m0 0l-4.5 4.5M12 9l4.5 4.5M4 3h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </label>
+        <input id="ruleUpload" type="file" class="hidden-file-input" (change)="onUploadFile($event)" /> -->
+
+        <button class="circle-btn" type="button" aria-label="download" (click)="downloadRows()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 21h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+
+        <button class="circle-btn" type="button" aria-label="refresh" (click)="onRefresh()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 4v6h6M20 20v-6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 15a8 8 0 0014.7 2.7M19 9A8 8 0 004.3 6.3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+
+        <button class="circle-btn danger" type="button" aria-label="delete" (click)="deleteAllFiltered()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="process-table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Rule Name</th>
+            <th>Type</th>
+            <th>Last Activated</th>
+            <th>Created On</th>
+            <th>Status</th>
+            <th class="edit-col">Edit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of filteredRows">
+            <td>{{ row.ruleName }}</td>
+
+            <td>
+              <select *ngIf="row.editing" class="inline-select" [(ngModel)]="row.draftType">
+                <option *ngFor="let t of typeOptions" [value]="t">{{ t }}</option>
+              </select>
+              <span *ngIf="!row.editing">{{ row.type }}</span>
+            </td>
+
+            <td>{{ row.lastActivated }}</td>
+            <td>{{ row.createdOn }}</td>
+
+            <td>
+              <select *ngIf="row.editing" class="inline-select" [(ngModel)]="row.draftStatus">
+                <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+              </select>
+              <span *ngIf="!row.editing" class="status-text" [class.status-completed]="row.status === 'Completed'" [class.status-pending]="row.status === 'Pending'" [class.status-failed]="row.status === 'Failed'">
+                <span class="status-dot"></span>{{ row.status }}
+              </span>
+            </td>
+
+            <td class="edit-col">
+              <ng-container *ngIf="row.editing; else viewActions">
+                <button class="icon-btn" type="button" aria-label="confirm" (click)="confirmEdit(row)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <button class="icon-btn danger" type="button" aria-label="cancel" (click)="cancelEdit(row)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+              </ng-container>
+              <ng-template #viewActions>
+                <button class="icon-btn" type="button" aria-label="edit" (click)="startEdit(row)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <button class="icon-btn danger" type="button" aria-label="delete" (click)="deleteRow(row)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+              </ng-template>
+            </td>
+          </tr>
+          <tr *ngIf="!filteredRows.length">
+            <td class="empty-row" colspan="6">No rules found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+</div>

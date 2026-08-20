@@ -1,0 +1,15 @@
+<div class="master-page">
+
+  <app-generic-table
+    title="Events"
+    searchPlaceholder="Search Events"
+    [columns]="columns"
+    [rows]="rows"
+    [showAdd]="false"
+    [showActions]="false"
+    [showDownload]="true"
+    emptyMessage="No events found"
+    (download)="downloadCsv($event)"
+  ></app-generic-table>
+
+</div>

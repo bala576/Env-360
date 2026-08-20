@@ -1,0 +1,197 @@
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+@font-face {
+  font-family: 'Red Hat Display';
+  src: url('/assets/font/RedHatDisplay-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Red Hat Display';
+  src: url('/assets/font/RedHatDisplay-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Red Hat Display';
+  src: url('/assets/font/RedHatDisplay-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Red Hat Display';
+  src: url('/assets/font/RedHatDisplay-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+}
+
+html, body {
+  font-family: 'Red Hat Display', sans-serif;
+}
+
+/* ---- shared master page / popup form styles (used by every master component) ---- */
+
+.master-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.master-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.master-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.master-form .field.span-2 {
+  grid-column: span 2;
+}
+
+.master-form label {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #111827;
+}
+
+.master-form input,
+.master-form select,
+.master-form textarea {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: #111827;
+  background: #f4f5f7;
+}
+
+.master-form input::placeholder,
+.master-form textarea::placeholder {
+  color: #9ca3af;
+}
+
+.master-form input:focus,
+.master-form select:focus,
+.master-form textarea:focus {
+  outline: none;
+  border-color: #b794f4;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px #ede4fd;
+}
+
+.master-form textarea {
+  resize: vertical;
+}
+
+.master-form select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%236d28d9' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+.btn-primary,
+.btn-secondary {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-primary {
+  background: #ded6fb;
+  color: #6d28d9;
+}
+
+.btn-primary:hover {
+  background: #d0c3f8;
+}
+
+.btn-secondary {
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+}
+
+.btn-secondary:hover {
+  background: #f9fafb;
+}
+
+.status-toggle {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  border: none;
+  background: #e5e7eb;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.status-toggle.on {
+  background: #7030a0;
+}
+
+.status-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.status-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
+  transition: transform 0.15s ease;
+}
+
+.status-toggle.on .status-toggle-knob {
+  transform: translateX(16px);
+}
+
+.form-toggle-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.form-toggle-field .toggle-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #111827;
+}
+
+@media (max-width: 640px) {
+  .master-form {
+    grid-template-columns: 1fr;
+  }
+
+  .master-form .field.span-2 {
+    grid-column: span 1;
+  }
+}

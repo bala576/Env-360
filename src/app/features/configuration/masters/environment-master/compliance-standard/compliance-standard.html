@@ -1,0 +1,135 @@
+<div class="master-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <app-generic-table
+    title="Compliance Standard Master"
+    searchPlaceholder="Search Compliance Standards"
+    [columns]="columns"
+    [rows]="rows"
+    (add)="openAdd()"
+    (edit)="openEdit($event)"
+    (delete)="deleteRow($event)"
+  ></app-generic-table>
+
+  <app-generic-popup
+    [isOpen]="popupOpen"
+    [title]="editingRow ? 'Edit Compliance Standard' : 'Add Compliance Standard'"
+    (closed)="closePopup()"
+  >
+    <form [formGroup]="form" class="master-form">
+
+      <div class="field">
+        <label>Standard Code</label>
+        <input type="text" formControlName="standardCode" placeholder="e.g. WHO-PM25" />
+      </div>
+
+      <div class="field">
+        <label>Standard Name</label>
+        <input type="text" formControlName="standardName" placeholder="e.g. WHO Air Quality Guideline for PM2.5" />
+      </div>
+
+      <div class="field">
+        <label>Organization / Authority</label>
+        <input type="text" formControlName="organizationAuthority" placeholder="e.g. World Health Organization" />
+      </div>
+
+      <div class="field">
+        <label>Version</label>
+        <input type="text" formControlName="version" placeholder="e.g. 2021" />
+      </div>
+
+      <div class="field">
+        <label>Environment Category</label>
+        <select formControlName="environmentCategory">
+          <option value="" disabled>Select category</option>
+          <option *ngFor="let c of environmentCategories" [value]="c">{{ c }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Environment Type</label>
+        <input type="text" formControlName="environmentType" placeholder="e.g. Ambient Air" />
+      </div>
+
+      <div class="field">
+        <label>Parameter</label>
+        <input type="text" formControlName="parameter" placeholder="e.g. PM2.5" />
+      </div>
+
+      <div class="field">
+        <label>Unit</label>
+        <input type="text" formControlName="unit" placeholder="e.g. µg/m³" />
+      </div>
+
+      <div class="field">
+        <label>Limit Type</label>
+        <select formControlName="limitType">
+          <option *ngFor="let t of limitTypes" [value]="t">{{ t }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Limit Value</label>
+        <input type="number" formControlName="limitValue" />
+      </div>
+
+      <div class="field">
+        <label>Lower Limit</label>
+        <input type="number" formControlName="lowerLimit" />
+      </div>
+
+      <div class="field">
+        <label>Upper Limit</label>
+        <input type="number" formControlName="upperLimit" />
+      </div>
+
+      <div class="field">
+        <label>Averaging Period</label>
+        <input type="text" formControlName="averagingPeriod" placeholder="e.g. 24 Hours" />
+      </div>
+
+      <div class="field">
+        <label>Applicable Location</label>
+        <input type="text" formControlName="applicableLocation" placeholder="e.g. Outdoor" />
+      </div>
+
+      <div class="field">
+        <label>Applicable Industry</label>
+        <input type="text" formControlName="applicableIndustry" placeholder="e.g. Manufacturing" />
+      </div>
+
+      <div class="field">
+        <label>Effective From</label>
+        <input type="date" formControlName="effectiveFrom" />
+      </div>
+
+      <div class="field">
+        <label>Effective To</label>
+        <input type="date" formControlName="effectiveTo" />
+      </div>
+
+      <div class="field span-2">
+        <label>Reference Document</label>
+        <input type="text" formControlName="referenceDocument" placeholder="e.g. WHO Global Air Quality Guidelines 2021" />
+      </div>
+
+      <div class="field span-2">
+        <label>Description</label>
+        <textarea formControlName="description" rows="2"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <app-form-toggle formControlName="status"></app-form-toggle>
+      </div>
+
+    </form>
+
+    <ng-container popupFooter>
+      <button class="btn-secondary" type="button" (click)="closePopup()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="save()">Save</button>
+    </ng-container>
+  </app-generic-popup>
+
+</div>

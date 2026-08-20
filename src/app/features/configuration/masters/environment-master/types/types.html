@@ -1,0 +1,112 @@
+<div class="master-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <app-generic-table
+    title="Environment Type Master"
+    searchPlaceholder="Search Environment Types"
+    [columns]="columns"
+    [rows]="rows"
+    (add)="openAdd()"
+    (edit)="openEdit($event)"
+    (delete)="deleteRow($event)"
+  ></app-generic-table>
+
+  <app-generic-popup
+    [isOpen]="popupOpen"
+    [title]="editingRow ? 'Edit Environment Type' : 'Add Environment Type'"
+    (closed)="closePopup()"
+  >
+    <form [formGroup]="form" class="master-form">
+      <div class="field">
+        <label>Environment Type Code</label>
+        <input type="text" formControlName="code" placeholder="e.g. ENV-IAQ" />
+      </div>
+
+      <div class="field">
+        <label>Environment Type Name</label>
+        <input type="text" formControlName="name" placeholder="e.g. Indoor Air Quality" />
+      </div>
+
+      <div class="field">
+        <label>Environment Category</label>
+        <select formControlName="environmentCategory">
+          <option value="" disabled>Select category</option>
+          <option *ngFor="let category of environmentCategories" [value]="category">{{ category }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Application Name</label>
+        <input type="text" formControlName="applicationName" placeholder="e.g. IAQ Monitor" />
+      </div>
+
+      <div class="field">
+        <label>Application Code</label>
+        <input type="text" formControlName="applicationCode" placeholder="e.g. APP-IAQ" />
+      </div>
+
+      <div class="field">
+        <label>Indoor / Outdoor</label>
+        <select formControlName="indoorOutdoor">
+          <option *ngFor="let option of indoorOutdoorOptions" [value]="option">{{ option }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Default Monitoring Point Type</label>
+        <input type="text" formControlName="defaultMonitoringPointType" placeholder="e.g. Room Sensor" />
+      </div>
+
+      <div class="field">
+        <label>Default Parameter Group</label>
+        <input type="text" formControlName="defaultParameterGroup" placeholder="e.g. Air Quality Group" />
+      </div>
+
+      <div class="field">
+        <label>Default Sensor Types</label>
+        <input type="text" formControlName="defaultSensorTypes" placeholder="e.g. CO2, PM2.5, VOC" />
+      </div>
+
+      <div class="field">
+        <label>Default Threshold Profile</label>
+        <input type="text" formControlName="defaultThresholdProfile" placeholder="e.g. IAQ Standard Profile" />
+      </div>
+
+      <div class="field">
+        <label>Default Compliance Standard</label>
+        <input type="text" formControlName="defaultComplianceStandard" placeholder="e.g. ASHRAE 62.1" />
+      </div>
+
+      <div class="field">
+        <label>Default Dashboard Template</label>
+        <input type="text" formControlName="defaultDashboardTemplate" placeholder="e.g. IAQ Dashboard" />
+      </div>
+
+      <div class="field">
+        <label>Icon</label>
+        <input type="text" formControlName="icon" placeholder="e.g. wind" />
+      </div>
+
+      <div class="field">
+        <label>Display Order</label>
+        <input type="number" formControlName="displayOrder" />
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <app-form-toggle formControlName="status"></app-form-toggle>
+      </div>
+
+      <div class="field span-2">
+        <label>Description</label>
+        <textarea formControlName="description" rows="3" placeholder="Describe this environment type"></textarea>
+      </div>
+    </form>
+
+    <ng-container popupFooter>
+      <button class="btn-secondary" type="button" (click)="closePopup()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="save()">Save</button>
+    </ng-container>
+  </app-generic-popup>
+</div>

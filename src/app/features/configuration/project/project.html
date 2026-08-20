@@ -1,0 +1,57 @@
+<div class="project-page">
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+  <h1 class="project-title">Project</h1>
+
+  <div class="project-layout">
+    <div class="project-tree-panel">
+      <button class="add-project-btn" type="button" (click)="openAddRoot()">Add Project</button>
+
+      <div class="tree-heading">Track People</div>
+
+      <div class="tree-scroll">
+        <app-location-tree-node
+          *ngFor="let root of projects"
+          [node]="root"
+          [depth]="0"
+          [selectedId]="selectedNode?.id ?? null"
+          (select)="selectNode($event)"
+          (addChild)="onAddChild($event)"
+          (editNode)="onEditNode($event)"
+          (deleteNode)="onDeleteNode($event)"
+        ></app-location-tree-node>
+      </div>
+    </div>
+
+    <div class="project-map-panel">
+      <div #mapContainer class="map-container"></div>
+    </div>
+  </div>
+
+  <app-generic-popup
+    [isOpen]="popupOpen"
+    [title]="(popupMode === 'edit' ? 'Edit ' : 'Add ') + popupLevelLabel"
+    (closed)="closePopup()"
+  >
+    <form [formGroup]="form" class="master-form">
+      <div class="field span-2">
+        <label>{{ popupLevelLabel }} Name</label>
+        <input type="text" formControlName="name" placeholder="e.g. {{ popupLevelLabel }} name" />
+      </div>
+
+      <div class="field">
+        <label>Latitude</label>
+        <input type="number" formControlName="latitude" step="0.0001" />
+      </div>
+
+      <div class="field">
+        <label>Longitude</label>
+        <input type="number" formControlName="longitude" step="0.0001" />
+      </div>
+    </form>
+
+    <ng-container popupFooter>
+      <button class="btn-secondary" type="button" (click)="closePopup()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="save()">Save</button>
+    </ng-container>
+  </app-generic-popup>
+</div>

@@ -1,0 +1,137 @@
+<div class="master-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <app-generic-table
+    title="Maintenance Profile Master"
+    searchPlaceholder="Search Maintenance Profiles"
+    [columns]="columns"
+    [rows]="rows"
+    (add)="openAdd()"
+    (edit)="openEdit($event)"
+    (delete)="deleteRow($event)"
+  ></app-generic-table>
+
+  <app-generic-popup
+    [isOpen]="popupOpen"
+    [title]="editingRow ? 'Edit Maintenance Profile' : 'Add Maintenance Profile'"
+    (closed)="closePopup()"
+  >
+    <form [formGroup]="form" class="master-form">
+
+      <div class="field">
+        <label>Profile Code</label>
+        <input type="text" formControlName="profileCode" placeholder="e.g. MTP-GAS" />
+      </div>
+
+      <div class="field">
+        <label>Profile Name</label>
+        <input type="text" formControlName="profileName" placeholder="e.g. Gas Sensor Maintenance" />
+      </div>
+
+      <div class="field">
+        <label>Sensor Type</label>
+        <input type="text" formControlName="sensorType" placeholder="e.g. H2S Gas Sensor" />
+      </div>
+
+      <div class="field">
+        <label>Device Model</label>
+        <input type="text" formControlName="deviceModel" placeholder="e.g. GasGuard GG-H2S-200" />
+      </div>
+
+      <div class="field">
+        <label>Parameter</label>
+        <input type="text" formControlName="parameter" placeholder="e.g. H2S" />
+      </div>
+
+      <div class="field">
+        <label>Calibration Required</label>
+        <app-form-toggle formControlName="calibrationRequired" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Calibration Frequency</label>
+        <input type="text" formControlName="calibrationFrequency" placeholder="e.g. 6 months" />
+      </div>
+
+      <div class="field">
+        <label>Calibration Method</label>
+        <input type="text" formControlName="calibrationMethod" placeholder="e.g. Reference Gas Calibration" />
+      </div>
+
+      <div class="field">
+        <label>Calibration Standard</label>
+        <input type="text" formControlName="calibrationStandard" placeholder="e.g. ISO 17025" />
+      </div>
+
+      <div class="field">
+        <label>Maintenance Required</label>
+        <app-form-toggle formControlName="maintenanceRequired" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Maintenance Frequency</label>
+        <input type="text" formControlName="maintenanceFrequency" placeholder="e.g. 1 year" />
+      </div>
+
+      <div class="field">
+        <label>Maintenance Type</label>
+        <select formControlName="maintenanceType">
+          <option *ngFor="let t of maintenanceTypes" [value]="t">{{ t }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Cleaning Frequency</label>
+        <input type="text" formControlName="cleaningFrequency" placeholder="e.g. 3 months" />
+      </div>
+
+      <div class="field">
+        <label>Inspection Frequency</label>
+        <input type="text" formControlName="inspectionFrequency" placeholder="e.g. 1 month" />
+      </div>
+
+      <div class="field">
+        <label>Replacement Interval</label>
+        <input type="text" formControlName="replacementInterval" placeholder="e.g. 5 years" />
+      </div>
+
+      <div class="field">
+        <label>Battery Replacement Interval</label>
+        <input type="text" formControlName="batteryReplacementInterval" placeholder="e.g. 1 year" />
+      </div>
+
+      <div class="field">
+        <label>Warning Before Due</label>
+        <input type="text" formControlName="warningBeforeDue" placeholder="e.g. 14 days" />
+      </div>
+
+      <div class="field">
+        <label>Certificate Required</label>
+        <app-form-toggle formControlName="certificateRequired" [onValue]="true" [offValue]="false" onLabel="Yes" offLabel="No"></app-form-toggle>
+      </div>
+
+      <div class="field">
+        <label>Default Maintenance Duration</label>
+        <input type="text" formControlName="defaultMaintenanceDuration" placeholder="e.g. 2 hours" />
+      </div>
+
+      <div class="field span-2">
+        <label>Description</label>
+        <textarea formControlName="description" rows="2"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <app-form-toggle formControlName="status"></app-form-toggle>
+      </div>
+
+    </form>
+
+    <ng-container popupFooter>
+      <button class="btn-secondary" type="button" (click)="closePopup()">Cancel</button>
+      <button class="btn-primary" type="button" (click)="save()">Save</button>
+    </ng-container>
+  </app-generic-popup>
+
+</div>

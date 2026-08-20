@@ -1,0 +1,244 @@
+<div class="pa-page">
+
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <div class="pa-layout">
+
+    <div class="pa-sidebar">
+      <div class="search-box">
+        <input type="text" placeholder="Search..." [(ngModel)]="searchTerm" />
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+      <div class="pa-automation-list">
+        <button
+          *ngFor="let item of filteredAutomations"
+          type="button"
+          class="pa-automation-item"
+          [class.selected]="item.id === selectedAutomationId"
+          (click)="selectAutomation(item)"
+        >
+          {{ item.name }}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="pa-form-panel">
+      <h2 class="pa-form-title">Add Automation Rule</h2>
+      <div class="pa-divider"></div>
+
+      <label class="pa-field-label">Title</label>
+      <input
+        type="text"
+        class="pa-text-input"
+        [class.invalid]="submitted && !title.trim()"
+        [(ngModel)]="title"
+        placeholder="e.g. Night Zone Escalation"
+      />
+      <div class="pa-error" *ngIf="submitted && !title.trim()">Title is required</div>
+
+      <div class="pa-section-row">
+        <span class="pa-section-label">Conditions</span>
+        <span class="pa-relationship">Relationship: {{ relationshipLabel }}</span>
+      </div>
+
+      <div class="pa-condition-row" *ngFor="let row of conditions; let i = index">
+        <div class="pa-row-label">
+          <select *ngIf="i > 0" class="pa-operator-select" [(ngModel)]="row.operator">
+            <option value="AND">AND</option>
+            <option value="OR">OR</option>
+          </select>
+          {{ conditionLabel(i) }}
+        </div>
+
+        <div class="pa-dropdown-wrap">
+          <div class="pa-field-item">
+            <button type="button" class="pa-field" [class.placeholder]="!row.type" (click)="toggleField(row, 'type')">
+              <span>{{ row.type || 'Select condition' }}</span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="pa-field-menu" *ngIf="row.openField === 'type'">
+              <div class="pa-field-option" *ngFor="let t of conditionTypeOptions" (click)="selectType(row, t)">{{ t }}</div>
+            </div>
+          </div>
+
+          <ng-container *ngIf="row.type === 'When the device is'">
+            <div class="pa-field-item">
+              <button type="button" class="pa-field" [class.placeholder]="!row.device" (click)="toggleField(row, 'device')">
+                <span>{{ row.device || 'Select device' }}</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="pa-field-menu" *ngIf="row.openField === 'device'">
+                <div class="pa-field-option" *ngFor="let d of deviceOptions" (click)="selectDevice(row, d)">{{ d }}</div>
+              </div>
+            </div>
+
+            <div class="pa-field-item" *ngIf="row.device">
+              <button type="button" class="pa-field" [class.placeholder]="!row.property" (click)="toggleField(row, 'property')">
+                <span>{{ row.property || 'Select property' }}</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="pa-field-menu" *ngIf="row.openField === 'property'">
+                <div class="pa-field-option" *ngFor="let p of propertyOptions" (click)="selectProperty(row, p)">{{ p }}</div>
+              </div>
+            </div>
+
+            <div class="pa-field-item" *ngIf="row.property">
+              <button type="button" class="pa-field" [class.placeholder]="!row.compareOp" (click)="toggleField(row, 'compare')">
+                <span>{{ row.compareOp || 'Select comparison' }}</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="pa-field-menu" *ngIf="row.openField === 'compare'">
+                <div class="pa-field-option" *ngFor="let c of compareOptionsFor(row)" (click)="selectCompare(row, c)">{{ c }}</div>
+              </div>
+            </div>
+          </ng-container>
+
+          <div class="pa-field-item" *ngIf="row.type === 'When the people is'">
+            <button type="button" class="pa-field" [class.placeholder]="!row.people" (click)="toggleField(row, 'people')">
+              <span>{{ row.people || 'Select person' }}</span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="pa-field-menu" *ngIf="row.openField === 'people'">
+              <div class="pa-field-option" *ngFor="let p of peopleOptions" (click)="selectPeople(row, p)">{{ p }}</div>
+            </div>
+          </div>
+
+          <div class="pa-field-item" *ngIf="row.type === 'When the zone is'">
+            <button type="button" class="pa-field" [class.placeholder]="!row.zone" (click)="toggleField(row, 'zone')">
+              <span>{{ row.zone || 'Select zone' }}</span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="pa-field-menu" *ngIf="row.openField === 'zone'">
+              <div class="pa-field-option" *ngFor="let z of zoneOptions" (click)="selectZone(row, z)">{{ z }}</div>
+            </div>
+          </div>
+
+          <ng-container *ngIf="row.type === 'When the time is'">
+            <div class="pa-time-cascade">
+              <span>From</span>
+              <select class="pa-time-select" [(ngModel)]="row.startHH">
+                <option value="">HH</option>
+                <option *ngFor="let h of hourOptions" [value]="h">{{ h }}</option>
+              </select>
+              :
+              <select class="pa-time-select" [(ngModel)]="row.startMM">
+                <option value="">MM</option>
+                <option *ngFor="let m of minuteOptions" [value]="m">{{ m }}</option>
+              </select>
+              <span>to</span>
+              <select class="pa-time-select" [(ngModel)]="row.endHH">
+                <option value="">HH</option>
+                <option *ngFor="let h of hourOptions" [value]="h">{{ h }}</option>
+              </select>
+              :
+              <select class="pa-time-select" [(ngModel)]="row.endMM">
+                <option value="">MM</option>
+                <option *ngFor="let m of minuteOptions" [value]="m">{{ m }}</option>
+              </select>
+            </div>
+            <div class="pa-day-chips">
+              <button
+                type="button"
+                class="pa-day-chip"
+                *ngFor="let d of dayOptions"
+                [class.selected]="isDaySelected(row, d)"
+                (click)="toggleDay(row, d)"
+              >{{ d }}</button>
+            </div>
+            <div class="pa-time-summary">{{ effectiveTimeLabel(row) }}</div>
+          </ng-container>
+        </div>
+
+        <button *ngIf="i === 0" class="pa-icon-btn" type="button" aria-label="add condition" (click)="addCondition()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
+        <button *ngIf="i > 0" class="pa-icon-btn danger" type="button" aria-label="remove condition" (click)="removeCondition(row.id)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <label class="pa-checkbox-line">
+        <input type="checkbox" [(ngModel)]="setTimePeriod" />
+        Set Time Period
+      </label>
+
+      <div class="pa-section-row">
+        <span class="pa-section-label">Actions</span>
+      </div>
+
+      <div class="pa-condition-row" *ngFor="let row of actions; let i = index">
+        <div class="pa-row-label">{{ actionLabel(i) }}</div>
+
+        <div class="pa-dropdown-wrap">
+          <div class="pa-field-item">
+            <button type="button" class="pa-field" [class.placeholder]="!row.value" (click)="toggleActionField(row, 'type')">
+              <span>{{ row.value || 'Select action' }}</span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="pa-field-menu" *ngIf="row.openField === 'type'">
+              <div class="pa-field-option" *ngFor="let t of actionOptions" (click)="selectActionType(row, t)">{{ t }}</div>
+            </div>
+          </div>
+
+          <ng-container *ngIf="row.value === 'Trigger device(s) to..'">
+            <div class="pa-field-item">
+              <button type="button" class="pa-field" [class.placeholder]="!row.device" (click)="toggleActionField(row, 'device')">
+                <span>{{ row.device || 'Select device' }}</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="pa-field-menu" *ngIf="row.openField === 'device'">
+                <div class="pa-field-option" *ngFor="let d of actionDeviceOptions" (click)="selectActionDevice(row, d)">{{ d }}</div>
+              </div>
+            </div>
+
+            <div class="pa-field-item" *ngIf="row.device">
+              <button type="button" class="pa-field" [class.placeholder]="!row.deviceType" (click)="toggleActionField(row, 'deviceType')">
+                <span>{{ row.deviceType || 'Select device type' }}</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="pa-field-menu" *ngIf="row.openField === 'deviceType'">
+                <div class="pa-field-option" *ngFor="let dt of actionDeviceTypeOptions" (click)="selectActionDeviceType(row, dt)">{{ dt }}</div>
+              </div>
+            </div>
+
+            <div class="pa-field-item" *ngIf="row.deviceType">
+              <button type="button" class="pa-field" [class.placeholder]="!row.status" (click)="toggleActionField(row, 'status')">
+                <span>{{ row.status || 'Select status' }}</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="pa-field-menu" *ngIf="row.openField === 'status'">
+                <div class="pa-field-option" *ngFor="let s of actionStatusOptions" (click)="selectActionStatus(row, s)">{{ s }}</div>
+              </div>
+            </div>
+          </ng-container>
+
+          <div class="pa-day-chips" *ngIf="row.value === 'Send an alarm notification'">
+            <button
+              type="button"
+              class="pa-day-chip"
+              *ngFor="let ch of notifyChannelOptions"
+              [class.selected]="isNotifyChannelSelected(row, ch)"
+              (click)="toggleNotifyChannel(row, ch)"
+            >{{ ch }}</button>
+          </div>
+        </div>
+
+        <button *ngIf="i === 0" class="pa-icon-btn" type="button" aria-label="add action" (click)="addAction()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
+        <button *ngIf="i > 0" class="pa-icon-btn danger" type="button" aria-label="remove action" (click)="removeAction(row.id)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <div class="pa-form-footer">
+        <button class="btn-secondary" type="button" (click)="cancel()">Cancel</button>
+        <button class="btn-primary" type="button" (click)="create()">Create</button>
+      </div>
+    </div>
+
+  </div>
+
+</div>

@@ -1,0 +1,16 @@
+<div class="popup-backdrop" *ngIf="isOpen" (click)="close()">
+  <div class="popup-panel" (click)="$event.stopPropagation()">
+    <div class="popup-header">
+      <h3>{{ title }}</h3>
+      <button class="popup-close" type="button" aria-label="close" (click)="close()">×</button>
+    </div>
+
+    <div class="popup-body">
+      <ng-content></ng-content>
+    </div>
+
+    <div class="popup-footer">
+      <ng-content select="[popupFooter]"></ng-content>
+    </div>
+  </div>
+</div>

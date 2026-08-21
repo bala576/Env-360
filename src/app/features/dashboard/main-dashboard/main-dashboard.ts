@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
+import { GenericPopup } from '../../../shared/generic-popup/generic-popup';
+
+interface WidgetDetail {
+  title: string;
+  rows?: { label: string; value: string }[];
+  note?: string;
+}
 
 interface DonutSlice {
   label: string;
@@ -28,11 +35,49 @@ interface MapPin {
 
 @Component({
   selector: 'app-main-dashboard',
-  imports: [CommonModule],
+  imports: [CommonModule, GenericPopup],
   templateUrl: './main-dashboard.html',
   styleUrl: './main-dashboard.css',
 })
 export class MainDashboard {
+
+  selectedWidget: WidgetDetail | null = null;
+
+  openWidget(detail: WidgetDetail): void {
+    this.selectedWidget = detail;
+  }
+
+  closeWidget(): void {
+    this.selectedWidget = null;
+  }
+
+  mapDetail(): WidgetDetail {
+    return {
+      title: 'Outlet Status Map',
+      rows: this.mapLegend.map((m) => ({ label: m.label, value: m.count + '' })),
+    };
+  }
+
+  comfortDetail(): WidgetDetail {
+    return {
+      title: 'Comfort Index Distribution',
+      rows: this.comfortDistribution.map((s) => ({ label: s.label, value: `${s.value} (${s.percent}%)` })),
+    };
+  }
+
+  alarmsSeverityDetail(): WidgetDetail {
+    return {
+      title: 'Alarms by Severity',
+      rows: this.alarmsBySeverity.map((s) => ({ label: s.label, value: `${s.value} (${s.percent}%)` })),
+    };
+  }
+
+  violationsDetail(): WidgetDetail {
+    return {
+      title: 'Top Outlets with Violations',
+      rows: this.violationRows.map((r) => ({ label: r.outlet, value: `${r.violation} - ${r.severity}` })),
+    };
+  }
 
    comfortDistribution: DonutSlice[] = [
     { label: 'Excellent (90-100)', value: 56, percent: 45, color: '#22c55e' },

@@ -79,10 +79,10 @@
   <!-- Middle row: chart, map, right column -->
   <div class="main-row">
 
-    <div class="panel chart-panel">
+    <div class="panel chart-panel" (click)="openWidget({ title: 'Temperature Trend (°C)', rows: [{ label: 'Range', value: 'Last 24 Hours' }, { label: 'Avg Temp', value: 'Blue line' }, { label: 'Min Temp', value: 'Cyan line' }, { label: 'Max Temp', value: 'Orange line' }] })">
       <div class="panel-head">
         <h3>Temperature Trend (°C)</h3>
-        <select class="range-select">
+        <select class="range-select" (click)="$event.stopPropagation()">
           <option>Last 24 Hours</option>
         </select>
       </div>
@@ -107,7 +107,7 @@
       </div>
     </div>
 
-    <div class="panel map-panel">
+    <div class="panel map-panel" (click)="openWidget(mapDetail())">
       <div class="panel-head">
         <h3>Outlet Status Map</h3>
         <div class="map-controls">
@@ -147,7 +147,7 @@
     </div>
 
     <div class="right-col">
-      <div class="panel donut-panel">
+      <div class="panel donut-panel" (click)="openWidget(comfortDetail())">
         <h3>Comfort Index Distribution</h3>
         <div class="donut-row">
           <div class="donut" [style.background]="conicGradient(comfortDistribution)">
@@ -166,7 +166,7 @@
         </div>
       </div>
 
-      <div class="panel donut-panel">
+      <div class="panel donut-panel" (click)="openWidget(alarmsSeverityDetail())">
         <h3>Alarms by Severity</h3>
         <div class="donut-row">
           <div class="donut" [style.background]="conicGradient(alarmsBySeverity)">
@@ -247,7 +247,7 @@
   </div>
 
   <!-- Violations table -->
-  <div class="panel table-panel">
+  <div class="panel table-panel" (click)="openWidget(violationsDetail())">
     <div class="panel-head">
       <h3>Top Outlets with Temperature / Humidity Violations</h3>
     </div>
@@ -283,4 +283,13 @@
   </div>
 
   <footer class="dashboard-footer">© 2025 Purple IQ Environment360. All rights reserved.</footer>
+
+  <app-generic-popup [isOpen]="!!selectedWidget" [title]="selectedWidget?.title || ''" (closed)="closeWidget()">
+    <ng-container *ngIf="selectedWidget">
+      <div class="popup-detail-sub" *ngIf="selectedWidget.note">{{ selectedWidget.note }}</div>
+      <ul class="popup-detail-rows" *ngIf="selectedWidget.rows?.length">
+        <li *ngFor="let r of selectedWidget.rows"><span>{{ r.label }}</span><span>{{ r.value }}</span></li>
+      </ul>
+    </ng-container>
+  </app-generic-popup>
 </div>

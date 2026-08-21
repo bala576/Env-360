@@ -5,7 +5,7 @@
 
       <!-- Top stat row -->
       <div class="stat-row">
-        <div class="stat-card" *ngFor="let card of statCards">
+        <div class="stat-card" *ngFor="let card of statCards" (click)="openWidget({ title: card.label, rows: [{ label: 'Value', value: card.value }, { label: 'Change', value: card.sub }] })">
           <div class="stat-head">
             <div class="stat-icon" [class]="card.iconBg">
               <svg *ngIf="card.icon === 'sites'" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.5 7-11.5A7 7 0 105 9.5C5 14.5 12 21 12 21z" [attr.stroke]="card.color" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="9.5" r="2.4" [attr.stroke]="card.color" stroke-width="1.8"/></svg>
@@ -23,7 +23,7 @@
 
       <!-- Middle row: donuts + trend -->
       <div class="middle-row">
-        <div class="panel donut-panel">
+        <div class="panel donut-panel" (click)="openWidget(alarmsSummaryDetail())">
           <h3>Alarms Summary</h3>
           <div class="donut-row">
             <div class="donut" [style.background]="conicGradient(alarmsSummary)">
@@ -43,7 +43,7 @@
           <a class="view-all" href="javascript:void(0)">View All Alarms →</a>
         </div>
 
-        <div class="panel donut-panel">
+        <div class="panel donut-panel" (click)="openWidget(sensorsByStatusDetail())">
           <h3>Sensors by Status</h3>
           <div class="donut-row">
             <div class="donut" [style.background]="conicGradient(sensorsByStatus)">
@@ -63,7 +63,7 @@
           <a class="view-all" href="javascript:void(0)">View All Sensors →</a>
         </div>
 
-        <div class="panel chart-panel">
+        <div class="panel chart-panel" (click)="openWidget({ title: 'Alarms Trend (Last 7 Days)', rows: [{ label: 'Critical', value: 'Red line' }, { label: 'Major', value: 'Orange line' }, { label: 'Minor', value: 'Yellow line' }] })">
           <div class="panel-head">
             <h3>Alarms Trend <span class="sub-title">(Last 7 Days)</span></h3>
           </div>
@@ -90,7 +90,7 @@
       </div>
     </div>
 
-    <div class="panel priority-panel">
+    <div class="panel priority-panel" (click)="openWidget(prioritySensorsDetail())">
       <h3>Priority Sensor <span class="sub-title">- Primary Application</span></h3>
       <ul class="priority-list">
         <li *ngFor="let s of prioritySensors">
@@ -115,7 +115,7 @@
   </div>
 
   <!-- Environment Overview -->
-  <div class="panel env-panel">
+  <div class="panel env-panel" (click)="openWidget(envTilesDetail())">
     <div class="panel-head">
       <h3>Environment Overview</h3>
     </div>
@@ -146,7 +146,7 @@
   <!-- Bottom row -->
   <div class="bottom-row">
 
-    <div class="panel">
+    <div class="panel" (click)="openWidget(topSitesDetail())">
       <div class="panel-head">
         <h3>Top Sites by Active Alarms</h3>
       </div>
@@ -163,7 +163,7 @@
       <a class="view-all" href="javascript:void(0)">View All →</a>
     </div>
 
-    <div class="panel">
+    <div class="panel" (click)="openWidget(quickActionsDetail())">
       <div class="panel-head">
         <h3>Quick Actions</h3>
       </div>
@@ -182,7 +182,7 @@
       </div>
     </div>
 
-    <div class="panel alarms-panel">
+    <div class="panel alarms-panel" (click)="openWidget(recentEventsDetail())">
       <div class="panel-head">
         <h3>Recent Events</h3>
       </div>
@@ -200,4 +200,13 @@
   </div>
 
   <footer class="dashboard-footer">© 2025 Purple IQ Environment360. All rights reserved.</footer>
+
+  <app-generic-popup [isOpen]="!!selectedWidget" [title]="selectedWidget?.title || ''" (closed)="closeWidget()">
+    <ng-container *ngIf="selectedWidget">
+      <div class="popup-detail-sub" *ngIf="selectedWidget.note">{{ selectedWidget.note }}</div>
+      <ul class="popup-detail-rows" *ngIf="selectedWidget.rows?.length">
+        <li *ngFor="let r of selectedWidget.rows"><span>{{ r.label }}</span><span>{{ r.value }}</span></li>
+      </ul>
+    </ng-container>
+  </app-generic-popup>
 </div>

@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
+import { GenericPopup } from '../../../shared/generic-popup/generic-popup';
+
+interface WidgetDetail {
+  title: string;
+  rows?: { label: string; value: string }[];
+  note?: string;
+}
 
 interface StatCard {
   iconBg: string;
@@ -68,11 +75,70 @@ interface IconStat {
 
 @Component({
   selector: 'app-manhole-dashboard',
-  imports: [CommonModule],
+  imports: [CommonModule, GenericPopup],
   templateUrl: './manhole-dashboard.html',
   styleUrl: './manhole-dashboard.css',
 })
 export class ManholeDashboard {
+
+  selectedWidget: WidgetDetail | null = null;
+
+  openWidget(detail: WidgetDetail): void {
+    this.selectedWidget = detail;
+  }
+
+  closeWidget(): void {
+    this.selectedWidget = null;
+  }
+
+  mapDetail(): WidgetDetail {
+    return {
+      title: 'Manhole Status Map',
+      rows: this.mapLegend.map((m) => ({ label: m.label, value: m.count + '' })),
+    };
+  }
+
+  sensorRowsDetail(): WidgetDetail {
+    return {
+      title: 'Level Sensors',
+      rows: this.sensorRows.map((r) => ({ label: r.manholeId, value: `${r.level} m - ${r.status}` })),
+    };
+  }
+
+  recentAlarmsDetail(): WidgetDetail {
+    return {
+      title: 'Recent Alarms',
+      rows: this.recentAlarms.map((a) => ({ label: a.title, value: `${a.manholeId} - ${a.severity}` })),
+    };
+  }
+
+  topLevelsDetail(): WidgetDetail {
+    return {
+      title: 'Top 5 Manholes by Level',
+      rows: this.topLevels.map((m) => ({ label: m.manholeId, value: `${m.level} m (${m.percent}%)` })),
+    };
+  }
+
+  overflowRiskDetail(): WidgetDetail {
+    return {
+      title: 'Overflow Risk (Next 6 Hours)',
+      rows: this.overflowRisk.map((s) => ({ label: s.label, value: `${s.value} (${s.percent}%)` })),
+    };
+  }
+
+  maintenanceDetail(): WidgetDetail {
+    return {
+      title: 'Maintenance Summary',
+      rows: this.maintenanceStats.map((s) => ({ label: s.label, value: s.value })),
+    };
+  }
+
+  rainfallDetail(): WidgetDetail {
+    return {
+      title: 'Rainfall',
+      rows: this.rainfallStats.map((s) => ({ label: s.label, value: s.value })),
+    };
+  }
 
   statCards: StatCard[] = [
     { iconBg: 'bg-blue', icon: 'manhole', color: '#3b82f6', label: 'Total Manholes', value: '512', sub: '▲ 6 vs yesterday', subType: 'up' },

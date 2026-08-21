@@ -2,7 +2,7 @@
 
   <!-- Top stat row -->
   <div class="stat-row">
-    <div class="stat-card" *ngFor="let card of statCards">
+    <div class="stat-card" *ngFor="let card of statCards" (click)="openWidget({ title: card.label, rows: [{ label: 'Value', value: card.value + ' ' + (card.percent || '') }, { label: 'Change', value: card.sub || '' }] })">
       <div class="stat-head">
         <div class="stat-icon" [class]="card.iconBg">
           <svg *ngIf="card.icon === 'manhole'" width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" [attr.stroke]="card.color" stroke-width="1.8"/><circle cx="12" cy="12" r="4" [attr.stroke]="card.color" stroke-width="1.8"/></svg>
@@ -23,7 +23,7 @@
   <!-- Middle row: map, water level trend, prediction -->
   <div class="main-row">
 
-    <div class="panel map-panel">
+    <div class="panel map-panel" (click)="openWidget(mapDetail())">
       <div class="panel-head">
         <h3>Manhole Status Map</h3>
         <div class="map-controls">
@@ -62,10 +62,10 @@
       </div>
     </div>
 
-    <div class="panel chart-panel">
+    <div class="panel chart-panel" (click)="openWidget({ title: 'Water Level Trend - ' + selectedManhole, rows: [{ label: 'Current Level', value: currentLevel + ' m' }, { label: '% Full', value: percentFull + '%' }, { label: 'Predicted (1h)', value: predicted1h + ' m' }, { label: 'Predicted (6h)', value: predicted6h + ' m' }] })">
       <div class="panel-head">
         <h3>Water Level Trend <span class="sub-title">(Selected Manhole)</span></h3>
-        <select class="range-select">
+        <select class="range-select" (click)="$event.stopPropagation()">
           <option>{{ selectedManhole }}</option>
         </select>
       </div>
@@ -115,7 +115,7 @@
       </div>
     </div>
 
-    <div class="panel chart-panel">
+    <div class="panel chart-panel" (click)="openWidget({ title: 'Level Prediction (Next 6 Hours)', rows: [{ label: 'Overflow Probability', value: overflowProbability + '%' }, { label: 'Expected Time', value: expectedTimeHours + ' hours (' + expectedTimeLabel + ')' }] })">
       <div class="panel-head">
         <h3>Level Prediction <span class="sub-title">(Next 6 Hours)</span></h3>
       </div>
@@ -158,10 +158,10 @@
 
   <!-- Sensors table + Recent alarms -->
   <div class="sensors-row">
-    <div class="panel table-panel">
+    <div class="panel table-panel" (click)="openWidget(sensorRowsDetail())">
       <div class="panel-head">
         <h3>Level Sensors (All)</h3>
-        <input class="search-box" type="text" placeholder="Search manhole or sensor..." />
+        <input class="search-box" type="text" placeholder="Search manhole or sensor..." (click)="$event.stopPropagation()" />
       </div>
       <div class="table-scroll">
         <table>
@@ -203,7 +203,7 @@
       <a class="view-all" href="javascript:void(0)">View All Manholes →</a>
     </div>
 
-    <div class="panel alarms-panel">
+    <div class="panel alarms-panel" (click)="openWidget(recentAlarmsDetail())">
       <div class="panel-head">
         <h3>Recent Alarms</h3>
         <a class="view-all" href="javascript:void(0)">View All</a>
@@ -229,7 +229,7 @@
   <!-- Bottom row -->
   <div class="bottom-row">
 
-    <div class="panel">
+    <div class="panel" (click)="openWidget(topLevelsDetail())">
       <div class="panel-head">
         <h3>Top 5 Manholes by Level</h3>
       </div>
@@ -249,7 +249,7 @@
       </ul>
     </div>
 
-    <div class="panel donut-panel">
+    <div class="panel donut-panel" (click)="openWidget(overflowRiskDetail())">
       <h3>Overflow Risk <span class="sub-title">(Next 6 Hours)</span></h3>
       <div class="donut-row">
         <div class="donut" [style.background]="conicGradient(overflowRisk)">
@@ -269,7 +269,7 @@
       <a class="view-all" href="javascript:void(0)">View All Predictions →</a>
     </div>
 
-      <div class="panel maintenance-panel">
+      <div class="panel maintenance-panel" (click)="openWidget(maintenanceDetail())">
         <h3>Maintenance Summary</h3>
         <div class="icon-stat-row">
           <div class="icon-stat" *ngFor="let s of maintenanceStats">
@@ -283,7 +283,7 @@
         <a class="view-all" href="javascript:void(0)">View All Work Orders →</a>
       </div>
 
-      <div class="panel rainfall-panel">
+      <div class="panel rainfall-panel" (click)="openWidget(rainfallDetail())">
         <ul class="rainfall-list">
           <li *ngFor="let r of rainfallStats">
             <span class="rainfall-label">{{ r.label }}</span>
@@ -294,4 +294,13 @@
   </div>
 
   <footer class="dashboard-footer">© 2025 Purple IQ Environment360. All rights reserved.</footer>
+
+  <app-generic-popup [isOpen]="!!selectedWidget" [title]="selectedWidget?.title || ''" (closed)="closeWidget()">
+    <ng-container *ngIf="selectedWidget">
+      <div class="popup-detail-sub" *ngIf="selectedWidget.note">{{ selectedWidget.note }}</div>
+      <ul class="popup-detail-rows" *ngIf="selectedWidget.rows?.length">
+        <li *ngFor="let r of selectedWidget.rows"><span>{{ r.label }}</span><span>{{ r.value }}</span></li>
+      </ul>
+    </ng-container>
+  </app-generic-popup>
 </div>

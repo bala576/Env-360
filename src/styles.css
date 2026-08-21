@@ -195,3 +195,99 @@ html, body {
     grid-column: span 1;
   }
 }
+
+/* ---- dashboard widgets: click-to-popup ---- */
+.chart-panel,
+.donut-panel,
+.map-pin,
+.zone-bubble,
+.donut-legend li,
+.table-scroll table tbody tr,
+.env-tile,
+.priority-list li,
+.rank-list li,
+.quick-action,
+.event-list li,
+.alarm-list li,
+.icon-stat,
+.rainfall-list li {
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
+}
+
+.chart-panel:hover,
+.donut-panel:hover,
+.env-tile:hover,
+.rank-list li:hover,
+.quick-action:hover,
+.icon-stat:hover {
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.1);
+  transform: translateY(-1px);
+}
+
+.donut-legend li:hover,
+.table-scroll table tbody tr:hover,
+.priority-list li:hover,
+.event-list li:hover,
+.alarm-list li:hover,
+.rainfall-list li:hover {
+  background-color: #f9fafb;
+}
+
+.map-pin:hover,
+.zone-bubble:hover {
+  filter: brightness(1.1);
+  transform: scale(1.08);
+}
+
+.popup-detail-value {
+  font-size: 30px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.popup-detail-sub {
+  font-size: 13.5px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.popup-section + .popup-section {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.popup-section-title {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #6d28d9;
+}
+
+.popup-detail-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.popup-detail-rows li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13.5px;
+  padding: 8px 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.popup-detail-rows li span:first-child {
+  color: #6b7280;
+}
+
+.popup-detail-rows li span:last-child {
+  font-weight: 700;
+  color: #111827;
+}

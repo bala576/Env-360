@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
+import { GenericPopup } from '../../../shared/generic-popup/generic-popup';
+
+interface WidgetDetail {
+  title: string;
+  rows?: { label: string; value: string }[];
+  note?: string;
+}
 
 interface StatCard {
   iconBg: string;
@@ -55,11 +62,70 @@ interface RecentEvent {
 
 @Component({
   selector: 'app-equipment-dashboard',
-  imports: [CommonModule],
+  imports: [CommonModule, GenericPopup],
   templateUrl: './equipment-dashboard.html',
   styleUrl: './equipment-dashboard.css',
 })
 export class EquipmentDashboard {
+
+  selectedWidget: WidgetDetail | null = null;
+
+  openWidget(detail: WidgetDetail): void {
+    this.selectedWidget = detail;
+  }
+
+  closeWidget(): void {
+    this.selectedWidget = null;
+  }
+
+  alarmsSummaryDetail(): WidgetDetail {
+    return {
+      title: 'Alarms Summary',
+      rows: this.alarmsSummary.map((s) => ({ label: s.label, value: `${s.value} (${s.percent}%)` })),
+    };
+  }
+
+  sensorsByStatusDetail(): WidgetDetail {
+    return {
+      title: 'Sensors by Status',
+      rows: this.sensorsByStatus.map((s) => ({ label: s.label, value: `${s.value} (${s.percent}%)` })),
+    };
+  }
+
+  prioritySensorsDetail(): WidgetDetail {
+    return {
+      title: 'Priority Sensors',
+      rows: this.prioritySensors.map((s) => ({ label: s.title, value: s.description })),
+    };
+  }
+
+  envTilesDetail(): WidgetDetail {
+    return {
+      title: 'Environment Overview',
+      rows: this.envTiles.map((t) => ({ label: t.label, value: `${t.value} (${t.status})` })),
+    };
+  }
+
+  topSitesDetail(): WidgetDetail {
+    return {
+      title: 'Top Sites by Active Alarms',
+      rows: this.topSites.map((s) => ({ label: s.name, value: `${s.count} alarms` })),
+    };
+  }
+
+  quickActionsDetail(): WidgetDetail {
+    return {
+      title: 'Quick Actions',
+      rows: this.quickActions.map((a) => ({ label: a.label, value: '' })),
+    };
+  }
+
+  recentEventsDetail(): WidgetDetail {
+    return {
+      title: 'Recent Events',
+      rows: this.recentEvents.map((e) => ({ label: e.title, value: `${e.location} - ${e.time}` })),
+    };
+  }
 
   statCards: StatCard[] = [
     { iconBg: 'bg-blue', icon: 'sites', color: '#3b82f6', label: 'Total Sites', value: '18', sub: '▲ 2 vs yesterday', subType: 'up' },

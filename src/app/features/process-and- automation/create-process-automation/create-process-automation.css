@@ -84,46 +84,14 @@
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
-.pa-form-title {
-  margin: 0 0 16px;
-  font-size: 20px;
-  font-weight: 700;
-  color: #111827;
-}
-
-.pa-divider {
-  height: 1px;
+.pa-form-title-bar {
   background: #eef0f2;
-  margin-bottom: 20px;
-}
-
-.pa-rule-grid {
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 32px;
-  align-items: start;
-}
-
-.pa-rule-left {
-  border-right: 1px solid #eef0f2;
-  padding-right: 24px;
-}
-
-.pa-rule-right {
-  min-width: 0;
-}
-
-@media (max-width: 700px) {
-  .pa-rule-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .pa-rule-left {
-    border-right: none;
-    border-bottom: 1px solid #eef0f2;
-    padding-right: 0;
-    padding-bottom: 20px;
-  }
+  color: #374151;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 24px;
 }
 
 .pa-field-label {
@@ -142,8 +110,7 @@
   color: #111827;
   background: #ffffff;
   font-family: inherit;
-  width: 100%;
-  max-width: 420px;
+  width: 54.5%;
   box-sizing: border-box;
 }
 
@@ -197,6 +164,12 @@
   flex-shrink: 0;
 }
 
+.pa-operator-slot {
+  display: inline-flex;
+  width: 54px;
+  flex-shrink: 0;
+}
+
 .pa-operator-select {
   border: 1px solid #e5e7eb;
   border-radius: 6px;
@@ -206,35 +179,39 @@
   color: #7030a0;
   background: #faf5ff;
   font-family: inherit;
+  width: 100%;
 }
 
 .pa-dropdown-wrap {
   display: flex;
-  align-items: flex-start;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: stretch;
   gap: 10px;
-  flex: 1;
+  flex: 0 1 480px;
+  min-width: 0;
 }
 
 .pa-field-item {
   position: relative;
+  width: 100%;
 }
 
 .pa-field {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  min-width: 180px;
-  border: 1.5px solid #c4b5fd;
+  width: 100%;
+  border: 1px solid #e5e7eb;
   border-radius: 10px;
-  padding: 9px 12px;
+  padding: 10px 12px;
   font-size: 13.5px;
   color: #111827;
   background: #ffffff;
   font-family: inherit;
   cursor: pointer;
   transition: border-color 0.15s ease;
+  box-sizing: border-box;
 }
 
 .pa-field:hover {
@@ -253,7 +230,7 @@
 .pa-field-menu {
   position: absolute;
   top: calc(100% + 4px);
-  min-width: 200px;
+  width: 100%;
   background: #ffffff;
   border: 1px solid #eef0f2;
   border-radius: 10px;

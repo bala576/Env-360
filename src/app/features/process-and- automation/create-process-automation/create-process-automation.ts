@@ -11,7 +11,7 @@ export type ConditionType =
   | ''
   | 'When the device is'
   | 'When the time is'
-  | 'When the people is'
+  | 'When the asset is'
   | 'When the zone is';
 
 export type ConditionField =
@@ -116,7 +116,7 @@ export class CreateProcessAutomation {
   conditionTypeOptions: ConditionType[] = [
     'When the device is',
     'When the time is',
-    'When the people is',
+    'When the asset is',
     'When the zone is',
   ];
 

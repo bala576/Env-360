@@ -170,7 +170,10 @@
       </div>
 
       <div class="pa-condition-row" *ngFor="let row of actions; let i = index">
-        <div class="pa-row-label">{{ actionLabel(i) }}</div>
+        <div class="pa-row-label">
+          <span class="pa-operator-slot"></span>
+          {{ actionLabel(i) }}
+        </div>
 
         <div class="pa-dropdown-wrap">
           <div class="pa-field-item">

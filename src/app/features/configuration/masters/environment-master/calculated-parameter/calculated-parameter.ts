@@ -1,11 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { GenericTable, TableColumn } from '../../../../../shared/generic-table/generic-table';
 import { GenericPopup } from '../../../../../shared/generic-popup/generic-popup';
 import { FormToggle } from '../../../../../shared/form-toggle/form-toggle';
 import { Breadcrumb, BreadcrumbItem } from '../../../../../shared/breadcrumb/breadcrumb';
 import { ADMIN_TOP_DROPDOWN, CONFIGURATION_DROPDOWN, ENVIRONMENT_MASTER_DROPDOWN } from '../../../../../shared/layout/sidebar/admin-nav.data';
+import { CategoriesStore } from '../categories/categories-store';
+
+const CALCULATED_PARAMETER_PAGE = '/administration/configuration/masters/environment-master/calculated-parameter';
+const CATEGORIES_PAGE = '/administration/configuration/masters/environment-master/categories';
 
 interface CalculatedParameterRow {
   id: string;
@@ -58,15 +63,18 @@ export class CalculatedParameter {
     { id: 'CALC-005', code: 'WQI', name: 'Water Quality Index', outputUnit: 'Index', environmentCategory: 'Water Quality', inputParameters: 'pH, Turbidity, Dissolved Oxygen', formula: 'weighted(pH, Turbidity, DO)', formulaType: 'Statistical', calculationFrequency: 'Daily', aggregationMethod: 'Average', minimumValidInputs: 2, validityCondition: 'pH BETWEEN 0 AND 14', description: 'Composite water quality score', status: 'Inactive', displayOrder: 5 },
   ];
 
-  environmentCategories = ['Air Quality', 'Water Quality', 'Noise', 'Energy', 'Waste'];
   formulaTypes = ['Arithmetic', 'Statistical', 'Conditional'];
   aggregationMethods = ['Average', 'Sum', 'Min', 'Max', 'Last'];
+
+  get environmentCategories(): string[] {
+    return this.categoriesStore.rows.map(r => r.name);
+  }
 
   popupOpen = false;
   editingRow: CalculatedParameterRow | null = null;
   form: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private categoriesStore: CategoriesStore, private router: Router) {
     this.form = this.fb.group({
       code: ['', Validators.required],
       name: ['', Validators.required],
@@ -121,5 +129,20 @@ export class CalculatedParameter {
 
   deleteRow(row: CalculatedParameterRow): void {
     this.rows = this.rows.filter(r => r.id !== row.id);
+  }
+
+  isEditCategoryDisabled(): boolean {
+    return !this.editingRow;
+  }
+
+  addCategory(): void {
+    this.router.navigate([CATEGORIES_PAGE], { queryParams: { action: 'add', returnUrl: CALCULATED_PARAMETER_PAGE } });
+  }
+
+  editCategory(): void {
+    if (this.isEditCategoryDisabled()) return;
+    const category = this.form.value.environmentCategory;
+    if (!category) return;
+    this.router.navigate([CATEGORIES_PAGE], { queryParams: { action: 'edit', value: category, returnUrl: CALCULATED_PARAMETER_PAGE } });
   }
 }

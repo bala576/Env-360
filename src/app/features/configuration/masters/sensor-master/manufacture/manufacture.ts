@@ -1,28 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { GenericTable, TableColumn } from '../../../../../shared/generic-table/generic-table';
 import { GenericPopup } from '../../../../../shared/generic-popup/generic-popup';
 import { FormToggle } from '../../../../../shared/form-toggle/form-toggle';
 import { Breadcrumb, BreadcrumbItem } from '../../../../../shared/breadcrumb/breadcrumb';
 import { ADMIN_TOP_DROPDOWN, CONFIGURATION_DROPDOWN, SENSOR_MASTER_DROPDOWN } from '../../../../../shared/layout/sidebar/admin-nav.data';
-
-interface ManufacturerRow {
-  id: string;
-  code: string;
-  name: string;
-  manufacturerType: string;
-  country: string;
-  website: string;
-  supportEmail: string;
-  supportPhone: string;
-  address: string;
-  contactPerson: string;
-  logo: string;
-  description: string;
-  status: 'Active' | 'Inactive';
-  displayOrder: number;
-}
+import { ManufactureStore, ManufacturerRow } from './manufacture-store';
 
 @Component({
   selector: 'app-manufacture',
@@ -30,7 +15,7 @@ interface ManufacturerRow {
   templateUrl: './manufacture.html',
   styleUrl: './manufacture.css',
 })
-export class Manufacture {
+export class Manufacture implements OnInit {
 
   breadcrumb: BreadcrumbItem[] = [
     { label: 'Administration', children: ADMIN_TOP_DROPDOWN },
@@ -51,94 +36,21 @@ export class Manufacture {
     { key: 'displayOrder', label: 'Display Order' },
   ];
 
-  rows: ManufacturerRow[] = [
-    {
-      id: 'MFR-001',
-      code: 'SENTECH',
-      name: 'SenTech Industries',
-      manufacturerType: 'Sensor Manufacturer',
-      country: 'Germany',
-      website: 'https://www.sentechindustries.com',
-      supportEmail: 'support@sentechindustries.com',
-      supportPhone: '+49 30 1234 5678',
-      address: 'Industriestrasse 12, Munich, Germany',
-      contactPerson: 'Hans Mueller',
-      logo: 'https://cdn.example.com/logos/sentech.png',
-      description: 'Manufacturer of precision environmental sensors.',
-      status: 'Active',
-      displayOrder: 1,
-    },
-    {
-      id: 'MFR-002',
-      code: 'ENVSENSE',
-      name: 'EnviroSense Corp',
-      manufacturerType: 'OEM',
-      country: 'United States',
-      website: 'https://www.envirosensecorp.com',
-      supportEmail: 'help@envirosensecorp.com',
-      supportPhone: '+1 415 555 0192',
-      address: '450 Bayshore Blvd, San Francisco, CA, USA',
-      contactPerson: 'Laura Chen',
-      logo: 'https://cdn.example.com/logos/envirosense.png',
-      description: 'OEM supplier of air quality and climate monitoring hardware.',
-      status: 'Active',
-      displayOrder: 2,
-    },
-    {
-      id: 'MFR-003',
-      code: 'GASGUARD',
-      name: 'GasGuard Systems',
-      manufacturerType: 'Sensor Manufacturer',
-      country: 'United Kingdom',
-      website: 'https://www.gasguardsystems.co.uk',
-      supportEmail: 'support@gasguardsystems.co.uk',
-      supportPhone: '+44 20 7946 0958',
-      address: '18 Kings Road, London, UK',
-      contactPerson: 'Oliver Brooks',
-      logo: 'https://cdn.example.com/logos/gasguard.png',
-      description: 'Specialist in confined-space gas detection sensors.',
-      status: 'Active',
-      displayOrder: 3,
-    },
-    {
-      id: 'MFR-004',
-      code: 'AQUAMET',
-      name: 'AquaMetrics Ltd',
-      manufacturerType: 'Device Integrator',
-      country: 'India',
-      website: 'https://www.aquametrics.in',
-      supportEmail: 'support@aquametrics.in',
-      supportPhone: '+91 80 4567 8901',
-      address: 'Electronic City, Bengaluru, India',
-      contactPerson: 'Priya Nair',
-      logo: 'https://cdn.example.com/logos/aquametrics.png',
-      description: 'Integrator of water quality monitoring devices.',
-      status: 'Active',
-      displayOrder: 4,
-    },
-    {
-      id: 'MFR-005',
-      code: 'CLIMATECH',
-      name: 'ClimaTech Devices',
-      manufacturerType: 'Third Party',
-      country: 'Singapore',
-      website: 'https://www.climatechdevices.com',
-      supportEmail: 'contact@climatechdevices.com',
-      supportPhone: '+65 6123 4567',
-      address: '1 Marina Boulevard, Singapore',
-      contactPerson: 'Wei Lim',
-      logo: 'https://cdn.example.com/logos/climatech.png',
-      description: 'Third-party reseller of climate control sensing equipment.',
-      status: 'Inactive',
-      displayOrder: 5,
-    },
-  ];
+  get rows(): ManufacturerRow[] {
+    return this.store.rows;
+  }
 
   popupOpen = false;
   editingRow: ManufacturerRow | null = null;
   form: FormGroup;
+  returnUrl = '';
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    private store: ManufactureStore,
+    private route: ActivatedRoute,
+    private router: Router,
+  ) {
     this.form = this.fb.group({
       code: ['', Validators.required],
       name: ['', Validators.required],
@@ -154,6 +66,20 @@ export class Manufacture {
       status: ['Active', Validators.required],
       displayOrder: [this.rows.length + 1],
     });
+  }
+
+  ngOnInit(): void {
+    const params = this.route.snapshot.queryParamMap;
+    this.returnUrl = params.get('returnUrl') || '';
+    const action = params.get('action');
+
+    if (action === 'add') {
+      this.openAdd();
+    } else if (action === 'edit') {
+      const name = params.get('value');
+      const row = name ? this.store.getByName(name) : undefined;
+      if (row) this.openEdit(row);
+    }
   }
 
   openAdd(): void {
@@ -173,6 +99,13 @@ export class Manufacture {
     this.editingRow = null;
   }
 
+  cancel(): void {
+    this.closePopup();
+    if (this.returnUrl) {
+      this.router.navigate([this.returnUrl]);
+    }
+  }
+
   save(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -182,15 +115,15 @@ export class Manufacture {
     const value = this.form.value;
 
     if (this.editingRow) {
-      Object.assign(this.editingRow, value);
+      this.store.update(this.editingRow.id, value);
     } else {
-      this.rows.push({ id: `MFR-${String(this.rows.length + 1).padStart(3, '0')}`, ...value });
+      this.store.add({ id: this.store.nextId(), ...value });
     }
 
     this.closePopup();
   }
 
   deleteRow(row: ManufacturerRow): void {
-    this.rows = this.rows.filter(r => r.id !== row.id);
+    this.store.delete(row);
   }
 }

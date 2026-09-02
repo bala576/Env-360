@@ -1,11 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { GenericTable, TableColumn } from '../../../../../shared/generic-table/generic-table';
 import { GenericPopup } from '../../../../../shared/generic-popup/generic-popup';
 import { FormToggle } from '../../../../../shared/form-toggle/form-toggle';
 import { Breadcrumb, BreadcrumbItem } from '../../../../../shared/breadcrumb/breadcrumb';
 import { ADMIN_TOP_DROPDOWN, CONFIGURATION_DROPDOWN, ENVIRONMENT_MASTER_DROPDOWN } from '../../../../../shared/layout/sidebar/admin-nav.data';
+import { CategoriesStore } from '../categories/categories-store';
+
+const TYPES_PAGE = '/administration/configuration/masters/environment-master/types';
+const CATEGORIES_PAGE = '/administration/configuration/masters/environment-master/categories';
 
 interface EnvironmentTypeRow {
   id: string;
@@ -42,8 +47,11 @@ export class Types {
     { label: 'Types' },
   ];
 
-  environmentCategories = ['Air Quality', 'Water Quality', 'Noise', 'Energy', 'Waste'];
   indoorOutdoorOptions = ['Indoor', 'Outdoor', 'Both'];
+
+  get environmentCategories(): string[] {
+    return this.categoriesStore.rows.map(r => r.name);
+  }
 
   columns: TableColumn[] = [
     { key: 'code', label: 'Environment Type Code' },
@@ -156,7 +164,7 @@ export class Types {
   editingRow: EnvironmentTypeRow | null = null;
   form: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private categoriesStore: CategoriesStore, private router: Router) {
     this.form = this.fb.group({
       code: ['', Validators.required],
       name: ['', Validators.required],
@@ -218,5 +226,20 @@ export class Types {
 
   deleteRow(row: EnvironmentTypeRow): void {
     this.rows = this.rows.filter(r => r.id !== row.id);
+  }
+
+  isEditCategoryDisabled(): boolean {
+    return !this.editingRow;
+  }
+
+  addCategory(): void {
+    this.router.navigate([CATEGORIES_PAGE], { queryParams: { action: 'add', returnUrl: TYPES_PAGE } });
+  }
+
+  editCategory(): void {
+    if (this.isEditCategoryDisabled()) return;
+    const category = this.form.value.environmentCategory;
+    if (!category) return;
+    this.router.navigate([CATEGORIES_PAGE], { queryParams: { action: 'edit', value: category, returnUrl: TYPES_PAGE } });
   }
 }

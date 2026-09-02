@@ -1,11 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { GenericTable, TableColumn } from '../../../../../shared/generic-table/generic-table';
 import { GenericPopup } from '../../../../../shared/generic-popup/generic-popup';
 import { FormToggle } from '../../../../../shared/form-toggle/form-toggle';
 import { Breadcrumb, BreadcrumbItem } from '../../../../../shared/breadcrumb/breadcrumb';
 import { ADMIN_TOP_DROPDOWN, CONFIGURATION_DROPDOWN, MONITORING_MASTER_DROPDOWN } from '../../../../../shared/layout/sidebar/admin-nav.data';
+import { SeverityStore } from '../../general-master/severity/severity-store';
+
+const ALARM_TYPES_PAGE = '/administration/configuration/masters/monitoring-master/alarm-types';
+const SEVERITY_PAGE = '/administration/configuration/masters/general-master/severity';
 
 interface AlarmTypeRow {
   id: string;
@@ -42,8 +47,11 @@ export class AlarmTypes {
   ];
 
   environmentCategories = ['Air Quality', 'Water Quality', 'Noise', 'Energy', 'Waste'];
-  severities = ['Critical', 'Major', 'Minor', 'Warning', 'Info'];
   triggerTypes = ['Threshold', 'Rate of Change', 'Device Status', 'Data Quality'];
+
+  get severities(): string[] {
+    return this.severityStore.rows.map(r => r.name);
+  }
 
   columns: TableColumn[] = [
     { key: 'code', label: 'Alarm Code' },
@@ -152,7 +160,7 @@ export class AlarmTypes {
   editingRow: AlarmTypeRow | null = null;
   form: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private severityStore: SeverityStore, private router: Router) {
     this.form = this.fb.group({
       code: ['', Validators.required],
       name: ['', Validators.required],
@@ -215,5 +223,20 @@ export class AlarmTypes {
 
   deleteRow(row: AlarmTypeRow): void {
     this.rows = this.rows.filter(r => r.id !== row.id);
+  }
+
+  isEditSeverityDisabled(): boolean {
+    return !this.editingRow;
+  }
+
+  addSeverity(): void {
+    this.router.navigate([SEVERITY_PAGE], { queryParams: { action: 'add', returnUrl: ALARM_TYPES_PAGE } });
+  }
+
+  editSeverity(): void {
+    if (this.isEditSeverityDisabled()) return;
+    const severity = this.form.value.defaultSeverity;
+    if (!severity) return;
+    this.router.navigate([SEVERITY_PAGE], { queryParams: { action: 'edit', value: severity, returnUrl: ALARM_TYPES_PAGE } });
   }
 }

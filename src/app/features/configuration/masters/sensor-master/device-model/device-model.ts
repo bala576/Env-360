@@ -1,11 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { GenericTable, TableColumn } from '../../../../../shared/generic-table/generic-table';
 import { GenericPopup } from '../../../../../shared/generic-popup/generic-popup';
 import { FormToggle } from '../../../../../shared/form-toggle/form-toggle';
 import { Breadcrumb, BreadcrumbItem } from '../../../../../shared/breadcrumb/breadcrumb';
 import { ADMIN_TOP_DROPDOWN, CONFIGURATION_DROPDOWN, SENSOR_MASTER_DROPDOWN } from '../../../../../shared/layout/sidebar/admin-nav.data';
+import { ManufactureStore } from '../manufacture/manufacture-store';
+
+const DEVICE_MODEL_PAGE = '/administration/configuration/masters/sensor-master/device-model';
 
 interface DeviceModelRow {
   id: string;
@@ -47,7 +51,9 @@ export class DeviceModel {
     { label: 'Device Model' },
   ];
 
-  manufacturers = ['SenTech Industries', 'EnviroSense Corp', 'GasGuard Systems', 'AquaMetrics Ltd', 'ClimaTech Devices'];
+  get manufacturers(): string[] {
+    return this.manufactureStore.rows.map(r => r.name);
+  }
   powerTypes = ['Battery', 'Solar', 'Wired', 'Hybrid'];
 
   columns: TableColumn[] = [
@@ -187,7 +193,7 @@ export class DeviceModel {
   editingRow: DeviceModelRow | null = null;
   form: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private manufactureStore: ManufactureStore, private router: Router) {
     this.form = this.fb.group({
       code: ['', Validators.required],
       modelName: ['', Validators.required],
@@ -253,5 +259,20 @@ export class DeviceModel {
 
   deleteRow(row: DeviceModelRow): void {
     this.rows = this.rows.filter(r => r.id !== row.id);
+  }
+
+  isEditManufacturerDisabled(): boolean {
+    return !this.editingRow;
+  }
+
+  addManufacturer(): void {
+    this.router.navigate(['/administration/configuration/masters/sensor-master/manufacture'], { queryParams: { action: 'add', returnUrl: DEVICE_MODEL_PAGE } });
+  }
+
+  editManufacturer(): void {
+    if (this.isEditManufacturerDisabled()) return;
+    const manufacturer = this.form.value.manufacturer;
+    if (!manufacturer) return;
+    this.router.navigate(['/administration/configuration/masters/sensor-master/manufacture'], { queryParams: { action: 'edit', value: manufacturer, returnUrl: DEVICE_MODEL_PAGE } });
   }
 }

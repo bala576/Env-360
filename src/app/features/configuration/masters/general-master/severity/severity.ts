@@ -1,26 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { GenericTable, TableColumn } from '../../../../../shared/generic-table/generic-table';
 import { GenericPopup } from '../../../../../shared/generic-popup/generic-popup';
 import { FormToggle } from '../../../../../shared/form-toggle/form-toggle';
 import { Breadcrumb, BreadcrumbItem } from '../../../../../shared/breadcrumb/breadcrumb';
 import { ADMIN_TOP_DROPDOWN, CONFIGURATION_DROPDOWN, GENERAL_MASTER_DROPDOWN } from '../../../../../shared/layout/sidebar/admin-nav.data';
-
-interface SeverityRow {
-  id: string;
-  code: string;
-  name: string;
-  priority: number;
-  description: string;
-  color: string;
-  icon: string;
-  acknowledgementRequired: boolean;
-  escalationRequired: boolean;
-  slaMinutes: number;
-  status: 'Active' | 'Inactive';
-  displayOrder: number;
-}
+import { SeverityStore, SeverityRow } from './severity-store';
 
 @Component({
   selector: 'app-severity',
@@ -28,7 +15,7 @@ interface SeverityRow {
   templateUrl: './severity.html',
   styleUrl: './severity.css',
 })
-export class Severity {
+export class Severity implements OnInit {
 
   breadcrumb: BreadcrumbItem[] = [
     { label: 'Administration', children: ADMIN_TOP_DROPDOWN },
@@ -46,19 +33,21 @@ export class Severity {
     { key: 'displayOrder', label: 'Display Order' },
   ];
 
-  rows: SeverityRow[] = [
-    { id: 'SEV-001', code: 'CRIT', name: 'Critical', priority: 1, description: 'Immediate action required', color: '#ef4444', icon: '', acknowledgementRequired: true, escalationRequired: true, slaMinutes: 15, status: 'Active', displayOrder: 1 },
-    { id: 'SEV-002', code: 'MAJ', name: 'Major', priority: 2, description: 'Significant impact', color: '#f97316', icon: '', acknowledgementRequired: true, escalationRequired: true, slaMinutes: 60, status: 'Active', displayOrder: 2 },
-    { id: 'SEV-003', code: 'MIN', name: 'Minor', priority: 3, description: 'Limited impact', color: '#eab308', icon: '', acknowledgementRequired: true, escalationRequired: false, slaMinutes: 240, status: 'Active', displayOrder: 3 },
-    { id: 'SEV-004', code: 'WARN', name: 'Warning', priority: 4, description: 'Informational warning', color: '#3b82f6', icon: '', acknowledgementRequired: false, escalationRequired: false, slaMinutes: 0, status: 'Active', displayOrder: 4 },
-    { id: 'SEV-005', code: 'INFO', name: 'Info', priority: 5, description: 'For information only', color: '#9ca3af', icon: '', acknowledgementRequired: false, escalationRequired: false, slaMinutes: 0, status: 'Inactive', displayOrder: 5 },
-  ];
+  get rows(): SeverityRow[] {
+    return this.store.rows;
+  }
 
   popupOpen = false;
   editingRow: SeverityRow | null = null;
   form: FormGroup;
+  returnUrl = '';
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    private store: SeverityStore,
+    private route: ActivatedRoute,
+    private router: Router,
+  ) {
     this.form = this.fb.group({
       code: ['', Validators.required],
       name: ['', Validators.required],
@@ -72,6 +61,20 @@ export class Severity {
       status: ['Active', Validators.required],
       displayOrder: [this.rows.length + 1],
     });
+  }
+
+  ngOnInit(): void {
+    const params = this.route.snapshot.queryParamMap;
+    this.returnUrl = params.get('returnUrl') || '';
+    const action = params.get('action');
+
+    if (action === 'add') {
+      this.openAdd();
+    } else if (action === 'edit') {
+      const name = params.get('value');
+      const row = name ? this.store.getByName(name) : undefined;
+      if (row) this.openEdit(row);
+    }
   }
 
   openAdd(): void {
@@ -91,6 +94,13 @@ export class Severity {
     this.editingRow = null;
   }
 
+  cancel(): void {
+    this.closePopup();
+    if (this.returnUrl) {
+      this.router.navigate([this.returnUrl]);
+    }
+  }
+
   save(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -100,15 +110,15 @@ export class Severity {
     const value = this.form.value;
 
     if (this.editingRow) {
-      Object.assign(this.editingRow, value);
+      this.store.update(this.editingRow.id, value);
     } else {
-      this.rows.push({ id: `SEV-${String(this.rows.length + 1).padStart(3, '0')}`, ...value });
+      this.store.add({ id: this.store.nextId(), ...value });
     }
 
     this.closePopup();
   }
 
   deleteRow(row: SeverityRow): void {
-    this.rows = this.rows.filter(r => r.id !== row.id);
+    this.store.delete(row);
   }
 }

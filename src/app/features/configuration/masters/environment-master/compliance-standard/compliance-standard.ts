@@ -1,11 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { GenericTable, TableColumn } from '../../../../../shared/generic-table/generic-table';
 import { GenericPopup } from '../../../../../shared/generic-popup/generic-popup';
 import { FormToggle } from '../../../../../shared/form-toggle/form-toggle';
 import { Breadcrumb, BreadcrumbItem } from '../../../../../shared/breadcrumb/breadcrumb';
 import { ADMIN_TOP_DROPDOWN, CONFIGURATION_DROPDOWN, ENVIRONMENT_MASTER_DROPDOWN } from '../../../../../shared/layout/sidebar/admin-nav.data';
+import { CategoriesStore } from '../categories/categories-store';
+
+const COMPLIANCE_STANDARD_PAGE = '/administration/configuration/masters/environment-master/compliance-standard';
+const CATEGORIES_PAGE = '/administration/configuration/masters/environment-master/categories';
 
 interface ComplianceStandardRow {
   id: string;
@@ -55,8 +60,11 @@ export class ComplianceStandard {
     { key: 'status', label: 'Status', type: 'toggle' },
   ];
 
-  environmentCategories = ['Air Quality', 'Water Quality', 'Noise', 'Energy', 'Waste'];
   limitTypes = ['Maximum', 'Minimum', 'Range'];
+
+  get environmentCategories(): string[] {
+    return this.categoriesStore.rows.map(r => r.name);
+  }
 
   rows: ComplianceStandardRow[] = [
     {
@@ -180,7 +188,7 @@ export class ComplianceStandard {
   editingRow: ComplianceStandardRow | null = null;
   form: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private categoriesStore: CategoriesStore, private router: Router) {
     this.form = this.fb.group({
       standardCode: ['', Validators.required],
       standardName: ['', Validators.required],
@@ -241,5 +249,20 @@ export class ComplianceStandard {
 
   deleteRow(row: ComplianceStandardRow): void {
     this.rows = this.rows.filter(r => r.id !== row.id);
+  }
+
+  isEditCategoryDisabled(): boolean {
+    return !this.editingRow;
+  }
+
+  addCategory(): void {
+    this.router.navigate([CATEGORIES_PAGE], { queryParams: { action: 'add', returnUrl: COMPLIANCE_STANDARD_PAGE } });
+  }
+
+  editCategory(): void {
+    if (this.isEditCategoryDisabled()) return;
+    const category = this.form.value.environmentCategory;
+    if (!category) return;
+    this.router.navigate([CATEGORIES_PAGE], { queryParams: { action: 'edit', value: category, returnUrl: COMPLIANCE_STANDARD_PAGE } });
   }
 }

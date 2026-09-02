@@ -1,11 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { GenericTable, TableColumn } from '../../../../../shared/generic-table/generic-table';
 import { GenericPopup } from '../../../../../shared/generic-popup/generic-popup';
 import { FormToggle } from '../../../../../shared/form-toggle/form-toggle';
 import { Breadcrumb, BreadcrumbItem } from '../../../../../shared/breadcrumb/breadcrumb';
 import { ADMIN_TOP_DROPDOWN, CONFIGURATION_DROPDOWN, MONITORING_MASTER_DROPDOWN } from '../../../../../shared/layout/sidebar/admin-nav.data';
+import { SeverityStore } from '../../general-master/severity/severity-store';
+
+const NOTIFICATION_PROFILE_PAGE = '/administration/configuration/masters/monitoring-master/notification-profile';
+const SEVERITY_PAGE = '/administration/configuration/masters/general-master/severity';
 
 interface NotificationProfileRow {
   id: string;
@@ -65,14 +70,17 @@ export class NotificationProfile {
     { id: 'NTP-005', code: 'NTP-INFO-ROUTINE', name: 'Routine Info Notification', alarmSeverity: 'Info', notificationChannels: 'Push', primaryRecipientType: 'Individual', primaryRecipients: 'dashboard.viewer@env360.com', escalationEnabled: false, escalationLevel: '', escalationRecipient: '', escalationDelay: '', repeatNotification: false, repeatInterval: '', maximumAttempts: 1, acknowledgementRequired: false, businessHoursOnly: true, quietHours: '21:00 - 07:00', emailTemplate: '', smsTemplate: '', pushTemplate: 'info-routine-push-v1', webhook: '', description: 'Low-priority informational updates for dashboard viewers.', status: 'Inactive' },
   ];
 
-  alarmSeverities = ['Critical', 'Major', 'Minor', 'Warning', 'Info'];
   recipientTypes = ['Individual', 'Role', 'Group'];
+
+  get alarmSeverities(): string[] {
+    return this.severityStore.rows.map(r => r.name);
+  }
 
   popupOpen = false;
   editingRow: NotificationProfileRow | null = null;
   form: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private severityStore: SeverityStore, private router: Router) {
     this.form = this.fb.group({
       code: ['', Validators.required],
       name: ['', Validators.required],
@@ -142,5 +150,20 @@ export class NotificationProfile {
 
   deleteRow(row: NotificationProfileRow): void {
     this.rows = this.rows.filter(r => r.id !== row.id);
+  }
+
+  isEditSeverityDisabled(): boolean {
+    return !this.editingRow;
+  }
+
+  addSeverity(): void {
+    this.router.navigate([SEVERITY_PAGE], { queryParams: { action: 'add', returnUrl: NOTIFICATION_PROFILE_PAGE } });
+  }
+
+  editSeverity(): void {
+    if (this.isEditSeverityDisabled()) return;
+    const severity = this.form.value.alarmSeverity;
+    if (!severity) return;
+    this.router.navigate([SEVERITY_PAGE], { queryParams: { action: 'edit', value: severity, returnUrl: NOTIFICATION_PROFILE_PAGE } });
   }
 }

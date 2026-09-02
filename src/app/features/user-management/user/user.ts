@@ -5,6 +5,7 @@ import { GenericTable, TableColumn } from '../../../shared/generic-table/generic
 import { GenericPopup } from '../../../shared/generic-popup/generic-popup';
 import { Breadcrumb, BreadcrumbItem } from '../../../shared/breadcrumb/breadcrumb';
 import { ADMIN_TOP_DROPDOWN, USER_MANAGEMENT_DROPDOWN } from '../../../shared/layout/sidebar/admin-nav.data';
+import { Router } from '@angular/router';
 
 interface UserRow {
   id: string;
@@ -64,7 +65,7 @@ export class User {
   editingRow: UserRow | null = null;
   form: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private router: Router) {
     this.form = this.fb.group({
       userName: ['', Validators.required],
       shortName: ['', Validators.required],
@@ -79,6 +80,21 @@ export class User {
   onRoleChange(): void {
     const role = this.form.value.role;
     this.form.patchValue({ roleName: ROLE_NAME_BY_CODE[role] ?? '' });
+  }
+
+  isEditRoleDisabled(): boolean {
+    return !this.editingRow;
+  }
+
+  addRole(): void {
+    this.router.navigate(['/role/create'], { queryParams: { returnUrl: '/user' } });
+  }
+
+  editRole(): void {
+    if (this.isEditRoleDisabled()) return;
+    const role = this.form.value.role;
+    if (!role) return;
+    this.router.navigate(['/role', role, 'edit'], { queryParams: { returnUrl: '/user' } });
   }
 
   openAdd(): void {

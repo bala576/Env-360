@@ -41,10 +41,18 @@
 
       <div class="field">
         <label>Role</label>
-        <select formControlName="role" (change)="onRoleChange()">
-          <option value="" disabled>Select role</option>
-          <option *ngFor="let r of roleOptions" [value]="r">{{ r }}</option>
-        </select>
+        <div class="reference-field-row">
+          <select formControlName="role" (change)="onRoleChange()">
+            <option value="" disabled>Select role</option>
+            <option *ngFor="let r of roleOptions" [value]="r">{{ r }}</option>
+          </select>
+          <button class="master-icon-btn" type="button" aria-label="add role" (click)="addRole()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </button>
+          <button class="master-icon-btn" type="button" aria-label="edit role" [disabled]="isEditRoleDisabled()" (click)="editRole()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
       </div>
 
       <div class="field">

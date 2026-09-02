@@ -30,19 +30,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
           { label: 'Types', route: '/administration/configuration/masters/environment-master/types' }
         ]
       },
-      {
-        label: 'General Master',
-        children: [
-          { label: 'Document', route: '/administration/configuration/masters/general-master/document' },
-          { label: 'Location', route: '/administration/configuration/masters/general-master/location' },
-          { label: 'Monitor', route: '/administration/configuration/masters/general-master/monitor' },
-          { label: 'Organization', route: '/administration/configuration/masters/general-master/organization' },
-          { label: 'Parameter', route: '/administration/configuration/masters/general-master/parameter' },
-          { label: 'Severity', route: '/administration/configuration/masters/general-master/severity' },
-          { label: 'Status', route: '/administration/configuration/masters/general-master/status' },
-          { label: 'Unit', route: '/administration/configuration/masters/general-master/unit' }
-        ]
-      },
+      
       {
         label: 'Monitoring Master',
         children: [
@@ -64,7 +52,20 @@ export const ADMIN_SECTIONS: AdminSection[] = [
           { label: 'Payload Mapping', route: '/administration/configuration/masters/sensor-master/payload-mapping' },
           { label: 'Sensor Types', route: '/administration/configuration/masters/sensor-master/sensor-types' }
         ]
-      }
+      },
+      {
+        label: 'General Master',
+        children: [
+          { label: 'Document', route: '/administration/configuration/masters/general-master/document' },
+          { label: 'Location', route: '/administration/configuration/masters/general-master/location' },
+          { label: 'Monitor', route: '/administration/configuration/masters/general-master/monitor' },
+          { label: 'Organization', route: '/administration/configuration/masters/general-master/organization' },
+          { label: 'Parameter', route: '/administration/configuration/masters/general-master/parameter' },
+          { label: 'Severity', route: '/administration/configuration/masters/general-master/severity' },
+          { label: 'Status', route: '/administration/configuration/masters/general-master/status' },
+          { label: 'Unit', route: '/administration/configuration/masters/general-master/unit' }
+        ]
+      },
     ]
   },
     {

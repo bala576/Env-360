@@ -1,11 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { GenericTable, TableColumn } from '../../../../../shared/generic-table/generic-table';
 import { GenericPopup } from '../../../../../shared/generic-popup/generic-popup';
 import { FormToggle } from '../../../../../shared/form-toggle/form-toggle';
 import { Breadcrumb, BreadcrumbItem } from '../../../../../shared/breadcrumb/breadcrumb';
 import { ADMIN_TOP_DROPDOWN, CONFIGURATION_DROPDOWN, SENSOR_MASTER_DROPDOWN } from '../../../../../shared/layout/sidebar/admin-nav.data';
+import { CategoriesStore } from '../../environment-master/categories/categories-store';
+
+const DEVICE_PROFILE_PAGE = '/administration/configuration/masters/sensor-master/device-profile';
+const CATEGORIES_PAGE = '/administration/configuration/masters/environment-master/categories';
 
 interface DeviceProfileRow {
   id: string;
@@ -46,7 +51,9 @@ export class DeviceProfile {
     { label: 'Device Profile' },
   ];
 
-  environmentCategories = ['Air Quality', 'Water Quality', 'Noise', 'Energy', 'Waste'];
+  get environmentCategories(): string[] {
+    return this.categoriesStore.rows.map(r => r.name);
+  }
 
   columns: TableColumn[] = [
     { key: 'profileCode', label: 'Profile Code' },
@@ -180,7 +187,7 @@ export class DeviceProfile {
   editingRow: DeviceProfileRow | null = null;
   form: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private categoriesStore: CategoriesStore, private router: Router) {
     this.form = this.fb.group({
       profileCode: ['', Validators.required],
       profileName: ['', Validators.required],
@@ -241,5 +248,20 @@ export class DeviceProfile {
 
   deleteRow(row: DeviceProfileRow): void {
     this.rows = this.rows.filter(r => r.id !== row.id);
+  }
+
+  isEditCategoryDisabled(): boolean {
+    return !this.editingRow;
+  }
+
+  addCategory(): void {
+    this.router.navigate([CATEGORIES_PAGE], { queryParams: { action: 'add', returnUrl: DEVICE_PROFILE_PAGE } });
+  }
+
+  editCategory(): void {
+    if (this.isEditCategoryDisabled()) return;
+    const category = this.form.value.environmentCategory;
+    if (!category) return;
+    this.router.navigate([CATEGORIES_PAGE], { queryParams: { action: 'edit', value: category, returnUrl: DEVICE_PROFILE_PAGE } });
   }
 }

@@ -31,6 +31,7 @@ export class CreateRole implements OnInit {
   breadcrumb: BreadcrumbItem[] = [];
   isEdit = false;
   roleId: string | null = null;
+  returnUrl = '/role';
 
   form: FormGroup;
   access: RoleAccessEntry[] = ACCESS_MODULES.map(module => ({ module, view: false, edit: false }));
@@ -56,6 +57,7 @@ export class CreateRole implements OnInit {
   ngOnInit(): void {
     this.roleId = this.route.snapshot.paramMap.get('roleId');
     this.isEdit = !!this.roleId;
+    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/role';
 
     this.breadcrumb = [
       { label: 'Administration', children: ADMIN_TOP_DROPDOWN },
@@ -95,7 +97,7 @@ export class CreateRole implements OnInit {
   }
 
   cancel(): void {
-    this.router.navigate(['/role']);
+    this.router.navigate([this.returnUrl]);
   }
 
   save(): void {

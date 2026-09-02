@@ -1,11 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { GenericTable, TableColumn } from '../../../../../shared/generic-table/generic-table';
 import { GenericPopup } from '../../../../../shared/generic-popup/generic-popup';
 import { FormToggle } from '../../../../../shared/form-toggle/form-toggle';
 import { Breadcrumb, BreadcrumbItem } from '../../../../../shared/breadcrumb/breadcrumb';
 import { ADMIN_TOP_DROPDOWN, CONFIGURATION_DROPDOWN, ENVIRONMENT_MASTER_DROPDOWN } from '../../../../../shared/layout/sidebar/admin-nav.data';
+import { CategoriesStore } from '../categories/categories-store';
+
+const PARAMETER_GROUPS_PAGE = '/administration/configuration/masters/environment-master/parameter-groups';
+const CATEGORIES_PAGE = '/administration/configuration/masters/environment-master/categories';
 
 interface ParameterGroupRow {
   id: string;
@@ -57,14 +62,17 @@ export class ParameterGroups {
     { id: 'PGRP-005', code: 'PG-POWER', name: 'Power Group', environmentCategory: 'Energy', environmentType: 'Device Health', description: 'Device power and connectivity parameters', parameters: 'Battery Level, Signal Strength', primaryParameter: 'Battery Level', secondaryParameters: 'Signal Strength', defaultUnit: '%', defaultSamplingInterval: '10 min', defaultAggregation: 'Last', status: 'Inactive', displayOrder: 5 },
   ];
 
-  environmentCategories = ['Air Quality', 'Water Quality', 'Noise', 'Energy', 'Waste'];
   aggregationMethods = ['Average', 'Sum', 'Min', 'Max', 'Last'];
+
+  get environmentCategories(): string[] {
+    return this.categoriesStore.rows.map(r => r.name);
+  }
 
   popupOpen = false;
   editingRow: ParameterGroupRow | null = null;
   form: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private categoriesStore: CategoriesStore, private router: Router) {
     this.form = this.fb.group({
       code: ['', Validators.required],
       name: ['', Validators.required],
@@ -118,5 +126,20 @@ export class ParameterGroups {
 
   deleteRow(row: ParameterGroupRow): void {
     this.rows = this.rows.filter(r => r.id !== row.id);
+  }
+
+  isEditCategoryDisabled(): boolean {
+    return !this.editingRow;
+  }
+
+  addCategory(): void {
+    this.router.navigate([CATEGORIES_PAGE], { queryParams: { action: 'add', returnUrl: PARAMETER_GROUPS_PAGE } });
+  }
+
+  editCategory(): void {
+    if (this.isEditCategoryDisabled()) return;
+    const category = this.form.value.environmentCategory;
+    if (!category) return;
+    this.router.navigate([CATEGORIES_PAGE], { queryParams: { action: 'edit', value: category, returnUrl: PARAMETER_GROUPS_PAGE } });
   }
 }

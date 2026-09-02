@@ -1,11 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { GenericTable, TableColumn } from '../../../../../shared/generic-table/generic-table';
 import { GenericPopup } from '../../../../../shared/generic-popup/generic-popup';
 import { FormToggle } from '../../../../../shared/form-toggle/form-toggle';
 import { Breadcrumb, BreadcrumbItem } from '../../../../../shared/breadcrumb/breadcrumb';
 import { ADMIN_TOP_DROPDOWN, CONFIGURATION_DROPDOWN, GENERAL_MASTER_DROPDOWN } from '../../../../../shared/layout/sidebar/admin-nav.data';
+import { CategoriesStore } from '../../environment-master/categories/categories-store';
+
+const MONITOR_PAGE = '/administration/configuration/masters/general-master/monitor';
+const CATEGORIES_PAGE = '/administration/configuration/masters/environment-master/categories';
 
 interface MonitoringPointTypeRow {
   id: string;
@@ -51,21 +56,24 @@ export class Monitor {
 
   rows: MonitoringPointTypeRow[] = [
     { id: 'MON-001', code: 'MPT-AIR', name: 'Ambient Air Monitoring', environmentCategory: 'Air Quality', environmentType: 'Indoor Air', description: 'Monitors indoor ambient air conditions', icon: '', defaultParameterGroup: 'Climate', expectedSensorTypes: 'Temperature, Humidity, CO2', criticality: 'High', indoorOutdoor: 'Indoor', status: 'Active', displayOrder: 1 },
-    { id: 'MON-002', code: 'MPT-GAS', name: 'Manhole Gas Monitoring', environmentCategory: 'Gas', environmentType: 'Confined Space', description: 'Monitors hazardous gas levels in confined spaces', icon: '', defaultParameterGroup: 'Gas Safety', expectedSensorTypes: 'H2S, CH4, O2', criticality: 'Critical', indoorOutdoor: 'Outdoor', status: 'Active', displayOrder: 2 },
-    { id: 'MON-003', code: 'MPT-COLD', name: 'Cold Storage Monitoring', environmentCategory: 'Climate', environmentType: 'Cold Chain', description: 'Monitors cold storage temperature and humidity', icon: '', defaultParameterGroup: 'Climate', expectedSensorTypes: 'Temperature, Humidity', criticality: 'High', indoorOutdoor: 'Indoor', status: 'Active', displayOrder: 3 },
-    { id: 'MON-004', code: 'MPT-WATER', name: 'Water Quality Monitoring', environmentCategory: 'Water', environmentType: 'Water Quality', description: 'Monitors water quality parameters', icon: '', defaultParameterGroup: 'Water Quality', expectedSensorTypes: 'pH, Turbidity, Dissolved Oxygen', criticality: 'Medium', indoorOutdoor: 'Outdoor', status: 'Active', displayOrder: 4 },
-    { id: 'MON-005', code: 'MPT-WEATHER', name: 'Outdoor Weather Station', environmentCategory: 'Weather', environmentType: 'Meteorological', description: 'Tracks outdoor weather conditions', icon: '', defaultParameterGroup: 'Weather', expectedSensorTypes: 'Wind Speed, Rainfall, Temperature', criticality: 'Low', indoorOutdoor: 'Outdoor', status: 'Inactive', displayOrder: 5 },
+    { id: 'MON-002', code: 'MPT-GAS', name: 'Manhole Gas Monitoring', environmentCategory: 'Air Quality', environmentType: 'Confined Space', description: 'Monitors hazardous gas levels in confined spaces', icon: '', defaultParameterGroup: 'Gas Safety', expectedSensorTypes: 'H2S, CH4, O2', criticality: 'Critical', indoorOutdoor: 'Outdoor', status: 'Active', displayOrder: 2 },
+    { id: 'MON-003', code: 'MPT-COLD', name: 'Cold Storage Monitoring', environmentCategory: 'Energy', environmentType: 'Cold Chain', description: 'Monitors cold storage temperature and humidity', icon: '', defaultParameterGroup: 'Climate', expectedSensorTypes: 'Temperature, Humidity', criticality: 'High', indoorOutdoor: 'Indoor', status: 'Active', displayOrder: 3 },
+    { id: 'MON-004', code: 'MPT-WATER', name: 'Water Quality Monitoring', environmentCategory: 'Water Quality', environmentType: 'Water Quality', description: 'Monitors water quality parameters', icon: '', defaultParameterGroup: 'Water Quality', expectedSensorTypes: 'pH, Turbidity, Dissolved Oxygen', criticality: 'Medium', indoorOutdoor: 'Outdoor', status: 'Active', displayOrder: 4 },
+    { id: 'MON-005', code: 'MPT-WEATHER', name: 'Outdoor Weather Station', environmentCategory: 'Energy', environmentType: 'Meteorological', description: 'Tracks outdoor weather conditions', icon: '', defaultParameterGroup: 'Weather', expectedSensorTypes: 'Wind Speed, Rainfall, Temperature', criticality: 'Low', indoorOutdoor: 'Outdoor', status: 'Inactive', displayOrder: 5 },
   ];
 
-  environmentCategories = ['Air Quality', 'Gas', 'Climate', 'Water', 'Weather'];
   criticalityLevels = ['Low', 'Medium', 'High', 'Critical'];
   indoorOutdoorOptions = ['Indoor', 'Outdoor', 'Both'];
+
+  get environmentCategories(): string[] {
+    return this.categoriesStore.rows.map(r => r.name);
+  }
 
   popupOpen = false;
   editingRow: MonitoringPointTypeRow | null = null;
   form: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private categoriesStore: CategoriesStore, private router: Router) {
     this.form = this.fb.group({
       code: ['', Validators.required],
       name: ['', Validators.required],
@@ -118,5 +126,20 @@ export class Monitor {
 
   deleteRow(row: MonitoringPointTypeRow): void {
     this.rows = this.rows.filter(r => r.id !== row.id);
+  }
+
+  isEditCategoryDisabled(): boolean {
+    return !this.editingRow;
+  }
+
+  addCategory(): void {
+    this.router.navigate([CATEGORIES_PAGE], { queryParams: { action: 'add', returnUrl: MONITOR_PAGE } });
+  }
+
+  editCategory(): void {
+    if (this.isEditCategoryDisabled()) return;
+    const category = this.form.value.environmentCategory;
+    if (!category) return;
+    this.router.navigate([CATEGORIES_PAGE], { queryParams: { action: 'edit', value: category, returnUrl: MONITOR_PAGE } });
   }
 }

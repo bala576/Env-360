@@ -105,6 +105,44 @@ html, body {
   padding-right: 36px;
 }
 
+/* reference select field (a select whose options come from another master) with add/edit icons beside it */
+
+.reference-field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reference-field-row select {
+  flex: 1;
+}
+
+.master-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #7030a0;
+  background: #ffffff;
+  color: #7030a0;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.master-icon-btn:hover:not(:disabled) {
+  background: #7030a0;
+  color: #ffffff;
+}
+
+.master-icon-btn:disabled {
+  border-color: #d1d5db;
+  color: #d1d5db;
+  cursor: not-allowed;
+}
+
 .btn-primary,
 .btn-secondary {
   border: none;

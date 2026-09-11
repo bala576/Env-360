@@ -26,6 +26,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 32px;
 }
 
 .tree-actions {
@@ -33,6 +34,28 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+}
+
+.tree-add-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 1.5px solid #7030a0;
+  background: #fff;
+  color: #7030a0;
+  cursor: pointer;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.tree-add-pill:hover {
+  background: #faf5ff;
 }
 
 .tree-icon-btn {
@@ -43,15 +66,16 @@
   background: transparent;
   color: #7030a0;
   cursor: pointer;
+  width: 24px;
+  height: 24px;
   padding: 0;
+  border-radius: 6px;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .tree-icon-btn:hover {
-  opacity: 0.7;
-}
-
-.tree-icon-btn.danger {
-  color: #ef4444;
+  background: #faf5ff;
 }
 
 .tree-chevron-btn {

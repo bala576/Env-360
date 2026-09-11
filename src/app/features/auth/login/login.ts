@@ -9,9 +9,6 @@ interface LoginData {
 
 }
 
-const HARDCODED_EMAIL = 'admin@test.com';
-const HARDCODED_PASSWORD = 'admin123';
-
 @Component({
   selector: 'app-login',
   imports: [CommonModule,FormsModule],
@@ -48,7 +45,7 @@ export class Login {
     this.popupVisible = false;
     this.isLoading = true;
 
-    if (this.credentials.email !== HARDCODED_EMAIL || this.credentials.password !== HARDCODED_PASSWORD) {
+    if (!this.credentials.email || !this.credentials.password) {
       this.isLoading = false;
       this.showPopup('Invalid email or password.', 'Error', 'error');
       return;

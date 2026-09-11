@@ -13,6 +13,8 @@
           *ngFor="let root of projects"
           [node]="root"
           [depth]="0"
+          [maxDepth]="maxDepth"
+          [levelNames]="levelNames"
           [selectedId]="selectedNode?.id ?? null"
           (select)="selectNode($event)"
           (addChild)="onAddChild($event)"
@@ -38,14 +40,159 @@
         <input type="text" formControlName="name" placeholder="e.g. {{ popupLevelLabel }} name" />
       </div>
 
-      <div class="field">
-        <label>Latitude</label>
-        <input type="number" formControlName="latitude" step="0.0001" />
+      <div class="field span-2">
+        <label>Description</label>
+        <textarea formControlName="description" rows="2"></textarea>
       </div>
 
+      <ng-container *ngIf="popupDepth === 0">
+        <div class="field">
+          <label>Week Start</label>
+          <select formControlName="weekStart">
+            <option *ngFor="let day of weekDays" [value]="day">{{ day }}</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Week End</label>
+          <select formControlName="weekEnd">
+            <option *ngFor="let day of weekDays" [value]="day">{{ day }}</option>
+          </select>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="popupDepth === 1">
+        <div class="field">
+          <label>Time Zone</label>
+          <select formControlName="timeZone">
+            <option *ngFor="let tz of timeZones" [value]="tz">{{ tz }}</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Country Code</label>
+          <input type="text" formControlName="countryCode" placeholder="e.g. IN" />
+        </div>
+
+        <div class="field">
+          <label>Latitude</label>
+          <input type="number" formControlName="latitude" step="0.0001" />
+        </div>
+
+        <div class="field">
+          <label>Longitude</label>
+          <input type="number" formControlName="longitude" step="0.0001" />
+        </div>
+
+        <div class="field">
+          <label>Zoom Level</label>
+          <input type="number" formControlName="zoomLevel" min="1" max="20" />
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="popupDepth === 2">
+        <div class="field">
+          <label>Outdoor Map</label>
+          <select formControlName="outdoorMap">
+            <option *ngFor="let opt of outdoorMapOptions" [value]="opt">{{ opt }}</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Latitude</label>
+          <input type="number" formControlName="latitude" step="0.0001" />
+        </div>
+
+        <div class="field">
+          <label>Longitude</label>
+          <input type="number" formControlName="longitude" step="0.0001" />
+        </div>
+
+        <div class="field">
+          <label>Zoom Level</label>
+          <input type="number" formControlName="zoomLevel" min="1" max="20" />
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="popupDepth === 3">
+        <div class="field">
+          <label>Latitude</label>
+          <input type="number" formControlName="latitude" step="0.0001" />
+        </div>
+
+        <div class="field">
+          <label>Longitude</label>
+          <input type="number" formControlName="longitude" step="0.0001" />
+        </div>
+
+        <div class="field">
+          <label>Zoom Level</label>
+          <input type="number" formControlName="zoomLevel" min="1" max="20" />
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="popupDepth === 4">
+        <div class="field span-2">
+          <label>Upload Map</label>
+          <input type="file" accept="image/*" (change)="onMapImageSelected($event)" />
+          <img *ngIf="form.get('mapImage')?.value as mapImage" [src]="mapImage" class="map-image-preview" alt="Floor map preview" />
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="popupDepth === 5">
+        <div class="field span-2">
+          <label>Upload Map</label>
+          <input type="file" accept="image/*" (change)="onMapImageSelected($event)" />
+          <img *ngIf="form.get('mapImage')?.value as mapImage" [src]="mapImage" class="map-image-preview" alt="Zone map preview" />
+        </div>
+
+        <div class="field">
+          <label>Top Zone</label>
+          <input type="text" formControlName="topZone" />
+        </div>
+
+        <div class="field">
+          <label>Priority</label>
+          <input type="number" formControlName="priority" min="1" />
+        </div>
+
+        <div class="field">
+          <label>Exit</label>
+          <input type="text" formControlName="exit" />
+        </div>
+
+        <div class="field">
+          <label>Zoom Level</label>
+          <input type="number" formControlName="zoomLevel" min="1" max="20" />
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="popupDepth === 6">
+        <div class="field">
+          <label>Top Zone</label>
+          <input type="text" formControlName="topZone" />
+        </div>
+
+        <div class="field span-2">
+          <label>Upload Map</label>
+          <input type="file" accept="image/*" (change)="onMapImageSelected($event)" />
+          <img *ngIf="form.get('mapImage')?.value as mapImage" [src]="mapImage" class="map-image-preview" alt="Sub Zone map preview" />
+        </div>
+
+        <div class="field">
+          <label>Priority</label>
+          <input type="number" formControlName="priority" min="1" />
+        </div>
+
+        <div class="field">
+          <label>Exit</label>
+          <input type="text" formControlName="exit" />
+        </div>
+      </ng-container>
+
       <div class="field">
-        <label>Longitude</label>
-        <input type="number" formControlName="longitude" step="0.0001" />
+        <label>Status</label>
+        <app-form-toggle formControlName="status"></app-form-toggle>
       </div>
     </form>
 

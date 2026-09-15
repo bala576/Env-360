@@ -33,7 +33,7 @@
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </ng-container>
-    <span class="tree-chevron-btn" *ngIf="node.kind !== 'outdoor'" [class.open]="node.expanded">
+    <span class="tree-chevron-btn" [class.open]="node.expanded" [class.hidden]="node.kind === 'outdoor'">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </span>
   </span>

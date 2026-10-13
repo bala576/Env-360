@@ -1,0 +1,331 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<!-- Grey office plan shared by the heatmap and tracking cards -->
+<ng-template #plan let-w="w" let-h="h">
+  <svg:rect [attr.width]="w" [attr.height]="h" fill="#f1f2f4"/>
+  <svg:g fill="#ffffff" stroke="#c7cbd1" stroke-width="1">
+    <svg:rect x="8" y="8" [attr.width]="w * 0.28" [attr.height]="h * 0.36"/>
+    <svg:rect [attr.x]="w * 0.3 + 12" y="8" [attr.width]="w * 0.22" [attr.height]="h * 0.3"/>
+    <svg:rect [attr.x]="w * 0.56 + 12" y="8" [attr.width]="w * 0.4 - 20" [attr.height]="h * 0.24"/>
+    <svg:rect x="8" [attr.y]="h * 0.58" [attr.width]="w * 0.2" [attr.height]="h * 0.4 - 8"/>
+    <svg:rect [attr.x]="w * 0.24" [attr.y]="h * 0.68" [attr.width]="w * 0.3" [attr.height]="h * 0.3 - 8"/>
+    <svg:rect [attr.x]="w * 0.6" [attr.y]="h * 0.56" [attr.width]="w * 0.36" [attr.height]="h * 0.42 - 8"/>
+  </svg:g>
+  <svg:g fill="#e2e5e9">
+    <svg:rect *ngFor="let i of [0, 1, 2, 3]" [attr.x]="w * 0.62 + i * w * 0.085" [attr.y]="h * 0.64" [attr.width]="w * 0.06" [attr.height]="h * 0.08" rx="1"/>
+    <svg:rect *ngFor="let i of [0, 1, 2]" [attr.x]="16 + i * w * 0.08" y="18" [attr.width]="w * 0.05" [attr.height]="h * 0.08" rx="1"/>
+  </svg:g>
+  <svg:g fill="#8fbf80">
+    <svg:circle *ngFor="let t of [[0.27, 0.48], [0.56, 0.44], [0.98, 0.4], [0.03, 0.5], [0.58, 0.95]]" [attr.cx]="w * t[0]" [attr.cy]="h * t[1]" r="4"/>
+  </svg:g>
+</ng-template>
+
+<div class="maps">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <h1>Maps &amp; Digital Twin</h1>
+      <p>Visualize your sites with interactive maps and 3D digital twin for real-time monitoring and smarter operations.</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-primary" [class.off]="!is3d" (click)="set3d(!is3d)">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'cube', size: 16 }"></ng-container>
+        {{ is3d ? '3D View' : '2D View' }}
+      </button>
+      <div class="layer-wrap">
+        <button type="button" class="btn-primary" (click)="layerMenuOpen = !layerMenuOpen" [attr.aria-expanded]="layerMenuOpen">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'layers', size: 16 }"></ng-container>
+          Layer Controls
+        </button>
+        <div class="menu" *ngIf="layerMenuOpen">
+          <span class="menu-title">Map layer</span>
+          <label *ngFor="let l of layers" class="menu-option">
+            <input type="radio" name="map-layer" [checked]="layer === l" (change)="setLayer(l)" />{{ l }}
+          </label>
+          <span class="menu-title">Display</span>
+          <label class="menu-option"><input type="checkbox" [(ngModel)]="showLabels" />Hotspot labels</label>
+          <label class="menu-option"><input type="checkbox" [(ngModel)]="showTrees" />Landscaping</label>
+        </div>
+      </div>
+      <button type="button" class="btn-primary" (click)="toggleFullscreen()">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: fullscreen ? 'close' : 'expand', size: 16 }"></ng-container>
+        {{ fullscreen ? 'Exit Full Screen' : 'Full Screen' }}
+      </button>
+    </div>
+  </header>
+
+  <nav class="page-tabs">
+    <button type="button" *ngFor="let tab of tabs" [class.active]="tab === activeTab" (click)="activeTab = tab">{{ tab }}</button>
+  </nav>
+
+  <ng-container *ngIf="activeTab === tabs[0]; else comingSoon">
+
+    <section class="row-top">
+      <!-- Site map -->
+      <div class="card map-card" #mapCard [class.fs]="fullscreen">
+        <div class="map-box" #mapBox [class.dragging]="dragging">
+          <svg class="site-map" [attr.viewBox]="viewBox" [attr.preserveAspectRatio]="aspectMode" [class.pannable]="zoom > 1"
+            (pointerdown)="onPointerDown($event)" (pointermove)="onPointerMove($event)" (pointerup)="onPointerUp()" (pointercancel)="onPointerUp()">
+            <defs>
+              <radialGradient id="glass" cx="0.4" cy="0.35" r="0.7">
+                <stop offset="0" stop-color="#e0f2fe"/>
+                <stop offset="0.6" stop-color="#7dd3fc"/>
+                <stop offset="1" stop-color="#0284c7"/>
+              </radialGradient>
+              <radialGradient id="mapHeat">
+                <stop offset="0" stop-color="#ef4444" stop-opacity="0.75"/>
+                <stop offset="0.45" stop-color="#f59e0b" stop-opacity="0.45"/>
+                <stop offset="1" stop-color="#22c55e" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- Ground, roads and plaza -->
+            <rect [attr.width]="map.width" [attr.height]="map.height" fill="#c5cfb9"/>
+            <g fill="#dedad2">
+              <rect x="0" y="214" [attr.width]="map.width" height="22"/>
+              <rect x="268" y="0" width="14" [attr.height]="map.height"/>
+              <rect x="494" y="0" width="14" [attr.height]="map.height"/>
+            </g>
+            <circle cx="415" cy="303" r="108" fill="#ebe6dc"/>
+            <path d="M330 390q85 26 170 0l-10 22h-150z" fill="#38bdf8" opacity="0.7"/>
+            <ellipse cx="415" cy="395" rx="30" ry="8" fill="#7dd3fc"/>
+            <line x1="0" x2="800" y1="225" y2="225" stroke="#f8fafc" stroke-width="1" stroke-dasharray="10 8"/>
+            <g *ngIf="showTrees" fill="#4f8a46">
+              <circle *ngFor="let t of trees" [attr.cx]="t.x" [attr.cy]="t.y" [attr.r]="t.r"/>
+            </g>
+
+            <!-- Buildings -->
+            <g *ngFor="let b of buildings" class="building" [class.selected]="b === selected" (click)="selectBuilding(b)">
+              <ng-container *ngIf="b.shape !== 'round'; else round">
+                <ng-container *ngIf="is3d">
+                  <rect class="shadow" [attr.x]="b.x + 10" [attr.y]="b.y + 6" [attr.width]="b.w" [attr.height]="b.h" fill="#000000" opacity="0.18"/>
+                  <rect class="wall" [attr.x]="b.x" [attr.y]="b.y + b.h - b.height" [attr.width]="b.w" [attr.height]="b.height" [attr.fill]="b.wall"/>
+                  <ng-container *ngIf="layer === 'Floors' && b.floors">
+                    <line *ngFor="let y of floorLines(b)" [attr.x1]="b.x" [attr.x2]="b.x + b.w" [attr.y1]="y" [attr.y2]="y"
+                      stroke="#ffffff" stroke-opacity="0.6" stroke-width="1"/>
+                  </ng-container>
+                </ng-container>
+                <g class="roof" [style.transform]="'translateY(' + -lift(b) + 'px)'">
+                  <rect [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.w" [attr.height]="b.h" [attr.fill]="b.roof" class="roof-top"/>
+                  <ng-container *ngIf="b.key === 'carpark'; else roofDetail">
+                    <g stroke="#f1f5f9" stroke-width="0.8">
+                      <line *ngFor="let row of [0, 1, 2, 3]" [attr.x1]="b.x + 8" [attr.x2]="b.x + b.w - 8" [attr.y1]="b.y + 30 + row * 34" [attr.y2]="b.y + 30 + row * 34"/>
+                    </g>
+                    <rect *ngFor="let c of cars" [attr.x]="c.x" [attr.y]="c.y" width="8" height="13" rx="2" [attr.fill]="c.color" stroke="#0f172a" stroke-width="0.4"/>
+                  </ng-container>
+                  <ng-template #roofDetail>
+                    <g fill="#ffffff" opacity="0.55">
+                      <rect *ngFor="let i of [0, 1, 2]" [attr.x]="b.x + 16" [attr.y]="b.y + 18 + i * (b.h - 36) / 3" [attr.width]="b.w * 0.45" [attr.height]="(b.h - 36) / 5" rx="2"/>
+                    </g>
+                    <g fill="#9ca3af">
+                      <rect *ngFor="let i of [0, 1, 2]" [attr.x]="b.x + b.w * 0.65 + i * 18" [attr.y]="b.y + 20" width="12" height="12" rx="2"/>
+                      <circle *ngFor="let i of [0, 1]" [attr.cx]="b.x + b.w * 0.7 + i * 26" [attr.cy]="b.y + b.h - 26" r="8" fill="#cbd5e1" stroke="#94a3b8"/>
+                    </g>
+                  </ng-template>
+                  <rect *ngIf="layer === 'Zones'" [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.w" [attr.height]="b.h"
+                    [attr.fill]="heatColor(b.occupancy / 100)" opacity="0.35"/>
+                  <rect class="outline" [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.w" [attr.height]="b.h" fill="none"/>
+                </g>
+              </ng-container>
+
+              <ng-template #round>
+                <ng-container *ngIf="is3d">
+                  <circle [attr.cx]="b.x + b.w / 2 + 8" [attr.cy]="b.y + b.h / 2 + 6" [attr.r]="b.w / 2" fill="#000000" opacity="0.16"/>
+                  <rect [attr.x]="b.x" [attr.y]="b.y + b.h / 2 - b.height" [attr.width]="b.w" [attr.height]="b.height" [attr.fill]="b.wall"/>
+                  <circle [attr.cx]="b.x + b.w / 2" [attr.cy]="b.y + b.h / 2" [attr.r]="b.w / 2" [attr.fill]="b.wall"/>
+                </ng-container>
+                <g class="roof" [style.transform]="'translateY(' + -lift(b) + 'px)'">
+                  <circle [attr.cx]="b.x + b.w / 2" [attr.cy]="b.y + b.h / 2" [attr.r]="b.w / 2" fill="url(#glass)"/>
+                  <g stroke="#ffffff" stroke-opacity="0.7" stroke-width="1">
+                    <line *ngFor="let a of [0, 30, 60, 90, 120, 150]" [attr.x1]="b.x + b.w / 2" [attr.y1]="b.y + b.h / 2 - b.w / 2"
+                      [attr.x2]="b.x + b.w / 2" [attr.y2]="b.y + b.h / 2 + b.w / 2" [attr.transform]="'rotate(' + a + ' ' + (b.x + b.w / 2) + ' ' + (b.y + b.h / 2) + ')'"/>
+                    <circle [attr.cx]="b.x + b.w / 2" [attr.cy]="b.y + b.h / 2" [attr.r]="b.w / 4" fill="none"/>
+                  </g>
+                  <circle *ngIf="layer === 'Zones'" [attr.cx]="b.x + b.w / 2" [attr.cy]="b.y + b.h / 2" [attr.r]="b.w / 2"
+                    [attr.fill]="heatColor(b.occupancy / 100)" opacity="0.35"/>
+                  <circle class="outline" [attr.cx]="b.x + b.w / 2" [attr.cy]="b.y + b.h / 2" [attr.r]="b.w / 2" fill="none"/>
+                </g>
+              </ng-template>
+            </g>
+
+            <!-- Layer overlays -->
+            <g *ngIf="layer === 'Heatmaps'" class="no-hit">
+              <circle *ngFor="let b of buildings" [attr.cx]="b.x + b.w / 2" [attr.cy]="b.y + b.h / 2 - lift(b)" [attr.r]="40 + b.occupancy * 0.7" fill="url(#mapHeat)"/>
+            </g>
+            <g class="no-hit">
+              <ng-container *ngFor="let p of overlay">
+                <circle *ngIf="layer === 'Sensors'" [attr.cx]="p.x" [attr.cy]="p.y - lift(p.building)" r="7" [attr.fill]="p.color" opacity="0.2"/>
+                <circle [attr.cx]="p.x" [attr.cy]="p.y - lift(p.building)" r="4" [attr.fill]="p.color" stroke="#ffffff" stroke-width="1.2"
+                  [attr.opacity]="p.dim ? 0.15 : 1"/>
+              </ng-container>
+            </g>
+          </svg>
+
+          <!-- Hotspot labels -->
+          <ng-container *ngIf="showLabels">
+            <button type="button" *ngFor="let b of buildings" class="hotspot" [class.active]="b === selected" [class.flip]="hotspot(b).flip"
+              [style.left.px]="hotspot(b).left" [style.top.px]="hotspot(b).top" (click)="selectBuilding(b)">
+              <span class="hs-icon" [style.background]="b.color">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: b.icon, size: 18 }"></ng-container>
+              </span>
+              <span class="hs-card">
+                <strong>{{ b.name }}</strong>
+                <span>{{ layer === 'Floors' ? (b.floors ? b.floors + ' floors' : 'Open atrium') : layer === 'Zones' || layer === 'Heatmaps' ? 'Occupancy: ' + b.occupancy + '%' : b.stat }}</span>
+              </span>
+              <span class="hs-arrow"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevronRight', size: 13 }"></ng-container></span>
+            </button>
+          </ng-container>
+        </div>
+
+          <app-dropdown class="view-select" [options]="siteViewOptions" [(ngModel)]="viewChoice" (ngModelChange)="onViewChoice()"></app-dropdown>
+
+          <div class="map-controls">
+            <button type="button" class="compass" (click)="resetView()" aria-label="reset view" title="Reset view">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                <path d="M12 3l3 9h-6z" fill="#ef4444"/><path d="M12 21l-3-9h6z" fill="#94a3b8"/>
+                <text x="12" y="2.6" text-anchor="middle" font-size="4" font-weight="700" fill="#1e1b4b">N</text>
+              </svg>
+            </button>
+            <button type="button" (click)="setZoom(0.5)" [disabled]="zoom >= 3" aria-label="zoom in">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 16 }"></ng-container>
+            </button>
+            <button type="button" (click)="setZoom(-0.5)" [disabled]="zoom <= 1" aria-label="zoom out">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'minus', size: 16 }"></ng-container>
+            </button>
+            <button type="button" class="mode" (click)="set3d(!is3d)" [attr.aria-label]="is3d ? 'switch to 2D' : 'switch to 3D'">{{ is3d ? '2D' : '3D' }}</button>
+            <button type="button" (click)="set3d(true); resetView()" aria-label="default 3D view">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'cube', size: 16 }"></ng-container>
+            </button>
+          </div>
+
+          <nav class="layer-bar">
+            <button type="button" *ngFor="let l of layers" [class.active]="l === layer" (click)="setLayer(l)">{{ l }}</button>
+          </nav>
+      </div>
+
+      <div class="side-col">
+        <!-- Site overview -->
+        <section class="card">
+          <div class="card-head"><h2>Site Overview</h2></div>
+          <div class="stat-grid">
+            <div class="stat" *ngFor="let s of siteStats">
+              <span class="stat-icon" [ngClass]="'tone-' + s.tone"><ng-container *ngTemplateOutlet="icon; context: { $implicit: s.icon, size: 20 }"></ng-container></span>
+              <div>
+                <span class="stat-label">{{ s.label }}</span>
+                <strong>{{ s.value }}</strong>
+                <span class="stat-sub" *ngIf="s.sub">{{ s.sub }}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Occupancy heatmap -->
+        <section class="card heat-card">
+          <div class="card-head">
+            <h2>Occupancy Heatmap</h2>
+            <app-dropdown class="range" [options]="floorOptions" [(ngModel)]="floor"></app-dropdown>
+          </div>
+          <svg class="plan" viewBox="0 0 300 200">
+            <defs>
+              <radialGradient *ngFor="let s of heatSpots" [attr.id]="s.id">
+                <stop offset="0" [attr.stop-color]="s.color" stop-opacity="0.9"/>
+                <stop offset="0.5" [attr.stop-color]="s.level >= 0.7 ? '#f59e0b' : s.color" stop-opacity="0.45"/>
+                <stop offset="1" [attr.stop-color]="s.color" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <ng-container *ngTemplateOutlet="plan; context: { w: 300, h: 200 }"></ng-container>
+            <circle *ngFor="let s of heatSpots" [attr.cx]="s.x" [attr.cy]="s.y" [attr.r]="s.r" [attr.fill]="'url(#' + s.id + ')'" class="heat-spot"/>
+          </svg>
+          <div class="heat-legend">
+            <span><span class="swatch round" style="background:#22c55e"></span>Low</span>
+            <span><span class="swatch round" style="background:#f59e0b"></span>Medium</span>
+            <span><span class="swatch round" style="background:#ef4444"></span>High</span>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="row-bottom">
+      <!-- Multi-floor navigation -->
+      <div class="card">
+        <div class="card-head">
+          <h2>Multi-floor Navigation{{ selected && selected.floors ? ' - ' + selected.name : '' }}</h2>
+        </div>
+        <div class="floor-nav">
+          <ul class="floor-list">
+            <li *ngFor="let f of floors">
+              <button type="button" [class.active]="f === floor" (click)="floor = f"><span class="dot"></span>{{ f }}</button>
+            </li>
+          </ul>
+          <svg class="stack" viewBox="0 0 300 200">
+            <g *ngFor="let p of plates" class="plate" [class.active]="p.floor === floor" (click)="floor = p.floor">
+              <polygon [attr.points]="plate(p.cy)"/>
+              <path [attr.d]="'M60 ' + (p.cy - 8) + 'h120M95 ' + (p.cy - 20) + 'h120M140 ' + (p.cy - 26) + 'l-40 26M200 ' + (p.cy - 26) + 'l-40 26'" class="plate-lines"/>
+            </g>
+            <ng-container *ngFor="let p of plates">
+              <g *ngIf="p.floor === floor" class="plate-label">
+                <circle cx="262" [attr.cy]="p.cy - 14" r="4" fill="#6d28d9"/>
+                <rect x="212" [attr.y]="p.cy - 4" width="76" height="22" rx="6" fill="#6d28d9"/>
+                <text x="250" [attr.y]="p.cy + 11" text-anchor="middle">{{ floorLabel(p.floor) }}</text>
+              </g>
+            </ng-container>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Asset locations -->
+      <div class="card">
+        <div class="card-head">
+          <h2>Asset Locations</h2>
+          <app-dropdown class="range" [options]="assetFilterOptions" [(ngModel)]="assetFilter"></app-dropdown>
+        </div>
+        <ul class="asset-list">
+          <li *ngFor="let t of assetTypes">
+            <button type="button" [class.active]="t.name === highlightType" (click)="focusAsset(t)" [title]="'Show ' + t.name + ' on the map'">
+              <span class="swatch" [style.background]="t.color"></span>
+              <span class="asset-name">{{ t.name }}</span>
+              <strong>{{ t.count | number }}</strong>
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Live tracking -->
+      <div class="card">
+        <div class="card-head">
+          <h2>Live People &amp; Asset Tracking</h2>
+          <app-dropdown class="range sm" [options]="trackOptions" [(ngModel)]="trackFilter"></app-dropdown>
+        </div>
+        <div class="track-box">
+          <div class="track-inner">
+          <svg class="plan" viewBox="0 0 400 200">
+            <ng-container *ngTemplateOutlet="plan; context: { w: 400, h: 200 }"></ng-container>
+            <ng-container *ngFor="let c of crowd">
+              <circle *ngIf="trackFilter === 'all' || trackFilter === c.kind" [attr.cx]="c.x" [attr.cy]="c.y" r="3.2" [attr.fill]="trackColor(c.kind)" opacity="0.65"/>
+            </ng-container>
+            <g *ngFor="let t of tracked">
+              <polyline [attr.points]="t.trail" fill="none" [attr.stroke]="t.color" stroke-width="1.6" stroke-dasharray="3 4" stroke-linecap="round"/>
+              <circle [attr.cx]="t.pos.x" [attr.cy]="t.pos.y" r="9" [attr.fill]="t.color" opacity="0.2"/>
+              <circle [attr.cx]="t.pos.x" [attr.cy]="t.pos.y" r="5" [attr.fill]="t.color" stroke="#ffffff" stroke-width="1.5"/>
+            </g>
+          </svg>
+          <span *ngFor="let t of tracked" class="track-tag" [style.left.%]="t.left" [style.top.%]="t.top" [style.background]="t.color">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: t.kind === 'Asset' ? 'box' : 'people', size: 12 }"></ng-container>
+            {{ t.label }}
+          </span>
+          </div>
+          <span class="live-badge"><span class="pulse"></span>Live</span>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+
+  <ng-template #comingSoon>
+    <section class="card empty tab-empty">{{ activeTab }} view coming soon</section>
+  </ng-template>
+</div>

@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { BrandPanel } from '../brand-panel/brand-panel';
 
 interface LoginData {
   email: string;
@@ -11,7 +12,7 @@ interface LoginData {
 
 @Component({
   selector: 'app-login',
-  imports: [CommonModule,FormsModule],
+  imports: [CommonModule, FormsModule, BrandPanel],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
@@ -20,6 +21,8 @@ export class Login {
     credentials: LoginData = { email: '', password: '' };
   errorMsg = '';
   isLoading = false;
+  showPassword = false;
+  rememberMe = false;
   popupVisible = false;
   popupTitle = '';
   popupMessage = '';
@@ -38,6 +41,11 @@ export class Login {
     this.popupVisible = false;
   }
 
+  socialLogin(provider: 'Google' | 'Microsoft') {
+    this.router.navigate([provider === 'Google' ? '/google-signin' : '/microsoft-signin']);
+  }
+
+
   login() {
     if (this.isLoading) return;
 
@@ -51,12 +59,8 @@ export class Login {
       return;
     }
 
-    const fakeToken = 'demo-token-' + btoa(this.credentials.email + ':' + this.credentials.password);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('token', fakeToken);
-    }
     this.isLoading = false;
-    this.router.navigate(['/dashboard']);
+    this.router.navigate(['/otp'], { state: { email: this.credentials.email } });
   }
 
 }

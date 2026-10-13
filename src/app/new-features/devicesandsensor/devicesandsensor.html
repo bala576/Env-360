@@ -1,0 +1,280 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<!-- Small product illustration per device shape (40x40 viewBox) -->
+<ng-template #deviceArt let-shape let-size="size">
+  <svg class="device-art" [attr.width]="size || 28" [attr.height]="size || 28" viewBox="0 0 40 40" aria-hidden="true" [ngSwitch]="shape">
+    <g *ngSwitchCase="'box'">
+      <rect x="11" y="4" width="18" height="32" rx="4" fill="#eef1f6" stroke="#9aa3b2"/>
+      <rect x="15" y="9" width="10" height="6" rx="1.5" fill="#cbd5e1"/>
+      <circle cx="20" cy="26" r="2" fill="#94a3b8"/>
+    </g>
+    <g *ngSwitchCase="'puck'">
+      <ellipse cx="20" cy="27" rx="12" ry="6" fill="#cbd5e1"/>
+      <path d="M8 27V17a12 6 0 0124 0v10" fill="#eef1f6" stroke="#9aa3b2"/>
+      <ellipse cx="20" cy="17" rx="12" ry="6" fill="#f8fafc" stroke="#9aa3b2"/>
+    </g>
+    <g *ngSwitchCase="'parking'">
+      <path d="M5 24l6-10h18l6 10v4H5z" fill="#334155"/>
+      <rect x="5" y="24" width="30" height="5" rx="1.5" fill="#1e293b"/>
+      <circle cx="20" cy="19" r="2.5" fill="#94a3b8"/>
+    </g>
+    <g *ngSwitchCase="'tall'">
+      <rect x="14" y="2" width="12" height="28" rx="3" fill="#eef1f6" stroke="#9aa3b2"/>
+      <rect x="18.5" y="30" width="3" height="8" fill="#64748b"/>
+      <rect x="17" y="7" width="6" height="4" rx="1" fill="#cbd5e1"/>
+    </g>
+    <g *ngSwitchCase="'probe'">
+      <rect x="15" y="3" width="10" height="26" rx="5" fill="#334155"/>
+      <rect x="17" y="29" width="6" height="8" rx="2" fill="#1e293b"/>
+      <rect x="17.5" y="8" width="5" height="3" rx="1" fill="#64748b"/>
+    </g>
+    <g *ngSwitchCase="'display'">
+      <rect x="4" y="7" width="32" height="20" rx="2" fill="#1e293b"/>
+      <rect x="6" y="9" width="28" height="16" fill="#334155"/>
+      <rect x="17" y="27" width="6" height="5" fill="#64748b"/>
+      <rect x="12" y="32" width="16" height="2.5" rx="1" fill="#94a3b8"/>
+    </g>
+    <g *ngSwitchDefault>
+      <rect x="11" y="6" width="2" height="12" rx="1" fill="#94a3b8"/>
+      <rect x="27" y="6" width="2" height="12" rx="1" fill="#94a3b8"/>
+      <rect x="5" y="18" width="30" height="14" rx="3" fill="#eef1f6" stroke="#9aa3b2"/>
+      <circle cx="11" cy="25" r="1.5" fill="#22c55e"/>
+      <circle cx="16" cy="25" r="1.5" fill="#22c55e"/>
+    </g>
+  </svg>
+</ng-template>
+
+<div class="devices-page">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <h1>Devices &amp; Sensors</h1>
+      <p>Manage and monitor all devices, sensors and gateways across your Environment360 deployment.</p>
+    </div>
+    <div class="add-split">
+      <button type="button" class="add-main">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 16 }"></ng-container>
+        Add Device
+      </button>
+      <button type="button" class="add-caret" (click)="addMenuOpen = !addMenuOpen" aria-label="more add options" [attr.aria-expanded]="addMenuOpen">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 15 }"></ng-container>
+      </button>
+      <div class="menu" *ngIf="addMenuOpen">
+        <button type="button" (click)="addMenuOpen = false">Add Sensor</button>
+        <button type="button" (click)="addMenuOpen = false">Add Gateway</button>
+        <button type="button" (click)="addMenuOpen = false">Bulk Import (CSV)</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- KPIs -->
+  <section class="kpi-row">
+    <div class="card kpi" *ngFor="let k of kpis">
+      <span class="kpi-icon" [ngClass]="'tone-' + k.tone">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: k.icon, size: 24 }"></ng-container>
+      </span>
+      <div class="kpi-body">
+        <span class="kpi-value">{{ k.value }}</span>
+        <span class="kpi-label">{{ k.label }}</span>
+        <span class="kpi-change">
+          <span class="trend" [class.good]="k.good" [class.bad]="!k.good">{{ k.direction === 'up' ? '▲' : '▼' }} {{ k.change }}</span>
+          vs last month
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <div class="content">
+
+    <!-- Device table -->
+    <section class="card table-card">
+      <div class="table-toolbar">
+        <nav class="tabs">
+          <button type="button" *ngFor="let t of tabs" [class.active]="t.key === activeTab" (click)="setTab(t.key)">
+            {{ t.label }} ({{ t.count | number }})
+          </button>
+        </nav>
+        <div class="tools">
+          <label class="search">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 15 }"></ng-container>
+            <input type="text" placeholder="Search devices..." [(ngModel)]="search" (ngModelChange)="onFilterChange()" />
+          </label>
+          <div class="filter-wrap">
+            <button type="button" class="filter-btn" [class.active]="filterOpen || filterCount" (click)="filterOpen = !filterOpen" aria-label="filters">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'filter', size: 16 }"></ng-container>
+              <span class="badge" *ngIf="filterCount">{{ filterCount }}</span>
+            </button>
+            <div class="filter-panel" *ngIf="filterOpen">
+              <label class="field"><span>Status</span><app-dropdown [options]="statusOptions" [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+              <label class="field"><span>Battery</span><app-dropdown [options]="batteryOptions" [(ngModel)]="batteryFilter" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+              <button type="button" class="link-btn" (click)="clearFilters()" [disabled]="!filterCount">Clear filters</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-scroll" appDragScroll>
+        <table>
+          <thead>
+            <tr>
+              <th class="check"><input type="checkbox" [checked]="allPageChecked" (change)="toggleAllPage()" aria-label="select all" /></th>
+              <th>Device Name</th>
+              <th>Type</th>
+              <th>Category</th>
+              <th>Location</th>
+              <th>Status</th>
+              <th>Last Seen</th>
+              <th>Battery</th>
+              <th class="actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of pagedDevices" [class.active]="d === selected" (click)="selectDevice(d)">
+              <td class="check" (click)="$event.stopPropagation()">
+                <input type="checkbox" [checked]="checked.has(d.serial)" (change)="toggleRow(d)" [attr.aria-label]="'select ' + d.name" />
+              </td>
+              <td>
+                <div class="device-cell">
+                  <ng-container *ngTemplateOutlet="deviceArt; context: { $implicit: d.shape, size: 28 }"></ng-container>
+                  <div>
+                    <span class="device-name">{{ d.name }}</span>
+                    <span class="device-serial">{{ d.serial }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>{{ d.type }}</td>
+              <td>{{ d.category }}</td>
+              <td>{{ d.location }}</td>
+              <td><span class="status" [class.offline]="d.status === 'offline'"><span class="dot"></span>{{ d.status | titlecase }}</span></td>
+              <td>{{ d.lastSeen }}</td>
+              <td>
+                <span class="battery" *ngIf="d.battery !== null && d.battery !== undefined; else noBattery" [class.low]="batteryLow(d.battery)">
+                  <span class="battery-icon"><span [style.width.%]="d.battery"></span></span>{{ d.battery }}%
+                </span>
+                <ng-template #noBattery>
+                  <span class="mains" *ngIf="d.battery === null; else unknown" title="Mains powered">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plug', size: 15 }"></ng-container>
+                  </span>
+                  <ng-template #unknown><span class="muted">-</span></ng-template>
+                </ng-template>
+              </td>
+              <td class="actions">
+                <button type="button" class="icon-btn" aria-label="more actions" (click)="$event.stopPropagation()">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 18 }"></ng-container>
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="pagedDevices.length === 0">
+              <td colspan="9" class="empty">No devices found</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-foot">
+        <span>Showing {{ rangeStart | number }} to {{ rangeEnd | number }} of {{ filteredDevices.length | number }} devices</span>
+        <div class="pager">
+          <button type="button" (click)="goToPage(page - 1)" [disabled]="page === 1" aria-label="previous page">‹</button>
+          <ng-container *ngFor="let p of pageList">
+            <button *ngIf="p !== null; else gap" type="button" [class.active]="p === page" (click)="goToPage(p)">{{ p }}</button>
+            <ng-template #gap><span class="gap">…</span></ng-template>
+          </ng-container>
+          <button type="button" (click)="goToPage(page + 1)" [disabled]="page === totalPages" aria-label="next page">›</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Detail panel -->
+    <aside class="detail">
+      <section class="card info-card">
+        <div class="info-head">
+          <div class="info-image">
+            <ng-container *ngTemplateOutlet="deviceArt; context: { $implicit: selected.shape, size: 64 }"></ng-container>
+          </div>
+          <div class="info-title">
+            <span class="pill" [class.offline]="selected.status === 'offline'">{{ selected.status | titlecase }}</span>
+            <h2>{{ selected.name }}</h2>
+            <span class="muted">{{ selected.type }}</span>
+          </div>
+          <button type="button" class="ghost-btn" aria-label="device actions">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 18 }"></ng-container>
+          </button>
+        </div>
+        <dl>
+          <div><dt>Device ID</dt><dd>{{ selected.serial }}</dd></div>
+          <div><dt>Type</dt><dd>{{ selected.type }}</dd></div>
+          <div><dt>Category</dt><dd>{{ selected.category }}</dd></div>
+          <div><dt>Location</dt><dd>{{ selected.location }}</dd></div>
+          <div><dt>Status</dt><dd><span class="status" [class.offline]="selected.status === 'offline'"><span class="dot"></span>{{ selected.status | titlecase }}</span></dd></div>
+          <div><dt>Last Seen</dt><dd>{{ selected.lastSeen }}</dd></div>
+          <div>
+            <dt>Battery</dt>
+            <dd>
+              <span class="battery" *ngIf="selected.battery !== null && selected.battery !== undefined; else panelBattery" [class.low]="batteryLow(selected.battery)">
+                <span class="battery-icon"><span [style.width.%]="selected.battery"></span></span>{{ selected.battery }}%
+              </span>
+              <ng-template #panelBattery>{{ batteryLabel(selected.battery) }}</ng-template>
+            </dd>
+          </div>
+          <div><dt>Firmware</dt><dd>{{ selected.firmware }}</dd></div>
+          <div><dt>Gateway</dt><dd>{{ selected.gateway }}</dd></div>
+        </dl>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h3>Current Readings</h3>
+          <span class="muted small">Last updated: {{ selected.lastSeen }}</span>
+        </div>
+        <div class="readings">
+          <div class="reading" *ngFor="let r of readings">
+            <span class="reading-label">
+              <span [ngClass]="'text-' + r.tone"><ng-container *ngTemplateOutlet="icon; context: { $implicit: r.icon, size: 13 }"></ng-container></span>
+              {{ r.label }}
+            </span>
+            <span class="reading-value">{{ r.value }}<small>{{ r.unit }}</small></span>
+            <span class="reading-delta" [class.up]="r.direction === 'up'">{{ r.direction === 'up' ? '▲' : '▼' }} {{ r.delta }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card map-card">
+        <div class="card-head">
+          <h3>Location</h3>
+          <a class="link" routerLink="/locating">
+            View on Map
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'external', size: 13 }"></ng-container>
+          </a>
+        </div>
+        <div class="mini-map">
+          <div class="mini-map-inner" [style.transform]="'scale(' + mapZoom + ')'">
+            <svg viewBox="0 0 300 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <g fill="none" stroke="#c4b5fd" stroke-width="1.2">
+                <path d="M20 90 L150 25 L280 90 L150 155 Z" fill="#f5f3ff"/>
+                <path d="M85 57.5 L215 122.5 M215 57.5 L85 122.5"/>
+                <path d="M52 74 L182 139 M118 41 L248 106 M248 74 L118 139 M182 41 L52 106"/>
+                <path d="M150 25 v-10 l130 65 v10 M20 90 v-10 l130 -65" stroke="#a78bfa"/>
+                <path d="M110 75 l40 -20 l40 20 l-40 20 z" fill="#ede9fe"/>
+              </g>
+            </svg>
+            <span class="pin">
+              <svg width="26" height="32" viewBox="0 0 24 30" aria-hidden="true">
+                <path d="M12 0a11 11 0 00-11 11c0 8 11 19 11 19s11-11 11-19A11 11 0 0012 0z" fill="#6d28d9"/>
+                <circle cx="12" cy="11" r="4.5" fill="#ffffff"/>
+              </svg>
+            </span>
+          </div>
+          <div class="map-zoom">
+            <button type="button" (click)="zoomMap(1)" aria-label="zoom in">+</button>
+            <button type="button" (click)="zoomMap(-1)" aria-label="zoom out">−</button>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>

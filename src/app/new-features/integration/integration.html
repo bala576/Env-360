@@ -1,0 +1,163 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<div class="integrations">
+
+  <!-- Header -->
+  <header class="page-header">
+    <h1>Integrations</h1>
+    <p>Connect with your existing systems to create a unified, intelligent platform</p>
+  </header>
+
+  <nav class="page-tabs">
+    <button type="button" *ngFor="let tab of tabs" [class.active]="tab === activeTab" (click)="activeTab = tab">{{ tab }}</button>
+  </nav>
+
+  <ng-container *ngIf="activeTab === tabs[0]; else comingSoon">
+
+    <!-- Architecture: sources, inputs, platform, outputs -->
+    <section class="flow" #flow>
+      <svg class="wires" *ngIf="size.width" [attr.viewBox]="'0 0 ' + size.width + ' ' + size.height" aria-hidden="true">
+        <defs>
+          <marker id="wireArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto">
+            <path d="M0 0L10 5L0 10z" fill="#6d28d9"/>
+          </marker>
+          <marker id="wireArrowLit" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto">
+            <path d="M0 0L10 5L0 10z" fill="#7c3aed"/>
+          </marker>
+        </defs>
+        <path *ngFor="let w of connectors" [attr.d]="w.d" class="wire" [class.lit]="isLit(w.key)" [class.out]="w.out"
+          [attr.marker-end]="isLit(w.key) ? 'url(#wireArrowLit)' : 'url(#wireArrow)'"/>
+      </svg>
+
+      <div class="sources">
+        <article class="card source" *ngFor="let s of sources" [attr.data-src]="s.key"
+          (mouseenter)="hoverKey = s.key" (mouseleave)="hoverKey = null" [class.lit]="hoverKey === s.key">
+          <header>
+            <span class="src-icon" [ngClass]="'tone-' + s.tone"><ng-container *ngTemplateOutlet="icon; context: { $implicit: s.icon, size: 18 }"></ng-container></span>
+            <h3>{{ s.title }}</h3>
+          </header>
+          <ul class="vendors">
+            <li *ngFor="let v of s.vendors" [style.color]="v.color" [style.font-weight]="v.weight || 600" [class.plain]="v.icon">
+              <span class="vendor-icon" *ngIf="v.icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: v.icon, size: 14 }"></ng-container></span>
+              {{ v.name }}
+            </li>
+          </ul>
+          <span class="connected"><span class="dot"></span>{{ s.connected }} connected</span>
+        </article>
+      </div>
+
+      <div class="diagram">
+        <section class="card io input">
+          <h2>Data Input</h2>
+          <ul>
+            <li *ngFor="let i of inputs" [attr.data-in]="i.key" (mouseenter)="hoverKey = i.key" (mouseleave)="hoverKey = null" [class.lit]="hoverKey === i.key">
+              <span class="io-icon" [style.color]="i.color"><ng-container *ngTemplateOutlet="icon; context: { $implicit: i.icon, size: 18 }"></ng-container></span>
+              <span class="io-text">{{ i.label }}<small *ngIf="i.sub">{{ i.sub }}</small></span>
+            </li>
+          </ul>
+        </section>
+
+        <div class="core">
+          <div class="cloud" #cloud>
+            <svg class="cloud-shape" viewBox="0 0 400 220" preserveAspectRatio="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="cloudFill" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0" stop-color="#f5f3ff"/>
+                  <stop offset="1" stop-color="#ddd6fe"/>
+                </linearGradient>
+              </defs>
+              <path d="M70 200C30 200 8 176 10 148c2-26 24-42 48-40 4-40 38-66 78-60 18-30 52-44 88-36 30 6 52 26 60 52 32-6 62 10 72 40 34 0 50 28 44 56-6 26-28 40-58 40z"
+                fill="url(#cloudFill)" stroke="#c4b5fd" stroke-width="2"/>
+            </svg>
+            <div class="cloud-body">
+              <div class="brand">
+                <img src="/assets/PurpleIQLOGOPurpleBright.png" alt="" />
+                <span>Purple IQ</span>
+              </div>
+              <div class="products">
+                <div class="product" *ngFor="let p of products">
+                  <span [style.color]="p.color"><ng-container *ngTemplateOutlet="icon; context: { $implicit: p.icon, size: 22 }"></ng-container></span>
+                  {{ p.label }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card deploy" data-deploy (mouseenter)="hoverKey = 'deploy'" (mouseleave)="hoverKey = null">
+            <button type="button" *ngFor="let d of deployments" [class.active]="d.key === deployment" (click)="deployment = d.key"
+              [attr.aria-pressed]="d.key === deployment">
+              <span class="dep-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: d.icon, size: 18 }"></ng-container></span>
+              <span>{{ d.label }}<small *ngIf="d.sub">{{ d.sub }}</small></span>
+            </button>
+          </div>
+        </div>
+
+        <section class="card io output">
+          <h2>Data Output</h2>
+          <ul>
+            <li *ngFor="let o of outputs" [attr.data-out]="o.key" (mouseenter)="hoverKey = o.key" (mouseleave)="hoverKey = null" [class.lit]="hoverKey === o.key">
+              <span class="io-icon" [style.color]="o.color"><ng-container *ngTemplateOutlet="icon; context: { $implicit: o.icon, size: 18 }"></ng-container></span>
+              <span class="io-text">{{ o.label }}</span>
+            </li>
+          </ul>
+        </section>
+      </div>
+    </section>
+
+    <!-- Methods, benefits, sample flow -->
+    <section class="row-bottom">
+      <div class="card">
+        <h2>Integration Methods</h2>
+        <ul class="methods">
+          <li *ngFor="let m of methods">
+            <span class="method-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: m.icon, size: 20 }"></ng-container></span>
+            <span><strong>{{ m.title }}</strong><small>{{ m.sub }}</small></span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>Key Benefits</h2>
+        <ul class="benefits">
+          <li *ngFor="let b of benefits">
+            <span class="tick"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 12 }"></ng-container></span>{{ b }}
+          </li>
+        </ul>
+      </div>
+
+      <div class="card sample">
+        <h2>Sample Integration Flow</h2>
+        <div class="sample-grid">
+          <div class="lane">
+            <span class="lane-title">Source Systems</span>
+            <span class="lane-item" *ngFor="let s of sampleSources">
+              <span [style.color]="s.color"><ng-container *ngTemplateOutlet="icon; context: { $implicit: s.icon, size: 15 }"></ng-container></span>{{ s.label }}
+            </span>
+          </div>
+          <div class="lane-gap" aria-hidden="true"><span *ngFor="let s of sampleSources"></span></div>
+          <div class="lane layer">
+            <span class="lane-title"><strong>Purple IQ</strong> Integration Layer</span>
+            <span class="lane-item" *ngFor="let s of sampleLayer">
+              <span><ng-container *ngTemplateOutlet="icon; context: { $implicit: s.icon, size: 15 }"></ng-container></span>{{ s.label }}
+            </span>
+          </div>
+          <div class="lane-gap" aria-hidden="true"><span *ngFor="let s of sampleTargets"></span></div>
+          <div class="lane target">
+            <span class="lane-title">Target Systems</span>
+            <span class="lane-item" *ngFor="let s of sampleTargets">
+              <span [style.color]="s.color"><ng-container *ngTemplateOutlet="icon; context: { $implicit: s.icon, size: 15 }"></ng-container></span>{{ s.label }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+
+  <ng-template #comingSoon>
+    <section class="card empty tab-empty">{{ activeTab }} view coming soon</section>
+  </ng-template>
+</div>

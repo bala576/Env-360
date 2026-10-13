@@ -1,2 +1,85 @@
-<p> This is my Otp I will do it later
-    !</p>
+<div class="auth-page">
+  <div class="auth-layout">
+    <app-brand-panel></app-brand-panel>
+
+    <section class="form-panel">
+      <div class="form-box">
+        <div class="form-logo" role="img" aria-label="PurpleIQ">
+          <span class="form-logo-mark"></span>
+          <span class="form-logo-name">Purple IQ</span>
+        </div>
+
+        <h2>Two-Factor Authentication</h2>
+        <p class="form-subtitle">
+          Enter the 6-digit code from your Google <strong>Authenticator</strong> app.
+        </p>
+
+        <div class="user-chip">
+          <span class="avatar">{{ initial }}</span>
+          <span class="user-info">
+            <span class="user-name">{{ name }}</span>
+            <span class="user-email">{{ email }}</span>
+          </span>
+        </div>
+
+        <form class="otp-form" (ngSubmit)="verify()">
+          <div class="otp-inputs" [class.has-error]="errorMsg">
+            @for (digit of digits; track $index; let i = $index) {
+              <input
+                #digitInput
+                type="text"
+                inputmode="numeric"
+                maxlength="6"
+                [attr.autocomplete]="i === 0 ? 'one-time-code' : 'off'"
+                [attr.aria-label]="'Digit ' + (i + 1)"
+                [value]="digit"
+                [class.filled]="digit"
+                (input)="onDigitInput(i, $event)"
+                (keydown)="onDigitKeydown(i, $event)"
+                (paste)="onPaste(i, $event)"
+                (focus)="$any($event.target).select()"
+              />
+            }
+          </div>
+
+          @if (errorMsg) {
+            <p class="error-msg">{{ errorMsg }}</p>
+          }
+
+          <div class="remember">
+            <label>
+              <input type="checkbox" [(ngModel)]="rememberDevice" name="rememberDevice" />
+              Don't ask for code on this device for 30 days
+            </label>
+            <span class="info-icon" tabindex="0" aria-label="Only tick this on a device you trust">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 11v5M12 8h.01" />
+              </svg>
+              <span class="tooltip">Only tick this on a device you trust. Others using it won't need a code.</span>
+            </span>
+          </div>
+
+          <button type="submit" class="btn-primary" [disabled]="isVerifying">
+            @if (isVerifying) {
+              <span class="spinner" aria-hidden="true"></span>
+              Verifying...
+            } @else {
+              Verify
+            }
+          </button>
+        </form>
+
+        <button type="button" class="link-button" (click)="useDifferentMethod()">Use a different method</button>
+        @if (infoMsg) {
+          <p class="info-msg">{{ infoMsg }}</p>
+        }
+
+        <a class="back-link" routerLink="/login">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
+          Back to sign in
+        </a>
+      </div>
+    </section>
+  </div>
+</div>

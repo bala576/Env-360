@@ -1,8 +1,17 @@
 import { Routes } from '@angular/router';
 import { Login } from './features/auth/login/login';
 import { Otp } from './features/auth/otp/otp';
+import { Google } from './features/auth/google/google';
+import { Microsoft } from './features/auth/microsoft/microsoft';
+import { Autenticator } from './features/auth/autenticator/autenticator';
+import { VerifyAuth } from './features/auth/verify-auth/verify-auth';
 import { MainLayout } from './shared/layout/main-layout/main-layout';
 import { MainDashboard } from './features/dashboard/main-dashboard/main-dashboard';
+import { Dashboard } from './new-features/dashboard/dashboard';
+import { Sites } from './new-features/sites/sites';
+import { Monitoring } from './new-features/monitoring/monitoring';
+import { Devicesandsensor } from './new-features/devicesandsensor/devicesandsensor';
+import { Automationandcontrol } from './new-features/automationandcontrol/automationandcontrol';
 import { ManholeDashboard } from './features/dashboard/manhole-dashboard/manhole-dashboard';
 import { EquipmentDashboard } from './features/dashboard/equipment-dashboard/equipment-dashboard';
 import { User } from './features/user-management/user/user';
@@ -52,12 +61,33 @@ import { LicenceManagement } from './features/configuration/licence-management/l
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: Login },
+  { path: 'google-signin', component: Google },
+  { path: 'microsoft-signin', component: Microsoft },
+  { path: 'authenticator', component: Autenticator },
+  { path: 'verify-auth', component: VerifyAuth },
   { path: 'otp', component: Otp },
   {
     path: '',
     component: MainLayout,
     children: [
       { path: 'dashboard', component: MainDashboard },
+      { path: 'new-dashboard', component: Dashboard },
+      { path: 'sites', component: Sites },
+      { path: 'monitoring', component: Monitoring },
+      { path: 'devices', component: Devicesandsensor },
+      { path: 'automation', component: Automationandcontrol },
+      { path: 'alarms', loadComponent: () => import('./new-features/alermsandevents/alermsandevents').then(m => m.Alermsandevents) },
+      { path: 'analytics', loadComponent: () => import('./new-features/analytics/analytics').then(m => m.Analytics) },
+      { path: 'operations', loadComponent: () => import('./new-features/operations/operations').then(m => m.Operations) },
+      { path: 'parking', loadComponent: () => import('./new-features/parking/parking').then(m => m.Parking) },
+      { path: 'space', loadComponent: () => import('./new-features/space/space').then(m => m.Space) },
+      { path: 'reports', loadComponent: () => import('./new-features/reportsandcompliance/reportsandcompliance').then(m => m.Reportsandcompliance) },
+      { path: 'maps', loadComponent: () => import('./new-features/maps/maps').then(m => m.Maps) },
+      { path: 'integrations', loadComponent: () => import('./new-features/integration/integration').then(m => m.Integration) },
+      { path: 'solution-templates', loadComponent: () => import('./new-features/solutiontemplete/solutiontemplete').then(m => m.Solutiontemplete) },
+      { path: 'administration', loadComponent: () => import('./new-features/administration/administration').then(m => m.Administration) },
+      { path: 'masters', loadComponent: () => import('./new-features/master/master').then(m => m.Master) },
+      { path: 'digital-displays', loadComponent: () => import('./new-features/digitaldisplay/digitaldisplay').then(m => m.Digitaldisplay) },
       { path: 'manhole-dashboard', component: ManholeDashboard },
       { path: 'equipment-dashboard', component: EquipmentDashboard },
       { path: 'locating', component: LiveMap },

@@ -1,0 +1,337 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<div class="reports">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <h1>Reports &amp; Compliance</h1>
+      <p>Generate insights, ensure regulatory compliance and simplify auditing</p>
+    </div>
+    <div class="generate-split">
+      <button type="button" class="btn-primary main" (click)="generateReport('Custom Report')">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 16 }"></ng-container>
+        Generate Report
+      </button>
+      <button type="button" class="btn-primary caret" (click)="generateMenuOpen = !generateMenuOpen" [attr.aria-expanded]="generateMenuOpen" aria-label="report types">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 16 }"></ng-container>
+      </button>
+      <div class="menu" *ngIf="generateMenuOpen">
+        <button type="button" (click)="generateReport('Compliance Summary Report')">Compliance Summary</button>
+        <button type="button" (click)="generateReport('Energy Consumption Report')">Energy Consumption</button>
+        <button type="button" (click)="generateReport('Audit Findings Report')">Audit Findings</button>
+        <button type="button" (click)="generateReport('Maintenance Work Orders Report')">Maintenance Work Orders</button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="page-tabs">
+    <button type="button" *ngFor="let tab of tabs" [class.active]="tab === activeTab" (click)="activeTab = tab">{{ tab }}</button>
+  </nav>
+
+  <ng-container *ngIf="activeTab === tabs[0]; else comingSoon">
+
+    <!-- KPIs -->
+    <section class="kpi-row">
+      <div class="card kpi" *ngFor="let k of kpis">
+        <span class="kpi-icon" [ngClass]="'tone-' + k.tone">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: k.icon, size: 22 }"></ng-container>
+        </span>
+        <div class="kpi-body">
+          <span class="kpi-label">{{ k.label }}</span>
+          <span class="kpi-value">{{ kpiValue(k) }}</span>
+          <span class="kpi-foot-row">
+            <span class="kpi-foot">
+              <span *ngIf="k.change !== undefined" class="change" [class.bad]="(k.change > 0) !== k.upIsGood">
+                {{ k.change < 0 ? '▼' : '▲' }} {{ k.change < 0 ? -k.change : k.change }}%
+              </span>
+              {{ k.foot }}
+            </span>
+            <span class="spark" aria-hidden="true">
+              <span *ngFor="let b of sparkBars(k)" [style.height.%]="b.h" [style.background]="k.color" [style.opacity]="b.opacity"></span>
+            </span>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filters -->
+    <section class="card filters">
+      <label class="field"><span>Site</span><app-dropdown [options]="siteOptions" [(ngModel)]="site"></app-dropdown></label>
+      <label class="field"><span>Building</span><app-dropdown [options]="buildingOptions" [(ngModel)]="building"></app-dropdown></label>
+      <label class="field"><span>Report Category</span><app-dropdown [options]="categoryOptions" [(ngModel)]="category"></app-dropdown></label>
+      <label class="field"><span>Compliance Standard</span><app-dropdown [options]="standardOptions" [(ngModel)]="standard"></app-dropdown></label>
+      <label class="field"><span>Date Range</span><app-dropdown [options]="rangeOptions" [(ngModel)]="range"></app-dropdown></label>
+      <button type="button" class="btn-primary apply" (click)="applyFilters()">Apply</button>
+    </section>
+
+    <!-- Charts -->
+    <section class="row row-charts">
+      <div class="card">
+        <div class="card-head">
+          <h2>Reports by Category</h2>
+          <app-dropdown class="range" [options]="rangeOptions" [(ngModel)]="categoryRange"></app-dropdown>
+        </div>
+        <div class="donut-row">
+          <div class="donut">
+            <svg viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="46" fill="none" stroke="#f1f5f9" stroke-width="16"/>
+              <circle *ngFor="let c of categories" cx="60" cy="60" r="46" fill="none" [attr.stroke]="c.color" stroke-width="16"
+                pathLength="100" [attr.stroke-dasharray]="c.dash + ' ' + (100 - c.dash)" [attr.stroke-dashoffset]="-c.offset"
+                transform="rotate(-90 60 60)"><title>{{ c.name }}: {{ c.count }}</title></circle>
+            </svg>
+            <div class="donut-center">
+              <strong>{{ totalReports }}</strong>
+              <span>Reports</span>
+            </div>
+          </div>
+          <ul class="legend-list">
+            <li *ngFor="let c of categories">
+              <span class="swatch" [style.background]="c.color"></span>
+              <span class="legend-label">{{ c.name }}</span>
+              <strong>{{ c.count }}</strong>
+              <span class="muted">({{ c.pct }}%)</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Compliance Status</h2>
+          <app-dropdown class="range" [options]="standardOptions" [(ngModel)]="complianceStandard"></app-dropdown>
+        </div>
+        <div class="donut-row" *ngIf="compliance as c">
+          <div class="donut">
+            <svg viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="46" fill="none" stroke="#f1f5f9" stroke-width="16"/>
+              <circle *ngFor="let s of c.segments" cx="60" cy="60" r="46" fill="none" [attr.stroke]="s.color" stroke-width="16"
+                pathLength="100" [attr.stroke-dasharray]="s.dash + ' ' + (100 - s.dash)" [attr.stroke-dashoffset]="-s.offset"
+                transform="rotate(-90 60 60)"><title>{{ s.state }}: {{ s.count }}</title></circle>
+            </svg>
+            <div class="donut-center">
+              <strong>{{ c.score }}%</strong>
+              <span>Compliant</span>
+            </div>
+          </div>
+          <ul class="legend-list">
+            <li *ngFor="let s of c.segments">
+              <span class="swatch" [style.background]="s.color"></span>
+              <span class="legend-label">{{ s.state }}</span>
+              <strong>{{ s.count }}</strong>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Audit &amp; Inspection Trend</h2>
+          <app-dropdown class="range" [options]="trendOptions" [(ngModel)]="trendDays" (ngModelChange)="hoverIndex = null"></app-dropdown>
+        </div>
+        <div class="chart-legend">
+          <span><span class="swatch" style="background:#8b5cf6"></span>Audits</span>
+          <span><span class="line-key"></span>Issues</span>
+        </div>
+        <svg #trendSvg class="chart" [attr.viewBox]="'0 0 ' + trendWidth + ' ' + trendHeight" [style.height.px]="trendHeight"
+          *ngIf="trend as c" (mouseleave)="hoverIndex = null">
+          <defs>
+            <linearGradient id="auditFill" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0" stop-color="#a78bfa"/>
+              <stop offset="1" stop-color="#ddd6fe"/>
+            </linearGradient>
+          </defs>
+          <g *ngFor="let t of c.leftTicks">
+            <line [attr.x1]="trendPlot.left" [attr.x2]="trendPlot.right" [attr.y1]="t.y" [attr.y2]="t.y" stroke="#eef0f4"/>
+            <text [attr.x]="trendPlot.left - 6" [attr.y]="t.y + 3" text-anchor="end" class="axis">{{ t.value }}</text>
+          </g>
+          <text *ngFor="let t of c.rightTicks" [attr.x]="trendPlot.right + 6" [attr.y]="t.y + 3" class="axis">{{ t.value }}</text>
+          <text class="axis-title" [attr.transform]="'translate(10 ' + (trendPlot.top + trendPlot.bottom) / 2 + ') rotate(-90)'" text-anchor="middle">Number of Audits</text>
+          <text class="axis-title" [attr.transform]="'translate(' + (trendWidth - 6) + ' ' + (trendPlot.top + trendPlot.bottom) / 2 + ') rotate(-90)'" text-anchor="middle">Number of Issues</text>
+          <g *ngFor="let b of c.bars; let i = index">
+            <rect [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.width" [attr.height]="b.h" rx="2" fill="url(#auditFill)" [attr.opacity]="hoverIndex === null || hoverIndex === i ? 1 : 0.55"/>
+            <text *ngIf="b.showLabel" [attr.x]="b.cx" [attr.y]="trendPlot.bottom + 14" text-anchor="middle" class="axis">{{ b.label }}</text>
+          </g>
+          <polyline [attr.points]="c.line" fill="none" stroke="#dc2626" stroke-width="1.6" stroke-linejoin="round"/>
+          <circle *ngFor="let p of c.points" [attr.cx]="p.x" [attr.cy]="p.y" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1"/>
+          <ng-container *ngIf="hoverBar as h">
+            <rect [attr.x]="h.boxX" y="2" width="86" height="32" rx="6" fill="#ffffff" stroke="#e5e7eb"/>
+            <text [attr.x]="h.boxX + 43" y="15" text-anchor="middle" class="tip-title">{{ h.label }}</text>
+            <text [attr.x]="h.boxX + 43" y="27" text-anchor="middle" class="tip-text">{{ h.value }} audits · {{ h.issues }} issues</text>
+          </ng-container>
+          <rect *ngFor="let b of c.bars; let i = index" [attr.x]="b.hitX" [attr.y]="trendPlot.top" [attr.width]="b.hitW"
+            [attr.height]="trendPlot.bottom - trendPlot.top" fill="transparent" (mouseenter)="hoverIndex = i"/>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Tables -->
+    <section class="row row-tables">
+      <div class="card">
+        <div class="card-head">
+          <h2>Top Reports</h2>
+          <a class="link" (click)="activeTab = 'Report Templates'">View All</a>
+        </div>
+        <div class="table-scroll" appDragScroll>
+          <table>
+            <thead>
+              <tr><th>Report Name</th><th>Category</th><th>Frequency</th><th>Last Generated</th><th class="actions">Actions</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of topReports">
+                <td>
+                  <span class="report-name">
+                    <span class="report-icon" [style.color]="r.color"><ng-container *ngTemplateOutlet="icon; context: { $implicit: r.icon, size: 15 }"></ng-container></span>
+                    {{ r.name }}
+                  </span>
+                </td>
+                <td>{{ r.category }}</td>
+                <td>{{ r.frequency }}</td>
+                <td>{{ r.lastGenerated }}</td>
+                <td class="actions">
+                  <button type="button" class="icon-btn" (click)="download(r.name)" [attr.aria-label]="'download ' + r.name">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'download', size: 16 }"></ng-container>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="topReports.length === 0"><td colspan="5" class="empty">No reports in this category</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Compliance Requirements</h2>
+          <a class="link" (click)="activeTab = 'Compliance Dashboard'">View All</a>
+        </div>
+        <div class="table-scroll" appDragScroll>
+          <table>
+            <thead>
+              <tr><th>Standard / Regulation</th><th>Status</th><th>Last Audit</th><th>Next Due</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of requirements">
+                <td>
+                  <span class="report-name">
+                    <span class="report-icon muted-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'file', size: 15 }"></ng-container></span>
+                    {{ r.standard }}
+                  </span>
+                </td>
+                <td><span class="pill" [ngClass]="stateClass(r.status)">{{ r.status }}</span></td>
+                <td>{{ r.lastAudit }}</td>
+                <td>{{ r.nextDue }}</td>
+              </tr>
+              <tr *ngIf="requirements.length === 0"><td colspan="4" class="empty">No requirements for this standard</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Upcoming Compliance Due Items</h2>
+          <a class="link" (click)="activeTab = 'Compliance Dashboard'">View All</a>
+        </div>
+        <ul class="due-list">
+          <li *ngFor="let d of dueItems">
+            <span class="date-badge" [class.overdue]="d.tone === 'overdue'">
+              <strong>{{ d.day }}</strong><span>{{ d.month }}</span>
+            </span>
+            <span class="due-body">
+              <strong>{{ d.title }}</strong>
+              <span>{{ d.authority }}</span>
+            </span>
+            <span class="pill" [ngClass]="'due-' + d.tone">{{ d.label }}</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Schedule, export, history -->
+    <section class="row row-bottom">
+      <div class="card">
+        <div class="card-head">
+          <h2>Report Schedule</h2>
+          <a class="link" (click)="activeTab = 'Scheduled Reports'">View All</a>
+        </div>
+        <div class="table-scroll" appDragScroll>
+          <table>
+            <thead>
+              <tr><th>Report Name</th><th>Frequency</th><th>Recipients</th><th>Next Run</th><th class="actions">Status</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let s of scheduled" [class.paused]="!s.enabled">
+                <td>{{ s.name }}</td>
+                <td>{{ s.frequency }}</td>
+                <td>{{ s.recipients }}</td>
+                <td>{{ s.enabled ? s.nextRun : 'Paused' }}</td>
+                <td class="actions">
+                  <button type="button" class="switch" role="switch" [attr.aria-checked]="s.enabled" [class.on]="s.enabled"
+                    (click)="toggleSchedule(s)" [attr.aria-label]="(s.enabled ? 'pause ' : 'resume ') + s.name"><span></span></button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card export">
+        <div class="card-head"><h2>Data Export</h2></div>
+        <div class="export-fields">
+          <label class="field"><span>Select Data Type</span><app-dropdown [options]="exportTypeOptions" [(ngModel)]="exportType"></app-dropdown></label>
+          <label class="field"><span>Date Range</span><app-dropdown [options]="rangeOptions" [(ngModel)]="exportRange"></app-dropdown></label>
+        </div>
+        <span class="field-label">Export Format</span>
+        <div class="export-actions">
+          <div class="formats" role="radiogroup" aria-label="export format">
+            <button type="button" *ngFor="let f of formats" role="radio" [attr.aria-checked]="f === exportFormat"
+              [class.active]="f === exportFormat" [ngClass]="'f-' + f.toLowerCase()" (click)="exportFormat = f">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'file', size: 15 }"></ng-container>{{ f }}
+            </button>
+          </div>
+          <button type="button" class="btn-primary" (click)="exportData()">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'download', size: 16 }"></ng-container>
+            Export
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Recently Generated Reports</h2>
+          <a class="link" (click)="activeTab = 'Audit Trail'">View All</a>
+        </div>
+        <div class="table-scroll" appDragScroll>
+          <table>
+            <thead>
+              <tr><th>Report Name</th><th>Generated On</th><th>Format</th><th class="actions">Actions</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let g of generated">
+                <td>{{ g.name }}</td>
+                <td>{{ g.generatedOn }}</td>
+                <td><span class="format" [ngClass]="'f-' + g.format.toLowerCase()">{{ g.format }}</span></td>
+                <td class="actions">
+                  <button type="button" class="icon-btn" (click)="download(g.name, g.format)" [attr.aria-label]="'download ' + g.name">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'download', size: 16 }"></ng-container>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+
+  <ng-template #comingSoon>
+    <section class="card empty tab-empty">{{ activeTab }} view coming soon</section>
+  </ng-template>
+
+  <div class="toast" *ngIf="toast" role="status">{{ toast }}</div>
+</div>

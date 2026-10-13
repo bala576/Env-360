@@ -1,0 +1,310 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<ng-template #sevBadge let-sev>
+  <span class="sev" [ngClass]="severityTone(sev)">
+    <ng-container *ngTemplateOutlet="icon; context: { $implicit: severityIcon(sev), size: 13 }"></ng-container>
+    {{ sev }}
+  </span>
+</ng-template>
+
+<div class="alarms">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <h1>Alarms &amp; Events</h1>
+      <p>Monitor, manage and resolve alarms and system events in real-time</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-primary" (click)="acknowledge()">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 16 }"></ng-container>
+        Acknowledge
+      </button>
+      <button type="button" class="btn-primary" (click)="activeTab = tabs[3]">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 16 }"></ng-container>
+        Create Alarm Rule
+      </button>
+      <button type="button" class="ghost-btn lg" aria-label="more options">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 18 }"></ng-container>
+      </button>
+    </div>
+  </header>
+
+  <nav class="page-tabs">
+    <button type="button" *ngFor="let tab of tabs" [class.active]="tab === activeTab" (click)="activeTab = tab">{{ tab }}</button>
+  </nav>
+
+  <ng-container *ngIf="activeTab === tabs[0]; else comingSoon">
+
+    <!-- KPIs -->
+    <section class="kpi-row">
+      <div class="card kpi" *ngFor="let k of kpis">
+        <span class="kpi-icon" [ngClass]="'tone-' + k.tone">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: k.icon, size: 24 }"></ng-container>
+        </span>
+        <div class="kpi-body">
+          <span class="kpi-label">{{ k.label }}</span>
+          <span class="kpi-value">{{ kpiValue(k) }}</span>
+          <span class="kpi-foot">
+            <span class="delta" [ngClass]="deltaTone(k)">
+              {{ k.change > 0 ? '▲' : k.change < 0 ? '▼' : '—' }} {{ k.change < 0 ? -k.change : k.change }}
+            </span>
+            vs yesterday
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts -->
+    <section class="chart-row">
+      <div class="card">
+        <div class="card-head"><h2>Alarms by Category</h2></div>
+        <div class="donut-row">
+          <div class="donut">
+            <svg viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="46" fill="none" stroke="#f3f4f6" stroke-width="18"/>
+              <circle *ngFor="let s of categorySlices" cx="60" cy="60" r="46" fill="none" [attr.stroke]="s.color" stroke-width="18"
+                pathLength="100" [attr.stroke-dasharray]="s.dash" [attr.stroke-dashoffset]="s.offset" transform="rotate(-90 60 60)">
+                <title>{{ s.label }}: {{ s.value }}</title>
+              </circle>
+            </svg>
+            <div class="donut-center">
+              <strong>{{ kpiValue(kpis[0]) }}</strong>
+              <span>Active Alarms</span>
+            </div>
+          </div>
+          <ul class="legend-list">
+            <li *ngFor="let s of categorySlices">
+              <span class="swatch" [style.background]="s.color"></span>
+              <span class="legend-label">{{ s.label }}</span>
+              <strong>{{ s.value }}</strong>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Alarms by Severity <span class="muted">(Last {{ severityRange }} Hours)</span></h2>
+          <app-dropdown class="range" [options]="severityRangeOptions" [(ngModel)]="severityRange"></app-dropdown>
+        </div>
+        <svg class="chart" viewBox="0 0 400 200">
+          <g *ngFor="let t of severityAxis.ticks">
+            <line [attr.x1]="plot.left" [attr.x2]="plot.right" [attr.y1]="t.y" [attr.y2]="t.y" stroke="#eef0f4"/>
+            <text [attr.x]="plot.left - 6" [attr.y]="t.y + 3" text-anchor="end" class="axis">{{ t.label }}</text>
+          </g>
+          <text x="8" [attr.y]="(plot.top + plot.bottom) / 2" class="axis" text-anchor="middle"
+            [attr.transform]="'rotate(-90 8 ' + (plot.top + plot.bottom) / 2 + ')'">Count</text>
+          <g *ngFor="let b of severityBars" class="bar">
+            <title>{{ b.tooltip }}</title>
+            <rect *ngFor="let s of b.segments" [attr.x]="b.x" [attr.y]="s.y" [attr.width]="b.width" [attr.height]="s.h" [attr.fill]="s.color"/>
+            <text *ngIf="b.label" [attr.x]="b.cx" [attr.y]="plot.bottom + 16" text-anchor="middle" class="axis">{{ b.label }}</text>
+          </g>
+        </svg>
+        <div class="chart-legend">
+          <span *ngFor="let s of severities"><span class="swatch" [style.background]="severityMeta[s].color"></span>{{ s }}</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Alarm Trend</h2>
+          <app-dropdown class="range" [options]="trendRangeOptions" [(ngModel)]="trendRange"></app-dropdown>
+        </div>
+        <svg class="chart" viewBox="0 0 400 200">
+          <g *ngFor="let t of trendAxis.ticks">
+            <line [attr.x1]="plot.left" [attr.x2]="plot.right" [attr.y1]="t.y" [attr.y2]="t.y" stroke="#eef0f4"/>
+            <text [attr.x]="plot.left - 6" [attr.y]="t.y + 3" text-anchor="end" class="axis">{{ t.label }}</text>
+          </g>
+          <text x="8" [attr.y]="(plot.top + plot.bottom) / 2" class="axis" text-anchor="middle"
+            [attr.transform]="'rotate(-90 8 ' + (plot.top + plot.bottom) / 2 + ')'">Count</text>
+          <text *ngFor="let d of trendDays" [attr.x]="d.x" [attr.y]="plot.bottom + 16" text-anchor="middle" class="axis">{{ d.label }}</text>
+          <g *ngFor="let line of trendLines">
+            <polyline [attr.points]="line.points" fill="none" [attr.stroke]="line.color" stroke-width="2" stroke-linejoin="round"/>
+            <circle *ngFor="let d of line.dots" [attr.cx]="d.x" [attr.cy]="d.y" r="3.2" [attr.fill]="line.color" stroke="#ffffff" stroke-width="1.2">
+              <title>{{ d.tooltip }}</title>
+            </circle>
+          </g>
+        </svg>
+        <div class="chart-legend">
+          <span *ngFor="let l of trendLines"><span class="line-swatch" [style.background]="l.color"></span>{{ l.severity }}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filters -->
+    <section class="card filters">
+      <label class="field"><span>Site</span><app-dropdown [options]="siteOptions" [(ngModel)]="site"></app-dropdown></label>
+      <label class="field"><span>Building</span><app-dropdown [options]="buildingOptions" [(ngModel)]="building" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+      <label class="field"><span>Space Type</span><app-dropdown [options]="spaceTypeOptions" [(ngModel)]="spaceType" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+      <label class="field"><span>Parameter</span><app-dropdown [options]="parameterOptions" [(ngModel)]="parameter" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+      <label class="field"><span>Severity</span><app-dropdown [options]="severityOptions" [(ngModel)]="severity" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+      <label class="field"><span>Status</span><app-dropdown [options]="statusOptions" [(ngModel)]="status" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+      <label class="search">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 15 }"></ng-container>
+        <input type="text" placeholder="Search alarms..." [(ngModel)]="search" (ngModelChange)="onFilterChange()" />
+      </label>
+    </section>
+
+    <div class="content" [class.no-detail]="!selected">
+
+      <!-- Alarms table -->
+      <section class="card table-card">
+        <div class="card-head table-head">
+          <h2>{{ status === 'all' ? 'All' : status }} Alarms ({{ filteredAlarms.length }})</h2>
+          <div class="head-actions">
+            <button type="button" class="btn-primary sm" (click)="acknowledge()">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 13 }"></ng-container>
+              Acknowledge
+            </button>
+            <button type="button" class="btn-outline sm" (click)="assign()">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'user', size: 13 }"></ng-container>
+              Assign
+            </button>
+            <button type="button" class="btn-outline sm" (click)="resolve()">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'resolve', size: 13 }"></ng-container>
+              Resolve
+            </button>
+            <button type="button" class="ghost-btn" aria-label="table options">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 16 }"></ng-container>
+            </button>
+          </div>
+        </div>
+        <div class="table-scroll" appDragScroll>
+          <table>
+            <thead>
+              <tr>
+                <th class="check"><input type="checkbox" [checked]="allPageChecked" (change)="toggleAllPage()" aria-label="select all" /></th>
+                <th>Severity</th>
+                <th>Date &amp; Time</th>
+                <th>Site / Location</th>
+                <th>Parameter</th>
+                <th>Current Value</th>
+                <th>Threshold</th>
+                <th>Duration</th>
+                <th>Status</th>
+                <th class="center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let a of pagedAlarms" [class.active]="a === selected" (click)="selectAlarm(a)">
+                <td class="check" (click)="$event.stopPropagation()">
+                  <input type="checkbox" [checked]="checked.has(a.id)" (change)="toggleRow(a)" [attr.aria-label]="'select ' + a.title" />
+                </td>
+                <td><ng-container *ngTemplateOutlet="sevBadge; context: { $implicit: a.severity }"></ng-container></td>
+                <td>{{ a.date }} {{ a.time }}</td>
+                <td><span class="lines"><span>{{ a.site }}</span><span>{{ a.location }}</span></span></td>
+                <td>{{ a.parameter }}</td>
+                <td><span class="value" [style.color]="severityMeta[a.severity].color">{{ a.value }}</span></td>
+                <td>{{ a.threshold }}</td>
+                <td>{{ a.duration }}</td>
+                <td><span class="status" [ngClass]="'st-' + a.status.toLowerCase()">{{ a.status }}</span></td>
+                <td class="center" (click)="$event.stopPropagation()">
+                  <div class="row-actions">
+                    <button type="button" class="icon-btn" [disabled]="a.status !== 'Active'" (click)="acknowledge(a)" [attr.aria-label]="'acknowledge ' + a.title" title="Acknowledge">
+                      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 15 }"></ng-container>
+                    </button>
+                    <button type="button" class="icon-btn" [disabled]="a.status === 'Resolved'" (click)="resolve(a)" [attr.aria-label]="'resolve ' + a.title" title="Resolve">
+                      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'resolve', size: 15 }"></ng-container>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="pagedAlarms.length === 0">
+                <td colspan="10" class="empty">No alarms found</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-foot">
+          <span>Showing {{ rangeStart }} to {{ rangeEnd }} of {{ filteredAlarms.length }} alarms</span>
+          <div class="pager">
+            <button type="button" (click)="goToPage(page - 1)" [disabled]="page === 1" aria-label="previous page">‹</button>
+            <button type="button" *ngFor="let p of pageList" [class.active]="p === page" (click)="goToPage(p)">{{ p }}</button>
+            <button type="button" (click)="goToPage(page + 1)" [disabled]="page === totalPages" aria-label="next page">›</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Alarm details -->
+      <aside class="card detail" *ngIf="selected as s">
+        <div class="detail-title">
+          <span class="detail-icon" [style.color]="severityMeta[s.severity].color">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: s.icon, size: 22 }"></ng-container>
+          </span>
+          <div class="detail-name">
+            <h3>{{ s.title }}</h3>
+            <span>{{ s.site }} &rsaquo; {{ s.building }} &rsaquo; {{ s.level }} &rsaquo; {{ s.location }}</span>
+          </div>
+          <span class="sev-solid" [style.background]="severityMeta[s.severity].color">{{ s.severity }}</span>
+          <button type="button" class="ghost-btn" (click)="selected = null" aria-label="close details">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 15 }"></ng-container>
+          </button>
+        </div>
+
+        <nav class="detail-tabs">
+          <button type="button" *ngFor="let t of detailTabs" [class.active]="t === activeDetailTab" (click)="activeDetailTab = t">{{ t }}</button>
+        </nav>
+
+        <ng-container *ngIf="activeDetailTab === detailTabs[0]; else detailSoon">
+          <div class="overview">
+            <div class="visual" [ngClass]="'vis-' + s.severity.toLowerCase()">
+              <svg viewBox="0 0 160 110" aria-hidden="true">
+                <rect x="8" y="10" width="144" height="92" rx="4" fill="#cbd5e1"/>
+                <rect x="14" y="16" width="132" height="80" rx="2" fill="#e2e8f0"/>
+                <g *ngFor="let col of [0, 1, 2, 3]">
+                  <rect [attr.x]="18 + col * 32" y="20" width="28" height="72" rx="2" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+                  <line *ngFor="let row of [0, 1, 2, 3]" [attr.x1]="20 + col * 32" [attr.x2]="44 + col * 32" [attr.y1]="34 + row * 15" [attr.y2]="34 + row * 15" stroke="#94a3b8" stroke-width="1.4"/>
+                  <rect [attr.x]="40 + col * 32" y="50" width="2" height="12" rx="1" fill="#64748b"/>
+                </g>
+                <rect x="8" y="100" width="144" height="4" fill="#94a3b8"/>
+              </svg>
+              <span class="visual-icon" [style.color]="severityMeta[s.severity].color">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: s.icon, size: 18 }"></ng-container>
+              </span>
+            </div>
+            <dl class="details">
+              <div><dt>Parameter</dt><dd>{{ s.parameter }}</dd></div>
+              <div><dt>Current Value</dt><dd class="strong" [style.color]="severityMeta[s.severity].color">{{ s.value }}</dd></div>
+              <div><dt>Threshold</dt><dd>{{ s.threshold }}</dd></div>
+              <div><dt>Status</dt><dd><span class="status-dot" [ngClass]="'st-' + s.status.toLowerCase()"><span class="dot"></span>{{ s.status }}</span></dd></div>
+              <div><dt>Duration</dt><dd>{{ s.duration }}</dd></div>
+              <div><dt>Triggered On</dt><dd>{{ s.date }} {{ s.time }}</dd></div>
+            </dl>
+          </div>
+
+          <h4 class="timeline-title">Timeline</h4>
+          <ol class="timeline">
+            <li *ngFor="let step of s.timeline" [ngClass]="'tl-' + step.tone">
+              <span class="tl-time">{{ step.time }}</span>
+              <span class="tl-dot"></span>
+              <div class="tl-body">
+                <strong>{{ step.title }}</strong>
+                <span *ngIf="step.note">{{ step.note }}</span>
+              </div>
+              <span class="tl-status">{{ step.status }}</span>
+            </li>
+          </ol>
+
+          <div class="detail-actions">
+            <button type="button" class="btn-primary sm" [disabled]="s.status !== 'Active'" (click)="acknowledge(s)">Acknowledge</button>
+            <button type="button" class="btn-outline sm" [disabled]="s.status === 'Resolved'" (click)="assign(s)">Assign</button>
+            <button type="button" class="btn-outline sm" [disabled]="s.status === 'Resolved'" (click)="resolve(s)">Resolve</button>
+          </div>
+        </ng-container>
+        <ng-template #detailSoon>
+          <div class="empty">{{ activeDetailTab }} view coming soon</div>
+        </ng-template>
+      </aside>
+    </div>
+  </ng-container>
+
+  <ng-template #comingSoon>
+    <section class="card empty tab-empty">{{ activeTab }} view coming soon</section>
+  </ng-template>
+</div>

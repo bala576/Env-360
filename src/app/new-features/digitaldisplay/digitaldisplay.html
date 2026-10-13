@@ -1,0 +1,439 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<!-- Content artwork, drawn at any size: lg (preview), sm (thumbnails), xs (table rows) -->
+<ng-template #poster let-p let-size="size">
+  <div class="poster" [ngClass]="'p-' + (size || 'sm')" [style.background]="p.bg" [style.color]="p.ink">
+    <svg class="poster-art" viewBox="0 0 160 90" preserveAspectRatio="xMaxYMax slice" aria-hidden="true" [ngSwitch]="p.art">
+      <g *ngSwitchCase="'skyline'">
+        <circle cx="128" cy="30" r="9" fill="#fcd34d" opacity="0.25"/>
+        <path d="M0 90V70h8v-6h6v8h6V58h7v12h5V62h8v28z" fill="#1e1b3a" opacity="0.8"/>
+        <path d="M58 90V66h6V54h5v12h6V60h8v30zM88 90V62h7v-8h6v36z" fill="#1e1b3a" opacity="0.85"/>
+        <path d="M118 90V58l2-6V34l1.5-10L123 6l1.5 18L126 34v18l2 6v32z" fill="#141230"/>
+        <path d="M134 90V64h6V52h6v12h6v-6h8v32z" fill="#1e1b3a" opacity="0.9"/>
+        <g fill="#fde68a">
+          <rect *ngFor="let w of [[61,70],[66,58],[72,74],[91,66],[97,58],[121,44],[121,62],[124,74],[137,70],[148,62],[12,74],[30,66]]" [attr.x]="w[0]" [attr.y]="w[1]" width="1.4" height="1.4"/>
+        </g>
+        <rect y="84" width="160" height="6" fill="#0b1230" opacity="0.6"/>
+      </g>
+      <g *ngSwitchCase="'shopper'">
+        <circle cx="122" cy="26" r="9" fill="#7c2d12"/>
+        <path d="M108 90c0-24 6-46 14-46s14 22 14 46z" fill="#dc2626"/>
+        <path d="M100 58h14v20h-14z" fill="#f59e0b"/>
+        <path d="M103 58v-4a4 4 0 018 0v4" fill="none" stroke="#92400e" stroke-width="1.5"/>
+        <path d="M132 62h16v22h-16z" fill="#7c3aed"/>
+        <path d="M136 62v-4a4 4 0 018 0v4" fill="none" stroke="#4c1d95" stroke-width="1.5"/>
+        <circle cx="150" cy="16" r="3" fill="#fb7185"/>
+        <circle cx="96" cy="22" r="2" fill="#fbbf24"/>
+      </g>
+      <g *ngSwitchCase="'food'">
+        <circle cx="124" cy="52" r="30" fill="#f5f5f4"/>
+        <circle cx="124" cy="52" r="24" fill="#e7e5e4"/>
+        <circle cx="114" cy="46" r="8" fill="#ea580c"/>
+        <circle cx="132" cy="44" r="7" fill="#65a30d"/>
+        <circle cx="126" cy="60" r="8" fill="#facc15"/>
+        <circle cx="113" cy="59" r="4" fill="#b91c1c"/>
+        <path d="M86 24v40M90 24v14a4 4 0 01-8 0V24" stroke="#d6d3d1" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </g>
+      <g *ngSwitchCase="'event'">
+        <path d="M128 14l5 12 13 1-10 8 3 13-11-7-11 7 3-13-10-8 13-1z" fill="#fde047"/>
+        <circle *ngFor="let c of [[96,20,'#f472b6'],[150,52,'#60a5fa'],[104,70,'#fde047'],[140,78,'#f472b6'],[112,42,'#a5f3fc'],[152,18,'#fde047']]"
+          [attr.cx]="c[0]" [attr.cy]="c[1]" r="3" [attr.fill]="c[2]"/>
+        <path d="M86 90l14-30 14 30z" fill="#1e1b4b" opacity="0.35"/>
+      </g>
+      <g *ngSwitchCase="'arrow'">
+        <circle cx="126" cy="44" r="26" fill="#ffffff" opacity="0.14"/>
+        <path d="M108 44h30M128 32l12 12-12 12" stroke="#ffffff" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="140" y="70" width="16" height="16" rx="3" fill="#4ade80"/>
+        <text x="148" y="82" text-anchor="middle" font-size="12" font-weight="800" fill="#052e16">P</text>
+      </g>
+      <g *ngSwitchCase="'grid'">
+        <rect *ngFor="let t of [[100,16],[122,16],[144,16],[100,38],[122,38],[144,38],[100,60],[122,60]]"
+          [attr.x]="t[0]" [attr.y]="t[1]" width="18" height="18" rx="4" fill="#ffffff" opacity="0.18"/>
+        <circle cx="153" cy="69" r="7" fill="#c4b5fd"/>
+      </g>
+      <g *ngSwitchCase="'cinema'">
+        <circle cx="124" cy="40" r="22" fill="#1c1917" stroke="#fcd34d" stroke-width="2"/>
+        <circle *ngFor="let h of [[136,40],[127.7,51.4],[114.3,47.1],[114.3,32.9],[127.7,28.6]]" [attr.cx]="h[0]" [attr.cy]="h[1]" r="5" fill="#57534e"/>
+        <path d="M90 74h70v12H90z" fill="#1c1917"/>
+        <rect *ngFor="let i of [0, 1, 2, 3, 4, 5, 6]" [attr.x]="94 + i * 10" y="77" width="5" height="6" fill="#fcd34d" opacity="0.7"/>
+      </g>
+    </svg>
+    <div class="poster-text">
+      <span class="poster-eyebrow">{{ p.eyebrow }}</span>
+      <strong *ngFor="let l of p.lines">{{ l }}</strong>
+      <span class="poster-cta" *ngIf="p.cta" [style.background]="p.accent">{{ p.cta }}</span>
+    </div>
+  </div>
+</ng-template>
+
+<div class="displays">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <h1>Digital Displays</h1>
+      <p>Create, schedule and manage content across all your digital displays</p>
+    </div>
+    <div class="upload-split">
+      <button type="button" class="btn-primary main" (click)="notifyAction('Upload content')">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 16 }"></ng-container>
+        Upload Content
+      </button>
+      <button type="button" class="btn-primary caret" (click)="uploadMenuOpen = !uploadMenuOpen" [attr.aria-expanded]="uploadMenuOpen" aria-label="more upload options">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 16 }"></ng-container>
+      </button>
+      <div class="menu" *ngIf="uploadMenuOpen">
+        <button type="button" (click)="notifyAction('Image upload')">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'image', size: 16 }"></ng-container>Upload Image
+        </button>
+        <button type="button" (click)="notifyAction('Video upload')">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'video', size: 16 }"></ng-container>Upload Video
+        </button>
+        <button type="button" (click)="notifyAction('Playlist builder')">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'list', size: 16 }"></ng-container>Create Playlist
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="page-tabs">
+    <button type="button" *ngFor="let tab of tabs" [class.active]="tab === activeTab" (click)="activeTab = tab">{{ tab }}</button>
+  </nav>
+
+  <div class="layout" *ngIf="activeTab === tabs[0]; else comingSoon">
+
+    <div class="main-col">
+      <!-- KPIs -->
+      <section class="kpi-row">
+        <div class="card kpi">
+          <span class="kpi-icon tone-purple"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'monitor', size: 24 }"></ng-container></span>
+          <div class="kpi-body">
+            <span class="kpi-label">Total Displays</span>
+            <span class="kpi-value">{{ displays.length }}</span>
+            <span class="kpi-foot"><span class="up">▲ {{ totalChange }}%</span> vs last month</span>
+          </div>
+        </div>
+        <div class="card kpi">
+          <span class="kpi-icon tone-green"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'wifi', size: 24 }"></ng-container></span>
+          <div class="kpi-body">
+            <span class="kpi-label">Online</span>
+            <span class="kpi-value">{{ onlineCount }}</span>
+            <span class="kpi-pct green">{{ percent(onlineCount) }}%</span>
+            <span class="meter"><span class="green" [style.width.%]="percent(onlineCount)"></span></span>
+          </div>
+        </div>
+        <div class="card kpi">
+          <span class="kpi-icon tone-red"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'wifiOff', size: 24 }"></ng-container></span>
+          <div class="kpi-body">
+            <span class="kpi-label">Offline</span>
+            <span class="kpi-value">{{ offlineCount }}</span>
+            <span class="kpi-pct red">▼ {{ percent(offlineCount) }}%</span>
+            <span class="meter"><span class="red" [style.width.%]="percent(offlineCount)"></span></span>
+          </div>
+        </div>
+        <div class="card kpi">
+          <span class="kpi-icon tone-purple"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'play', size: 24 }"></ng-container></span>
+          <div class="kpi-body">
+            <span class="kpi-label">Active Playlists</span>
+            <span class="kpi-value">{{ activePlaylists }}</span>
+            <span class="kpi-foot"><span class="up">▲ {{ playlistChange }}%</span> vs last month</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Charts -->
+      <section class="chart-row">
+        <div class="card">
+          <div class="card-head">
+            <h2>Display Status by Location</h2>
+            <app-dropdown class="range" [options]="statusSiteOptions" [(ngModel)]="statusSite"></app-dropdown>
+          </div>
+          <div class="chart-legend top">
+            <span><span class="swatch" style="background:#22c55e"></span>Online</span>
+            <span><span class="swatch" style="background:#ef4444"></span>Offline</span>
+          </div>
+          <svg #barsSvg class="chart bars-chart" [attr.viewBox]="'0 0 ' + barsWidth + ' ' + chartHeight.bars" [style.height.px]="chartHeight.bars" *ngIf="statusChart as c">
+            <g *ngFor="let t of c.ticks">
+              <line [attr.x1]="barsPlot.left" [attr.x2]="barsPlot.right" [attr.y1]="t.y" [attr.y2]="t.y" stroke="#eef0f4"/>
+              <text [attr.x]="barsPlot.left - 6" [attr.y]="t.y + 3" text-anchor="end" class="axis">{{ t.label }}</text>
+            </g>
+            <g *ngFor="let b of c.bars" class="bar">
+              <title>{{ b.tooltip }}</title>
+              <rect [attr.x]="b.x" [attr.y]="b.online.y" [attr.width]="b.width" [attr.height]="b.online.h" fill="#22c55e"/>
+              <rect *ngIf="b.offline.h > 0" [attr.x]="b.x" [attr.y]="b.offline.y" [attr.width]="b.width" [attr.height]="b.offline.h" fill="#ef4444" rx="2"/>
+              <text *ngFor="let line of b.label; let i = index" [attr.x]="b.cx" [attr.y]="barsPlot.bottom + 14 + i * 11" text-anchor="middle" class="axis">{{ line }}</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Content Playback Statistics</h2>
+            <app-dropdown class="range" [options]="playbackRangeOptions" [(ngModel)]="playbackRange" (ngModelChange)="hoverIndex = null"></app-dropdown>
+          </div>
+          <div class="stat-row" *ngIf="playback as s">
+            <div>
+              <strong>{{ s.total | number }}</strong>
+              <span>Total Plays</span>
+              <em [class.down]="s.totalChange < 0">{{ s.totalChange < 0 ? '▼' : '▲' }} {{ s.totalChange < 0 ? -s.totalChange : s.totalChange }}%</em>
+            </div>
+            <div>
+              <strong>{{ s.success }}%</strong>
+              <span>Successful Plays</span>
+              <em [class.down]="s.successChange < 0">{{ s.successChange < 0 ? '▼' : '▲' }} {{ s.successChange < 0 ? -s.successChange : s.successChange }}%</em>
+            </div>
+            <div>
+              <strong>{{ s.failed }}%</strong>
+              <span>Failed Plays</span>
+              <!-- Fewer failures is good, so a drop shows green -->
+              <em [class.down]="s.failedChange > 0">{{ s.failedChange > 0 ? '▲' : '▼' }} {{ s.failedChange < 0 ? -s.failedChange : s.failedChange }}%</em>
+            </div>
+          </div>
+          <svg #lineSvg class="chart" [attr.viewBox]="'0 0 ' + lineWidth + ' ' + chartHeight.line" [style.height.px]="chartHeight.line" *ngIf="lineChart as c" (mouseleave)="hoverIndex = null">
+            <defs>
+              <linearGradient id="playFill" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0" stop-color="#8b5cf6" stop-opacity="0.35"/>
+                <stop offset="1" stop-color="#8b5cf6" stop-opacity="0.03"/>
+              </linearGradient>
+            </defs>
+            <g *ngFor="let t of c.yTicks">
+              <line [attr.x1]="linePlot.left" [attr.x2]="linePlot.right" [attr.y1]="t.y" [attr.y2]="t.y" stroke="#eef0f4"/>
+              <text [attr.x]="linePlot.left - 5" [attr.y]="t.y + 3" text-anchor="end" class="axis">{{ t.label }}</text>
+            </g>
+            <text *ngFor="let t of c.xTicks" [attr.x]="t.x" [attr.y]="linePlot.bottom + 14" text-anchor="middle" class="axis">{{ t.label }}</text>
+            <polygon [attr.points]="c.area" fill="url(#playFill)"/>
+            <polyline [attr.points]="c.line" fill="none" stroke="#7c3aed" stroke-width="1.8" stroke-linejoin="round"/>
+            <circle *ngFor="let p of c.pts; let i = index" [attr.cx]="p.x" [attr.cy]="p.y" [attr.r]="i === hoverIndex ? 3.6 : 2.4" fill="#7c3aed" stroke="#ffffff" stroke-width="1"/>
+            <ng-container *ngIf="hoverPoint as h">
+              <line [attr.x1]="h.x" [attr.x2]="h.x" [attr.y1]="linePlot.top" [attr.y2]="linePlot.bottom" stroke="#c4b5fd" stroke-dasharray="3 3"/>
+              <rect [attr.x]="h.boxX" [attr.y]="h.boxY" width="84" height="32" rx="6" fill="#ffffff" stroke="#e5e7eb"/>
+              <text [attr.x]="h.boxX + 42" [attr.y]="h.boxY + 13" text-anchor="middle" class="tip-title">{{ h.label }}</text>
+              <text [attr.x]="h.boxX + 42" [attr.y]="h.boxY + 25" text-anchor="middle" class="tip-text">{{ h.value | number }} plays</text>
+            </ng-container>
+            <rect *ngFor="let hit of c.hits; let i = index" [attr.x]="hit.x" [attr.y]="linePlot.top" [attr.width]="hit.width"
+              [attr.height]="linePlot.bottom - linePlot.top" fill="transparent" (mouseenter)="hoverIndex = i"/>
+          </svg>
+        </div>
+      </section>
+
+      <!-- Filters -->
+      <section class="card filters">
+        <label class="field"><span>Site</span><app-dropdown [options]="siteOptions" [(ngModel)]="siteFilter" (ngModelChange)="onSiteChange()"></app-dropdown></label>
+        <label class="field"><span>Building</span><app-dropdown [options]="buildingOptions" [(ngModel)]="buildingFilter" (ngModelChange)="onBuildingChange()"></app-dropdown></label>
+        <label class="field"><span>Zone</span><app-dropdown [options]="zoneOptions" [(ngModel)]="zoneFilter" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+        <label class="field"><span>Display Type</span><app-dropdown [options]="typeOptions" [(ngModel)]="typeFilter" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+        <label class="field"><span>Status</span><app-dropdown [options]="statusOptions" [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+      </section>
+
+      <!-- Display list -->
+      <section class="card table-card">
+        <div class="card-head">
+          <h2>Digital Displays ({{ filteredDisplays.length }})</h2>
+          <div class="tools">
+            <div class="assign-wrap">
+              <button type="button" class="btn-primary sm" (click)="assignMenuOpen = !assignMenuOpen" [attr.aria-expanded]="assignMenuOpen">
+                Assign Content{{ checked.size ? ' (' + checked.size + ')' : '' }}
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 14 }"></ng-container>
+              </button>
+              <div class="menu" *ngIf="assignMenuOpen">
+                <span class="menu-title">{{ checked.size ? 'Assign to ' + checked.size + ' selected' : 'Assign to ' + selected.name }}</span>
+                <button type="button" *ngFor="let p of playlists" (click)="assignPlaylist(p)">
+                  <span class="menu-thumb"><ng-container *ngTemplateOutlet="poster; context: { $implicit: posterFor(p), size: 'xs' }"></ng-container></span>{{ p }}
+                </button>
+              </div>
+            </div>
+            <button type="button" class="btn-outline sm" (click)="activeTab = 'Scheduling'">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'calendar', size: 15 }"></ng-container>
+              Schedule
+            </button>
+            <div class="more-wrap">
+              <button type="button" class="icon-btn boxed" (click)="moreMenuOpen = !moreMenuOpen" aria-label="more actions">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 18 }"></ng-container>
+              </button>
+              <div class="menu" *ngIf="moreMenuOpen">
+                <button type="button" (click)="notifyAction('Export')">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'upload', size: 16 }"></ng-container>Export List
+                </button>
+                <button type="button" (click)="notifyAction('Bulk restart')">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'power', size: 16 }"></ng-container>Restart Selected
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-scroll" appDragScroll>
+          <table>
+            <thead>
+              <tr>
+                <th class="check"><input type="checkbox" [checked]="allPageChecked" (change)="toggleAllPage()" aria-label="select all" /></th>
+                <th>Display Name</th>
+                <th>Location</th>
+                <th>Type</th>
+                <th>Content / Playlist</th>
+                <th>Status</th>
+                <th>Last Seen</th>
+                <th class="actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let d of pagedDisplays" [class.active]="d === selected" (click)="selectDisplay(d)">
+                <td class="check" (click)="$event.stopPropagation()">
+                  <input type="checkbox" [checked]="checked.has(d.id)" (change)="toggleRow(d)" [attr.aria-label]="'select ' + d.name" />
+                </td>
+                <td>
+                  <div class="name-cell">
+                    <span class="row-thumb"><ng-container *ngTemplateOutlet="poster; context: { $implicit: posterFor(d.playlist), size: 'xs' }"></ng-container></span>
+                    <span class="strong">{{ d.name }}</span>
+                  </div>
+                </td>
+                <td class="two-line"><span>{{ d.site }}</span><span>{{ d.zone }}</span></td>
+                <td>{{ d.type }}</td>
+                <td><a class="link">{{ d.playlist }}</a></td>
+                <td><span class="status" [class.offline]="d.status === 'offline'"><span class="dot"></span>{{ d.status | titlecase }}</span></td>
+                <td class="two-line"><span>{{ d.lastSeen.slice(0, -6) }}</span><span>{{ d.lastSeen.slice(-5) }}</span></td>
+                <td class="actions" (click)="$event.stopPropagation()">
+                  <div class="row-menu-wrap">
+                    <button type="button" class="icon-btn" aria-label="row actions" (click)="rowMenuId = rowMenuId === d.id ? null : d.id">
+                      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 18 }"></ng-container>
+                    </button>
+                    <div class="menu right" *ngIf="rowMenuId === d.id">
+                      <button type="button" (click)="rowAction(d, 'select')">
+                        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'pin', size: 15 }"></ng-container>Show on Map
+                      </button>
+                      <button type="button" (click)="rowAction(d, 'refresh')">
+                        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'refresh', size: 15 }"></ng-container>Refresh Content
+                      </button>
+                      <button type="button" (click)="rowAction(d, 'restart')">
+                        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'power', size: 15 }"></ng-container>Restart Display
+                      </button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="pagedDisplays.length === 0">
+                <td colspan="8" class="empty">No displays match these filters</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-foot">
+          <span>Showing {{ rangeStart }} to {{ rangeEnd }} of {{ filteredDisplays.length }} displays</span>
+          <div class="pager">
+            <button type="button" (click)="goToPage(page - 1)" [disabled]="page === 1" aria-label="previous page">‹</button>
+            <ng-container *ngFor="let p of pageList">
+              <button *ngIf="p !== null; else gap" type="button" [class.active]="p === page" (click)="goToPage(p)">{{ p }}</button>
+              <ng-template #gap><span class="gap">…</span></ng-template>
+            </ng-container>
+            <button type="button" (click)="goToPage(page + 1)" [disabled]="page === totalPages" aria-label="next page">›</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Side column: selected display -->
+    <aside class="side-col">
+      <section class="card preview-card">
+        <div class="card-head">
+          <h2>Live Display Preview</h2>
+          <a class="link" (click)="activeTab = 'Content Management'">View All</a>
+        </div>
+        <div class="screen" [class.off]="selected.status === 'offline'">
+          <ng-container *ngTemplateOutlet="poster; context: { $implicit: currentSlide, size: 'lg' }"></ng-container>
+          <span class="screen-badge"><span class="pulse" [class.dead]="selected.status === 'offline'"></span>{{ selected.name }}</span>
+          <div class="screen-off" *ngIf="selected.status === 'offline'">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'wifiOff', size: 26 }"></ng-container>
+            <strong>Display offline</strong>
+            <span>Last seen {{ selected.lastSeen }}</span>
+          </div>
+        </div>
+        <div class="thumbs">
+          <button type="button" *ngFor="let s of slides; let i = index" [class.active]="i === slideIndex" (click)="showSlide(i)" [attr.aria-label]="'show ' + s.title">
+            <ng-container *ngTemplateOutlet="poster; context: { $implicit: s, size: 'sm' }"></ng-container>
+          </button>
+        </div>
+      </section>
+
+      <section class="card map-card">
+        <div class="card-head">
+          <h2>Display Locations</h2>
+          <app-dropdown class="level-select" [options]="mapLevelOptions" [(ngModel)]="mapLevel" (ngModelChange)="zoom = 1"></app-dropdown>
+        </div>
+        <div class="map-wrap">
+          <svg class="map" [attr.viewBox]="viewBox">
+            <!-- Ground, planting and walkways -->
+            <rect [attr.width]="map.width" [attr.height]="map.height" fill="#e7e2d6"/>
+            <path d="M0 120h300M150 0v200M0 40h120" stroke="#f8f5ee" stroke-width="10"/>
+            <rect x="10" y="8" width="70" height="24" rx="4" fill="#9cbf8a"/>
+            <rect x="214" y="160" width="76" height="32" rx="6" fill="#9cbf8a"/>
+            <circle *ngFor="let t of [[24,140],[34,150],[22,184],[120,182],[132,174],[280,90],[270,100],[200,14],[214,10]]"
+              [attr.cx]="t[0]" [attr.cy]="t[1]" r="6" fill="#6d9c5c"/>
+            <!-- Buildings -->
+            <rect x="20" y="52" width="110" height="58" rx="3" fill="#f8fafc" stroke="#cbd5e1"/>
+            <rect x="162" y="20" width="126" height="90" rx="3" fill="#f1f5f9" stroke="#cbd5e1"/>
+            <rect x="60" y="130" width="80" height="44" rx="3" fill="#f8fafc" stroke="#cbd5e1"/>
+            <rect x="162" y="130" width="40" height="50" rx="3" fill="#f1f5f9" stroke="#cbd5e1"/>
+            <circle cx="232" cy="66" r="14" fill="#e0f2fe" stroke="#bae6fd"/>
+            <text x="75" y="84" text-anchor="middle" class="map-label">Main Atrium</text>
+            <text x="225" y="102" text-anchor="middle" class="map-label">Fashion Avenue</text>
+            <text x="100" y="156" text-anchor="middle" class="map-label">Cinema &amp; Dining</text>
+
+            <!-- Display pins -->
+            <g *ngFor="let d of mapPins" class="pin" [class.active]="d === selected" (click)="selectDisplay(d)">
+              <title>{{ d.name }} ({{ d.status }})</title>
+              <path [attr.transform]="'translate(' + (d.x - 8) + ' ' + (d.y - 21) + ')'" d="M8 21s7-6.5 7-12A7 7 0 001 9c0 5.5 7 12 7 12z"
+                [attr.fill]="d.status === 'offline' ? '#ef4444' : '#6d28d9'" stroke="#ffffff" stroke-width="1.4"/>
+              <rect [attr.x]="d.x - 3.5" [attr.y]="d.y - 15.5" width="7" height="5" rx="0.8" fill="none" stroke="#ffffff" stroke-width="1.1"/>
+            </g>
+            <g *ngIf="pinLabel as l" class="pin-label">
+              <rect [attr.x]="l.x" [attr.y]="l.y" [attr.width]="l.width" height="24" rx="4" fill="#1e1b4b" opacity="0.92"/>
+              <text [attr.x]="l.x + 7" [attr.y]="l.y + 10" class="pin-name">{{ selected.name }}</text>
+              <circle [attr.cx]="l.x + 9" [attr.cy]="l.y + 17" r="2" [attr.fill]="selected.status === 'offline' ? '#ef4444' : '#22c55e'"/>
+              <text [attr.x]="l.x + 14" [attr.y]="l.y + 19" class="pin-status">{{ selected.status | titlecase }}</text>
+            </g>
+          </svg>
+          <div class="map-controls">
+            <button type="button" (click)="setZoom(0.5)" [disabled]="zoom >= 2" aria-label="zoom in">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 15 }"></ng-container>
+            </button>
+            <button type="button" (click)="setZoom(-0.5)" [disabled]="zoom <= 1" aria-label="zoom out">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'minus', size: 15 }"></ng-container>
+            </button>
+          </div>
+          <span class="map-count">{{ mapPins.length }} displays on this level</span>
+        </div>
+      </section>
+
+      <section class="card schedule-card">
+        <div class="card-head">
+          <h2>Content Schedule - {{ selected.name }}</h2>
+          <a class="link" (click)="activeTab = 'Scheduling'">View All</a>
+        </div>
+        <ol class="timeline">
+          <li *ngFor="let s of schedule; let i = index" [ngClass]="'t-' + s.state.toLowerCase()">
+            <span class="time">{{ s.time }}</span>
+            <button type="button" class="tl-thumb" (click)="showSlide(i)" [attr.aria-label]="'preview ' + s.poster.title">
+              <ng-container *ngTemplateOutlet="poster; context: { $implicit: s.poster, size: 'sm' }"></ng-container>
+            </button>
+            <div class="tl-body">
+              <strong>{{ s.poster.title }}</strong>
+              <span>Duration: {{ s.duration }} sec</span>
+            </div>
+            <span class="pill" [ngClass]="'st-' + s.state.toLowerCase()">{{ s.state }}</span>
+          </li>
+        </ol>
+      </section>
+    </aside>
+  </div>
+
+  <ng-template #comingSoon>
+    <section class="card empty tab-empty">{{ activeTab }} view coming soon</section>
+  </ng-template>
+
+  <div class="toast" *ngIf="toast" role="status">{{ toast }}</div>
+</div>

@@ -1,0 +1,258 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<div class="monitoring">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <h1>Monitoring</h1>
+      <p>Real-time and historical monitoring of all environmental parameters</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-primary">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'settings', size: 16 }"></ng-container>
+        Customize View
+      </button>
+      <button type="button" class="btn-outline">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'export', size: 16 }"></ng-container>
+        Export
+      </button>
+      <button type="button" class="btn-outline icon-only" aria-label="more options">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 18 }"></ng-container>
+      </button>
+    </div>
+  </header>
+
+  <nav class="page-tabs">
+    <button type="button" *ngFor="let tab of tabs" [class.active]="tab === activeTab" (click)="activeTab = tab">{{ tab }}</button>
+  </nav>
+
+  <ng-container *ngIf="activeTab === tabs[0]; else comingSoon">
+
+    <!-- Parameter summary -->
+    <section class="summary-row">
+      <div class="card summary" *ngFor="let s of summary">
+        <div class="summary-top">
+          <span class="summary-icon" [ngClass]="'tone-' + s.tone">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: s.icon, size: 26 }"></ng-container>
+          </span>
+          <div class="summary-body">
+            <span class="summary-label">{{ s.label }}</span>
+            <span class="summary-value">{{ s.total | number }}</span>
+            <span class="summary-sub">Monitoring Points</span>
+          </div>
+        </div>
+        <div class="summary-breakdown">
+          <span *ngFor="let st of statuses" [title]="st | titlecase">
+            <span class="dot" [style.background]="statusColors[st]"></span>{{ s.breakdown[st] | number }}
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filters -->
+    <section class="card filters">
+      <label class="field"><span>Site</span><app-dropdown [options]="siteOptions" [(ngModel)]="site" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+      <label class="field"><span>Building</span><app-dropdown [options]="buildingOptions" [(ngModel)]="building" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+      <label class="field"><span>Floor</span><app-dropdown [options]="floorOptions" [(ngModel)]="floor" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+      <label class="field"><span>Space Type</span><app-dropdown [options]="spaceTypeOptions" [(ngModel)]="spaceType" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+      <label class="field"><span>Parameter</span><app-dropdown [options]="parameterOptions" [(ngModel)]="parameter" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+      <label class="field"><span>Status</span><app-dropdown [options]="statusOptions" [(ngModel)]="status" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+      <label class="search">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 15 }"></ng-container>
+        <input type="text" placeholder="Search monitoring points..." [(ngModel)]="search" (ngModelChange)="onFilterChange()" />
+      </label>
+    </section>
+
+    <div class="content" [class.no-detail]="!selected">
+
+      <!-- Monitoring points table -->
+      <section class="card table-card">
+        <div class="card-head">
+          <h2>Monitoring Points ({{ filteredPoints.length }})</h2>
+          <div class="head-actions">
+            <div class="bulk">
+              <button type="button" class="btn-primary sm" (click)="bulkOpen = !bulkOpen">
+                Bulk Actions{{ checked.size ? ' (' + checked.size + ')' : '' }}
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 13 }"></ng-container>
+              </button>
+              <div class="bulk-menu" *ngIf="bulkOpen">
+                <button type="button" [disabled]="!checked.size" (click)="bulkOpen = false">Acknowledge</button>
+                <button type="button" [disabled]="!checked.size" (click)="bulkOpen = false">Export Selected</button>
+                <button type="button" [disabled]="!checked.size" (click)="checked.clear(); bulkOpen = false">Clear Selection</button>
+              </div>
+            </div>
+            <button type="button" class="btn-ghost" aria-label="table settings">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'settings', size: 16 }"></ng-container>
+            </button>
+          </div>
+        </div>
+
+        <div class="table-scroll" appDragScroll>
+          <table>
+            <thead>
+              <tr>
+                <th class="check"><input type="checkbox" [checked]="allPageChecked" (change)="toggleAllPage()" aria-label="select all" /></th>
+                <th>Monitoring Point</th>
+                <th>Space / Location</th>
+                <th>Parameter</th>
+                <th>Current Value</th>
+                <th>Status</th>
+                <th>Trend (24h)</th>
+                <th>Last Reading</th>
+                <th class="actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let point of pagedPoints" [class.active]="point === selected" (click)="selectPoint(point)">
+                <td class="check" (click)="$event.stopPropagation()">
+                  <input type="checkbox" [checked]="checked.has(point.id)" (change)="toggleRow(point)" [attr.aria-label]="'select ' + point.name" />
+                </td>
+                <td class="strong">{{ point.name }}</td>
+                <td>{{ point.space }}</td>
+                <td>{{ point.parameter }}</td>
+                <td class="value" [ngClass]="'value-' + point.valueTone">{{ point.value }}</td>
+                <td><span class="status-pill" [ngClass]="'pill-' + point.status"><span class="dot"></span>{{ point.status | titlecase }}</span></td>
+                <td>
+                  <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+                    <polyline class="draw" pathLength="1" [attr.points]="sparkPoints(point.trend)" fill="none" [attr.stroke]="point.trendColor" stroke-width="2" stroke-linejoin="round"/>
+                  </svg>
+                </td>
+                <td class="muted">{{ point.lastReading }}</td>
+                <td class="actions">
+                  <button type="button" class="icon-btn" aria-label="more actions" (click)="$event.stopPropagation()">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 18 }"></ng-container>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="pagedPoints.length === 0">
+                <td colspan="9" class="empty">No monitoring points found</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-foot">
+          <span>Showing {{ rangeStart }} to {{ rangeEnd }} of {{ filteredPoints.length }} monitoring points</span>
+          <div class="pager">
+            <button type="button" (click)="goToPage(page - 1)" [disabled]="page === 1" aria-label="previous page">‹</button>
+            <ng-container *ngFor="let p of pageList">
+              <button *ngIf="p !== null; else gap" type="button" [class.active]="p === page" (click)="goToPage(p)">{{ p }}</button>
+              <ng-template #gap><span class="gap">…</span></ng-template>
+            </ng-container>
+            <button type="button" (click)="goToPage(page + 1)" [disabled]="page === totalPages" aria-label="next page">›</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Detail panel -->
+      <aside class="detail" *ngIf="selected as point">
+        <section class="card">
+          <div class="detail-head">
+            <h2>{{ point.name }}</h2>
+            <span class="online"><span class="dot"></span>Online</span>
+            <button type="button" class="btn-ghost" aria-label="edit">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'edit', size: 15 }"></ng-container>
+            </button>
+            <button type="button" class="btn-ghost" aria-label="close" (click)="closeDetail()">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 15 }"></ng-container>
+            </button>
+          </div>
+          <div class="detail-path">{{ point.site }} › {{ point.building }} › {{ point.floor }} › {{ point.space }}</div>
+
+          <nav class="detail-tabs">
+            <button type="button" *ngFor="let tab of detailTabs" [class.active]="tab === activeDetailTab" (click)="activeDetailTab = tab">{{ tab }}</button>
+          </nav>
+
+          <div class="overview" *ngIf="activeDetailTab === detailTabs[0]; else detailSoon">
+            <div class="overview-image">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'fridge', size: 44 }"></ng-container>
+            </div>
+            <dl>
+              <div><dt>Space Type</dt><dd>{{ point.spaceType }}</dd></div>
+              <div><dt>Status</dt><dd><span class="status-pill" [ngClass]="'pill-' + point.status"><span class="dot"></span>{{ point.status | titlecase }}</span></dd></div>
+              <div><dt>Monitoring Point ID</dt><dd>{{ point.id }}</dd></div>
+              <div><dt>Last Reading</dt><dd>{{ point.lastReading }}</dd></div>
+              <div><dt>Device</dt><dd>{{ point.device }}</dd></div>
+              <div>
+                <dt>Battery</dt>
+                <dd class="battery">
+                  <span class="battery-icon"><span [style.width.%]="point.battery"></span></span>{{ point.battery }}%
+                </dd>
+              </div>
+              <div><dt>Installation Date</dt><dd>{{ point.installed }}</dd></div>
+              <div>
+                <dt>Signal Strength</dt>
+                <dd class="signal">
+                  <span class="bars">
+                    <span *ngFor="let b of [1, 2, 3, 4]" [class.on]="b <= signalBars(point.signal)" [style.height.px]="3 + b * 2.5"></span>
+                  </span>
+                  {{ point.signal }} dBm
+                </dd>
+              </div>
+            </dl>
+          </div>
+          <ng-template #detailSoon>
+            <div class="empty">{{ activeDetailTab }} view coming soon</div>
+          </ng-template>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Current Readings</h2>
+            <app-dropdown class="range" [options]="rangeOptions" [(ngModel)]="range"></app-dropdown>
+          </div>
+          <div class="readings">
+            <div class="reading" *ngFor="let r of readings">
+              <div class="reading-top">
+                <span class="reading-icon" [ngClass]="'tone-' + r.tone">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: r.icon, size: 20 }"></ng-container>
+                </span>
+                <div>
+                  <span class="reading-label">{{ r.label }}</span>
+                  <span class="reading-value">{{ r.value }} <small>{{ r.unit }}</small></span>
+                </div>
+              </div>
+              <span class="status-pill" [ngClass]="'pill-' + r.status"><span class="dot"></span>{{ r.status | titlecase }}</span>
+              <span class="reading-note">{{ r.note }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card trend-card">
+          <div class="card-head">
+            <h2>Temperature &amp; Humidity Trend</h2>
+          </div>
+          <div class="chart-legend">
+            <span><span class="legend-line" style="background:#ef4444"></span>Temperature (°C)</span>
+            <span><span class="legend-line" style="background:#2563eb"></span>Humidity (%RH)</span>
+          </div>
+          <svg class="trend-chart" viewBox="0 0 520 220" aria-label="Temperature and humidity over the last 24 hours">
+            <rect [attr.x]="eventBand.x" [attr.y]="chart.top" [attr.width]="eventBand.width" [attr.height]="chart.bottom - chart.top" fill="#fee2e2" opacity="0.7"/>
+            <g *ngFor="let t of tempTicks">
+              <line [attr.x1]="chart.left" [attr.x2]="chart.right" [attr.y1]="t.y" [attr.y2]="t.y" stroke="#eef0f5"/>
+              <text [attr.x]="chart.left - 8" [attr.y]="t.y + 4" text-anchor="end" class="axis">{{ t.label }}</text>
+            </g>
+            <text *ngFor="let t of humidityTicks" [attr.x]="chart.right + 8" [attr.y]="t.y + 4" class="axis">{{ t.label }}</text>
+            <text *ngFor="let t of hourTicks" [attr.x]="t.x" [attr.y]="chart.bottom + 18" text-anchor="middle" class="axis">{{ t.label }}</text>
+            <text x="12" y="96" class="axis-title" transform="rotate(-90 12 96)" text-anchor="middle">Temperature (°C)</text>
+            <text x="510" y="96" class="axis-title" transform="rotate(90 510 96)" text-anchor="middle">Humidity (%RH)</text>
+
+            <polyline class="draw" pathLength="1" [attr.points]="tempLine.points" fill="none" stroke="#ef4444" stroke-width="2"/>
+            <circle *ngFor="let d of tempLine.dots" [attr.cx]="d.x" [attr.cy]="d.y" r="2.5" fill="#ef4444"/>
+            <polyline class="draw" pathLength="1" [attr.points]="humidityLine.points" fill="none" stroke="#2563eb" stroke-width="2"/>
+            <circle *ngFor="let d of humidityLine.dots" [attr.cx]="d.x" [attr.cy]="d.y" r="2.5" fill="#2563eb"/>
+          </svg>
+        </section>
+      </aside>
+    </div>
+  </ng-container>
+
+  <ng-template #comingSoon>
+    <section class="card empty tab-empty">{{ activeTab }} view coming soon</section>
+  </ng-template>
+</div>

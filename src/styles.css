@@ -32,7 +32,12 @@
 }
 
 html, body {
+  margin: 0;
   font-family: 'Red Hat Display', sans-serif;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
 }
 
 /* ---- shared master page / popup form styles (used by every master component) ---- */
@@ -328,4 +333,14 @@ html, body {
 .popup-detail-rows li span:last-child {
   font-weight: 700;
   color: #111827;
+}
+
+/* Drag-to-scroll containers (shared/drag-scroll directive) */
+.drag-scroll {
+  cursor: grab;
+}
+
+.drag-scroll.dragging {
+  cursor: grabbing;
+  user-select: none;
 }

@@ -1,0 +1,306 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<div class="admin">
+
+  <header class="page-header">
+    <h1>Administration</h1>
+    <p>Manage users, roles, security, system settings and platform operations</p>
+  </header>
+
+  <nav class="page-tabs">
+    <button type="button" *ngFor="let tab of tabs" [class.active]="tab === activeTab" (click)="activeTab = tab">{{ tab }}</button>
+  </nav>
+
+  <!-- KPI row -->
+  <section class="stats">
+    <div class="stat card" *ngFor="let s of stats">
+      <span class="stat-icon" [style.color]="s.color" [style.background]="s.tint">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: s.icon, size: 24 }"></ng-container>
+      </span>
+      <div class="stat-body">
+        <span class="stat-label">{{ s.label }}</span>
+        <strong class="stat-value">{{ s.value }}</strong>
+        <span class="stat-change">
+          <span [ngClass]="changeClass(s.change, s.goodWhenUp)">{{ s.change < 0 ? '▼' : '▲' }} {{ s.change < 0 ? -s.change : s.change }}%</span>
+          <span class="muted">vs last month</span>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <ng-container *ngIf="activeTab === 'User Management'; else comingSoon">
+
+    <div class="layout">
+      <div class="main-col">
+
+        <!-- Module shortcuts -->
+        <section class="module-grid">
+          <button type="button" class="module card" *ngFor="let m of modules" (click)="openModule(m)">
+            <span class="module-icon" [style.color]="m.color" [style.background]="m.tint">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: m.icon, size: 22 }"></ng-container>
+            </span>
+            <span class="module-text">
+              <strong>{{ m.name }}</strong>
+              <span>{{ m.description }}</span>
+            </span>
+            <span class="module-arrow">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'arrow', size: 18 }"></ng-container>
+            </span>
+          </button>
+        </section>
+
+        <!-- Users -->
+        <section class="card users">
+          <div class="card-head">
+            <h2>Users</h2>
+            <div class="list-tools">
+              <label class="search">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 15 }"></ng-container>
+                <input type="text" placeholder="Search users..." [(ngModel)]="search" (ngModelChange)="onFilterChange()"/>
+              </label>
+              <app-dropdown [options]="roleOptions" [(ngModel)]="role" (ngModelChange)="onFilterChange()"></app-dropdown>
+              <button type="button" class="btn-primary sm" (click)="openAdd()">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 15 }"></ng-container>
+                Add User
+              </button>
+              <button type="button" class="btn-ghost" *ngIf="selected.size" (click)="deleteSelected()">Delete ({{ selected.size }})</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th class="col-check"><input type="checkbox" [checked]="allOnPageSelected" (change)="toggleAll()" aria-label="select all"/></th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Group</th>
+                  <th>Status</th>
+                  <th>Last Login</th>
+                  <th class="center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let u of pageRows" [class.selected]="selected.has(u.id)">
+                  <td class="col-check"><input type="checkbox" [checked]="selected.has(u.id)" (change)="toggleRow(u.id)" [attr.aria-label]="'select ' + u.name"/></td>
+                  <td>
+                    <span class="user-name">
+                      <span class="avatar" [style.background]="roleColors[u.role]">{{ initials(u.name) }}</span>
+                      {{ u.name }}
+                    </span>
+                  </td>
+                  <td>{{ u.email }}</td>
+                  <td>{{ u.role }}</td>
+                  <td>{{ u.group }}</td>
+                  <td>
+                    <span class="status" [class.inactive]="u.status === 'Inactive'"><span class="dot"></span>{{ u.status }}</span>
+                  </td>
+                  <td>{{ u.lastLogin }}</td>
+                  <td class="center actions">
+                    <button type="button" class="icon-btn" aria-label="row actions" (click)="toggleMenu(u.id, $event)">
+                      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'dots', size: 18 }"></ng-container>
+                    </button>
+                    <div class="row-menu" *ngIf="menuFor === u.id" (click)="$event.stopPropagation()">
+                      <button type="button" (click)="openEdit(u)">
+                        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'edit', size: 14 }"></ng-container> Edit
+                      </button>
+                      <button type="button" (click)="resetPassword(u)">
+                        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'reset', size: 14 }"></ng-container> Reset Password
+                      </button>
+                      <button type="button" (click)="toggleStatus(u)">
+                        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'toggle', size: 14 }"></ng-container>
+                        {{ u.status === 'Active' ? 'Deactivate' : 'Activate' }}
+                      </button>
+                      <button type="button" class="danger" (click)="deleteUser(u)">
+                        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'trash', size: 14 }"></ng-container> Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr *ngIf="!pageRows.length">
+                  <td colspan="8" class="empty">No users match your filters</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="list-foot">
+            <span class="muted">Showing {{ rangeStart }} to {{ rangeEnd }} of {{ filtered.length }} users</span>
+            <div class="pager">
+              <button type="button" class="page-btn" [disabled]="page === 1" (click)="goTo(page - 1)" aria-label="previous page">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'left', size: 14 }"></ng-container>
+              </button>
+              <ng-container *ngFor="let p of pages">
+                <button *ngIf="p !== null; else gap" type="button" class="page-btn" [class.active]="p === page" (click)="goTo(p)">{{ p }}</button>
+                <ng-template #gap><span class="page-gap">…</span></ng-template>
+              </ng-container>
+              <button type="button" class="page-btn" [disabled]="page === pageCount" (click)="goTo(page + 1)" aria-label="next page">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 14 }"></ng-container>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <div class="bottom-row">
+          <!-- Security settings -->
+          <section class="card">
+            <h2>Security Settings</h2>
+            <div class="setting-list">
+              <button type="button" class="setting" *ngFor="let s of securitySettings" (click)="toggleSetting(s)"
+                [title]="s.toggle ? 'Click to ' + (s.value === 'Enabled' ? 'disable' : 'enable') : 'Open security settings'">
+                <span class="setting-icon">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: s.icon, size: 16 }"></ng-container>
+                </span>
+                <span class="setting-name">{{ s.name }}</span>
+                <span *ngIf="s.tone; else plain" class="pill" [ngClass]="'pill-' + s.tone">{{ s.value }}</span>
+                <ng-template #plain><span class="setting-value">{{ s.value }}</span></ng-template>
+                <span class="setting-arrow">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 14 }"></ng-container>
+                </span>
+              </button>
+            </div>
+          </section>
+
+          <!-- License usage -->
+          <section class="card">
+            <div class="card-head">
+              <h2>License Usage</h2>
+              <a class="link" (click)="activeTab = 'Licensing'">View Details</a>
+            </div>
+            <div class="license-list">
+              <div class="license" *ngFor="let l of licenses">
+                <div class="license-head">
+                  <span>{{ l.product }}</span>
+                  <span><strong>{{ l.used }}</strong> <span class="muted">/ {{ l.total }}</span></span>
+                </div>
+                <div class="bar" role="progressbar" [attr.aria-valuenow]="l.used" [attr.aria-valuemax]="l.total" [attr.aria-label]="l.product + ' licenses used'"
+                  [title]="licensePercent(l.used, l.total) + '% used'">
+                  <span class="bar-fill" [style.width.%]="licensePercent(l.used, l.total)" [style.background]="l.color"></span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- System status -->
+          <section class="card">
+            <div class="card-head">
+              <h2>System Status</h2>
+              <span class="pill" [ngClass]="allServicesOnline ? 'pill-good' : 'pill-bad'">{{ allServicesOnline ? 'All Systems Online' : 'Degraded' }}</span>
+            </div>
+            <div class="service-list">
+              <div class="service" *ngFor="let s of services">
+                <span>{{ s.name }}</span>
+                <span class="pill" [ngClass]="s.online ? 'pill-good' : 'pill-bad'">{{ s.online ? 'Online' : 'Offline' }}</span>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <aside class="side-col">
+        <!-- Role distribution -->
+        <section class="card">
+          <h2>Role Distribution</h2>
+          <div class="donut-wrap">
+            <svg class="donut" viewBox="0 0 160 160" role="img" [attr.aria-label]="'Role distribution of ' + users.length + ' users'">
+              <circle cx="80" cy="80" r="62" fill="none" stroke="#f3f4f6" stroke-width="22"/>
+              <circle *ngFor="let seg of donut" cx="80" cy="80" r="62" fill="none" [attr.stroke]="seg.color" stroke-width="22"
+                [attr.stroke-dasharray]="seg.dash" [attr.stroke-dashoffset]="seg.offset" transform="rotate(-90 80 80)"
+                class="seg" [class.dim]="hoveredRole && hoveredRole !== seg.role"
+                (mouseenter)="hoveredRole = seg.role" (mouseleave)="hoveredRole = null">
+                <title>{{ seg.role }}: {{ seg.count }} ({{ seg.percent }}%)</title>
+              </circle>
+              <text x="80" y="80" text-anchor="middle" class="donut-value">{{ donutCenter.value }}</text>
+              <text x="80" y="98" text-anchor="middle" class="donut-label">{{ donutCenter.label }}</text>
+            </svg>
+            <ul class="legend">
+              <li *ngFor="let seg of donut" [class.dim]="hoveredRole && hoveredRole !== seg.role"
+                (mouseenter)="hoveredRole = seg.role" (mouseleave)="hoveredRole = null">
+                <span class="swatch" [style.background]="seg.color"></span>
+                <span class="legend-name">{{ seg.role }}</span>
+                <span class="legend-value">{{ seg.count }} ({{ seg.percent }}%)</span>
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- Recent activities -->
+        <section class="card activity">
+          <div class="card-head">
+            <h2>Recent Activities</h2>
+            <a class="link" *ngIf="activities.length > 5" (click)="showAllActivity = !showAllActivity">{{ showAllActivity ? 'Show Less' : 'View All' }}</a>
+          </div>
+          <ol class="timeline">
+            <li *ngFor="let a of visibleActivities">
+              <span class="tl-dot" [style.background]="a.color"></span>
+              <span class="tl-icon" [style.color]="a.color" [style.background]="a.tint">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: a.icon, size: 18 }"></ng-container>
+              </span>
+              <div class="tl-body">
+                <strong>{{ a.title }}</strong>
+                <span>{{ a.detail }}</span>
+                <span class="muted">{{ a.time }}</span>
+              </div>
+            </li>
+          </ol>
+        </section>
+      </aside>
+    </div>
+
+  </ng-container>
+
+  <ng-template #comingSoon>
+    <section class="card placeholder">
+      <span class="stat-icon" style="color:#6d28d9;background:#ede9fe">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'gear', size: 26 }"></ng-container>
+      </span>
+      <h2>{{ activeTab }}</h2>
+      <p class="muted">This section is under development.</p>
+      <button type="button" class="btn-ghost" (click)="activeTab = tabs[0]">Back to User Management</button>
+    </section>
+  </ng-template>
+</div>
+
+<!-- Add / edit user -->
+<div class="overlay" *ngIf="dialogOpen" (click)="dialogOpen = false">
+  <div class="dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+    <div class="dialog-head">
+      <h2>{{ editing ? 'Edit User' : 'Add User' }}</h2>
+      <button type="button" class="icon-btn" aria-label="close" (click)="dialogOpen = false">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 18 }"></ng-container>
+      </button>
+    </div>
+    <form class="dialog-body" (ngSubmit)="saveUser()">
+      <label class="field">
+        <span>Full Name</span>
+        <input type="text" name="name" [(ngModel)]="draft.name" placeholder="e.g. Ahmed Al Mansoori" autofocus/>
+      </label>
+      <label class="field">
+        <span>Email</span>
+        <input type="email" name="email" [(ngModel)]="draft.email" placeholder="name@company.com"/>
+        <small class="field-error" *ngIf="emailTaken">A user with this email already exists</small>
+      </label>
+      <div class="field-row">
+        <div class="field">
+          <span>Role</span>
+          <app-dropdown name="role" [options]="draftRoleOptions" [(ngModel)]="draft.role"></app-dropdown>
+        </div>
+        <div class="field">
+          <span>Group</span>
+          <app-dropdown name="group" [options]="groupOptions" [(ngModel)]="draft.group"></app-dropdown>
+        </div>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" class="btn-ghost" (click)="dialogOpen = false">Cancel</button>
+        <button type="submit" class="btn-primary sm" [disabled]="!canSave">{{ editing ? 'Save Changes' : 'Add User' }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" *ngIf="toast">{{ toast }}</div>

@@ -1,0 +1,379 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<!-- Illustrated header for each template card -->
+<ng-template #scene let-art>
+  <svg class="scene" viewBox="0 0 240 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true" [ngSwitch]="art">
+    <g *ngSwitchCase="'retail'">
+      <rect width="240" height="110" fill="#fde7c4"/>
+      <rect y="70" width="240" height="40" fill="#e9d5b5"/>
+      <g *ngFor="let s of [[8, '#f59e0b'], [66, '#7c3aed'], [124, '#ef4444'], [182, '#0ea5e9']]">
+        <rect [attr.x]="s[0]" y="22" width="50" height="48" fill="#fff7ed" stroke="#e5c9a0"/>
+        <rect [attr.x]="s[0]" y="22" width="50" height="9" [attr.fill]="s[1]"/>
+        <rect [attr.x]="+s[0] + 6" y="36" width="38" height="26" fill="#bfdbfe" opacity="0.8"/>
+      </g>
+      <g *ngFor="let p of [[30, 1], [52, 0.8], [96, 1], [150, 0.9], [176, 1], [212, 0.8]]" fill="#334155">
+        <circle [attr.cx]="p[0]" [attr.cy]="74 - 12 * p[1]" [attr.r]="3.4 * p[1]"/>
+        <rect [attr.x]="p[0] - 3.4 * p[1]" [attr.y]="78 - 12 * p[1]" [attr.width]="6.8 * p[1]" [attr.height]="16 * p[1]" rx="2"/>
+      </g>
+      <g *ngFor="let m of [[60, 14], [118, 10], [168, 16]]">
+        <circle [attr.cx]="m[0]" [attr.cy]="m[1]" r="6" fill="#7c3aed" stroke="#ffffff" stroke-width="1.5"/>
+      </g>
+    </g>
+    <g *ngSwitchCase="'office'">
+      <rect width="240" height="110" fill="#e0ecf8"/>
+      <g fill="#bfdbfe" stroke="#93c5fd" stroke-width="0.6">
+        <rect *ngFor="let x of [10, 50, 90, 130, 170, 210]" [attr.x]="x" y="8" width="30" height="40"/>
+      </g>
+      <rect y="60" width="240" height="50" fill="#cbd5e1"/>
+      <g *ngFor="let d of [[20, 66], [90, 66], [160, 66], [40, 88], [120, 88], [190, 88]]">
+        <rect [attr.x]="d[0]" [attr.y]="d[1]" width="44" height="6" rx="1" fill="#f8fafc"/>
+        <rect [attr.x]="d[0] + 14" [attr.y]="d[1] - 10" width="16" height="10" rx="1" fill="#1e293b"/>
+        <circle [attr.cx]="d[0] + 10" [attr.cy]="d[1] - 5" r="3" fill="#475569"/>
+      </g>
+    </g>
+    <g *ngSwitchCase="'warehouse'">
+      <rect width="240" height="110" fill="#e2e8f0"/>
+      <rect y="84" width="240" height="26" fill="#cbd5e1"/>
+      <g *ngFor="let x of [8, 82, 156]">
+        <rect [attr.x]="x" y="10" width="64" height="74" fill="none" stroke="#2563eb" stroke-width="2"/>
+        <line *ngFor="let y of [34, 58]" [attr.x1]="x" [attr.x2]="x + 64" [attr.y1]="y" [attr.y2]="y" stroke="#2563eb" stroke-width="2"/>
+        <rect *ngFor="let b of [[4, 16], [24, 18], [44, 14], [6, 40], [30, 42], [10, 64], [36, 62]]" [attr.x]="x + b[0]" [attr.y]="b[1]"
+          width="16" [attr.height]="(b[1] < 34 ? 34 : b[1] < 58 ? 58 : 84) - b[1]" fill="#d6a76c" stroke="#a16207" stroke-width="0.5"/>
+      </g>
+      <g transform="translate(118 62)">
+        <rect x="0" y="6" width="26" height="16" rx="2" fill="#facc15"/>
+        <rect x="8" y="-6" width="14" height="12" fill="none" stroke="#1f2937" stroke-width="1.6"/>
+        <line x1="-4" x2="-4" y1="-10" y2="22" stroke="#1f2937" stroke-width="2"/>
+        <line x1="-14" x2="-4" y1="20" y2="20" stroke="#1f2937" stroke-width="2"/>
+        <circle cx="6" cy="23" r="4" fill="#111827"/><circle cx="21" cy="23" r="4" fill="#111827"/>
+      </g>
+    </g>
+    <g *ngSwitchCase="'parking'">
+      <rect width="240" height="110" fill="#475569"/>
+      <rect y="0" width="240" height="14" fill="#334155"/>
+      <circle *ngFor="let x of [30, 90, 150, 210]" [attr.cx]="x" cy="10" r="2.5" [attr.fill]="x === 150 ? '#ef4444' : '#22c55e'"/>
+      <g *ngFor="let c of [[12, '#e2e8f0'], [56, '#1f2937'], [100, '#94a3b8'], [144, '#b91c1c'], [188, '#f8fafc']]">
+        <rect [attr.x]="c[0]" y="56" width="38" height="20" rx="5" [attr.fill]="c[1]"/>
+        <rect [attr.x]="+c[0] + 6" y="46" width="26" height="12" rx="4" [attr.fill]="c[1]"/>
+        <rect [attr.x]="+c[0] + 9" y="48" width="20" height="8" rx="2" fill="#93c5fd" opacity="0.8"/>
+        <circle [attr.cx]="+c[0] + 8" cy="77" r="4" fill="#0f172a"/><circle [attr.cx]="+c[0] + 30" cy="77" r="4" fill="#0f172a"/>
+      </g>
+      <line *ngFor="let x of [8, 52, 96, 140, 184, 228]" [attr.x1]="x" [attr.x2]="x" y1="44" y2="84" stroke="#f8fafc" stroke-width="1"/>
+      <rect x="200" y="18" width="30" height="22" rx="3" fill="#1d4ed8"/>
+      <text x="215" y="34" text-anchor="middle" font-size="14" font-weight="800" fill="#ffffff">P1</text>
+    </g>
+    <g *ngSwitchCase="'healthcare'">
+      <rect width="240" height="110" fill="#ecfeff"/>
+      <rect y="74" width="240" height="36" fill="#cffafe"/>
+      <rect x="0" y="10" width="240" height="4" fill="#a5f3fc"/>
+      <g *ngFor="let x of [14, 92, 170]">
+        <rect [attr.x]="x" y="56" width="56" height="16" rx="3" fill="#ffffff" stroke="#67e8f9"/>
+        <rect [attr.x]="x" y="48" width="14" height="10" rx="2" fill="#e0f2fe"/>
+        <line [attr.x1]="x + 4" [attr.x2]="x + 4" y1="72" y2="84" stroke="#94a3b8" stroke-width="2"/>
+        <line [attr.x1]="x + 52" [attr.x2]="x + 52" y1="72" y2="84" stroke="#94a3b8" stroke-width="2"/>
+        <rect [attr.x]="x + 40" y="20" width="14" height="30" fill="#5eead4" opacity="0.5"/>
+      </g>
+      <rect x="112" y="22" width="16" height="16" rx="3" fill="#ef4444"/>
+      <path d="M120 25v10M115 30h10" stroke="#ffffff" stroke-width="2.4"/>
+    </g>
+    <g *ngSwitchCase="'education'">
+      <rect width="240" height="110" fill="#dbeafe"/>
+      <rect y="84" width="240" height="26" fill="#bbf7d0"/>
+      <rect x="40" y="30" width="160" height="54" fill="#f8fafc" stroke="#cbd5e1"/>
+      <path d="M30 32L120 8l90 24z" fill="#64748b"/>
+      <rect *ngFor="let x of [56, 84, 112, 140, 168]" [attr.x]="x" y="40" width="10" height="44" fill="#e2e8f0"/>
+      <circle *ngFor="let t of [16, 222]" [attr.cx]="t" cy="70" r="14" fill="#22c55e"/>
+      <g *ngFor="let p of [[70, 1], [100, 0.9], [130, 1], [158, 0.85]]" fill="#1e293b">
+        <circle [attr.cx]="p[0]" [attr.cy]="88 - 12 * p[1]" [attr.r]="3.4 * p[1]"/>
+        <rect [attr.x]="p[0] - 3.4 * p[1]" [attr.y]="92 - 12 * p[1]" [attr.width]="6.8 * p[1]" [attr.height]="15 * p[1]" rx="2"/>
+      </g>
+    </g>
+    <g *ngSwitchCase="'industrial'">
+      <rect width="240" height="110" fill="#fcd9a8"/>
+      <rect width="240" height="50" fill="#93c5fd" opacity="0.55"/>
+      <rect y="86" width="240" height="24" fill="#57534e"/>
+      <g fill="#44403c">
+        <rect x="20" y="40" width="14" height="46"/><rect x="40" y="26" width="10" height="60"/>
+        <rect x="70" y="50" width="50" height="36"/><rect x="130" y="34" width="16" height="52"/>
+        <rect x="160" y="54" width="60" height="32"/><rect x="200" y="20" width="10" height="34"/>
+      </g>
+      <ellipse cx="45" cy="18" rx="10" ry="5" fill="#e7e5e4" opacity="0.8"/>
+      <ellipse cx="205" cy="12" rx="12" ry="5" fill="#e7e5e4" opacity="0.8"/>
+      <path d="M34 70h36M120 64h10M146 70h14" stroke="#a8a29e" stroke-width="3"/>
+      <circle *ngFor="let l of [[26, 50], [44, 40], [138, 44], [176, 64], [96, 60]]" [attr.cx]="l[0]" [attr.cy]="l[1]" r="1.6" fill="#fde047"/>
+    </g>
+    <g *ngSwitchCase="'city'">
+      <rect width="240" height="110" fill="#bfdbfe"/>
+      <rect y="88" width="240" height="22" fill="#334155"/>
+      <path d="M0 98h240" stroke="#fde047" stroke-width="1.5" stroke-dasharray="10 6"/>
+      <g fill="#475569">
+        <rect x="8" y="46" width="22" height="42"/><rect x="34" y="26" width="18" height="62"/><rect x="56" y="52" width="24" height="36"/>
+        <rect x="86" y="14" width="20" height="74"/><rect x="110" y="36" width="26" height="52"/><rect x="140" y="22" width="16" height="66"/>
+        <rect x="160" y="48" width="26" height="40"/><rect x="190" y="30" width="20" height="58"/><rect x="214" y="54" width="22" height="34"/>
+      </g>
+      <g fill="#bae6fd">
+        <rect *ngFor="let w of [[38, 32], [44, 44], [90, 22], [98, 40], [92, 60], [116, 44], [126, 60], [144, 30], [194, 38], [200, 56], [14, 56], [62, 62], [166, 58]]"
+          [attr.x]="w[0]" [attr.y]="w[1]" width="4" height="5"/>
+      </g>
+    </g>
+    <g *ngSwitchDefault>
+      <rect width="240" height="110" fill="#ede9fe"/>
+      <path *ngFor="let x of [0, 30, 60, 90, 120, 150, 180, 210]" [attr.d]="'M' + x + ' 0v110'" stroke="#ddd6fe"/>
+      <path *ngFor="let y of [0, 30, 60, 90]" [attr.d]="'M0 ' + y + 'h240'" stroke="#ddd6fe"/>
+      <path d="M120 26l8 16 18 3-13 12 3 18-16-9-16 9 3-18-13-12 18-3z" fill="#7c3aed"/>
+    </g>
+  </svg>
+</ng-template>
+
+<!-- One template card -->
+<ng-template #card let-t>
+  <article class="card tpl">
+    <div class="tpl-scene"><ng-container *ngTemplateOutlet="scene; context: { $implicit: t.art }"></ng-container></div>
+    <div class="tpl-body">
+      <div class="tpl-title">
+        <span class="tpl-icon" [style.background]="t.tint" [style.color]="t.color">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: t.icon, size: 20 }"></ng-container>
+        </span>
+        <h3>{{ t.name }}</h3>
+        <span class="badge" *ngIf="t.custom">Custom</span>
+      </div>
+      <p>{{ t.description }}</p>
+      <div class="tags">
+        <span *ngFor="let m of t.modules" class="tag" [ngClass]="tagTone(m)">{{ m }}</span>
+      </div>
+      <span class="deployed" *ngIf="deployedSites(t).length as n">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 12 }"></ng-container>
+        Deployed to {{ n }} site{{ n === 1 ? '' : 's' }}
+      </span>
+      <button type="button" class="use" (click)="openDeploy(t)">
+        Use Template <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'arrow', size: 15 }"></ng-container>
+      </button>
+    </div>
+  </article>
+</ng-template>
+
+<div class="templates">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <h1>Solution Templates</h1>
+      <p>Pre-configured templates to quickly deploy industry-specific solutions</p>
+    </div>
+    <button type="button" class="btn-primary" (click)="openCreate()">
+      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 16 }"></ng-container>
+      Create Custom Template
+    </button>
+  </header>
+
+  <nav class="page-tabs">
+    <button type="button" *ngFor="let tab of tabs" [class.active]="tab === activeTab" (click)="activeTab = tab">
+      {{ tab }}<span class="count" *ngIf="tab === 'My Templates' && myTemplates.length">{{ myTemplates.length }}</span>
+    </button>
+  </nav>
+
+  <!-- Filters -->
+  <section class="card filters">
+    <label class="field"><span>Industry</span><app-dropdown [options]="industryOptions" [(ngModel)]="industry"></app-dropdown></label>
+    <label class="field"><span>Use Case</span><app-dropdown [options]="useCaseOptions" [(ngModel)]="useCase"></app-dropdown></label>
+    <label class="field"><span>Technology</span><app-dropdown [options]="technologyOptions" [(ngModel)]="technology"></app-dropdown></label>
+    <label class="field"><span>Application</span><app-dropdown [options]="applicationOptions" [(ngModel)]="application"></app-dropdown></label>
+    <label class="search">
+      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 16 }"></ng-container>
+      <input type="text" placeholder="Search templates..." [(ngModel)]="search" />
+    </label>
+  </section>
+
+  <section class="layout">
+    <div class="main-col">
+      <div class="result-bar" *ngIf="filterCount">
+        <span>{{ resultCount }} template{{ resultCount === 1 ? '' : 's' }} found</span>
+        <button type="button" class="link-btn" (click)="clearFilters()">Clear filters</button>
+      </div>
+
+      <!-- Groups pack side by side, each spanning as many columns as it has cards -->
+      <div class="groups">
+        <div class="group" *ngFor="let g of groups" [ngClass]="'span-' + (g.title ? Math.min(g.items.length, 4) : 4)">
+          <h2 class="group-title" *ngIf="g.title">
+            {{ g.title }} <span>{{ g.items.length }}</span>
+            <button type="button" class="link-btn more" *ngIf="g.items.length > maxCols" (click)="toggleGroup(g.title)">
+              {{ expandedGroups.has(g.title) ? 'Show less' : 'View all ' + g.items.length }}
+            </button>
+          </h2>
+          <div class="grid">
+            <ng-container *ngFor="let t of visibleItems(g)">
+              <ng-container *ngTemplateOutlet="card; context: { $implicit: t }"></ng-container>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+
+      <div class="card empty" *ngIf="resultCount === 0">
+        <ng-container *ngIf="activeTab === 'My Templates' && !filterCount; else noMatch">
+          <strong>No templates yet</strong>
+          <span>Create a custom template or deploy one from the library and it will appear here.</span>
+          <button type="button" class="btn-primary sm" (click)="openCreate()">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 14 }"></ng-container>Create Custom Template
+          </button>
+        </ng-container>
+        <ng-template #noMatch>
+          <strong>No templates match these filters</strong>
+          <button type="button" class="link-btn" (click)="clearFilters()">Clear filters</button>
+        </ng-template>
+      </div>
+    </div>
+
+    <aside class="side-col">
+      <section class="featured">
+        <div class="featured-art"><ng-container *ngTemplateOutlet="scene; context: { $implicit: 'retail' }"></ng-container></div>
+        <div class="featured-body">
+          <span class="eyebrow">Featured Template</span>
+          <h2>{{ featured.name }}</h2>
+          <p>{{ featured.description }}</p>
+          <div class="tags">
+            <span *ngFor="let m of featured.modules" class="tag glass">{{ m }}</span>
+          </div>
+          <button type="button" class="btn-light" (click)="openFeatured()">
+            Use This Template <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'arrow', size: 15 }"></ng-container>
+          </button>
+        </div>
+      </section>
+
+      <section class="card how">
+        <h2>How It Works</h2>
+        <ol>
+          <li *ngFor="let s of howItWorks; let i = index">
+            <span class="num">{{ i + 1 }}</span>
+            <span class="how-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: s.icon, size: 18 }"></ng-container></span>
+            <span><strong>{{ s.title }}</strong><small>{{ s.sub }}</small></span>
+          </li>
+        </ol>
+      </section>
+    </aside>
+  </section>
+
+  <!-- Quick deploy -->
+  <section class="card quick">
+    <div class="quick-main">
+      <h2>Quick Deploy</h2>
+      <p>Deploy a solution template in minutes</p>
+      <div class="steps">
+        <ng-container *ngFor="let s of quickDeploy; let i = index; let last = last">
+          <div class="step" [class.active]="i === quickStep" [class.done]="quickStep > i">
+            <span class="step-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: s.icon, size: 20 }"></ng-container></span>
+            <span><strong>{{ s.title }}</strong><small>{{ s.sub }}</small></span>
+          </div>
+          <span class="step-arrow" *ngIf="!last"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'arrow', size: 16 }"></ng-container></span>
+        </ng-container>
+      </div>
+    </div>
+    <div class="own">
+      <strong>Or Create Your Own</strong>
+      <span>Build a custom template tailored to your specific requirements.</span>
+      <button type="button" class="btn-primary sm" (click)="openCreate()">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 14 }"></ng-container>Create Custom Template
+      </button>
+    </div>
+  </section>
+
+  <!-- Dialogs -->
+  <div class="backdrop" *ngIf="dialog" (click)="closeDialog()">
+    <div class="dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+
+      <ng-container *ngIf="dialog === 'deploy' && target">
+        <header class="dialog-head">
+          <span class="tpl-icon" [style.background]="target.tint" [style.color]="target.color">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: target.icon, size: 20 }"></ng-container>
+          </span>
+          <div>
+            <h2>{{ step === 2 ? 'Deployed' : 'Deploy ' + target.name }}</h2>
+            <span class="muted">{{ target.industry }}</span>
+          </div>
+          <button type="button" class="icon-btn" (click)="closeDialog()" aria-label="close">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 18 }"></ng-container>
+          </button>
+        </header>
+
+        <ol class="dialog-steps">
+          <li [class.active]="step === 0" [class.done]="step > 0">Configure</li>
+          <li [class.active]="step === 1" [class.done]="step > 1">Choose Sites</li>
+          <li [class.active]="step === 2">Go Live</li>
+        </ol>
+
+        <div class="dialog-body" *ngIf="step === 0">
+          <span class="field-label">Modules to enable</span>
+          <label class="check" *ngFor="let m of target.modules">
+            <input type="checkbox" [checked]="chosenModules.has(m)" (change)="toggle(chosenModules, m)" />{{ m }}
+          </label>
+        </div>
+
+        <div class="dialog-body" *ngIf="step === 1">
+          <span class="field-label">Apply to sites</span>
+          <label class="check" *ngFor="let s of sites">
+            <input type="checkbox" [checked]="chosenSites.has(s)" (change)="toggle(chosenSites, s)" />{{ s }}
+            <span class="muted small" *ngIf="deployedSites(target).includes(s)">already deployed</span>
+          </label>
+        </div>
+
+        <div class="dialog-body done-body" *ngIf="step === 2">
+          <span class="done-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 26 }"></ng-container></span>
+          <strong>{{ target.name }} is live</strong>
+          <span class="muted">{{ chosenModules.size }} module{{ chosenModules.size === 1 ? '' : 's' }} on {{ chosenSites.size }} site{{ chosenSites.size === 1 ? '' : 's' }}. Find it under My Templates.</span>
+        </div>
+
+        <footer class="dialog-foot">
+          <ng-container *ngIf="step === 0">
+            <button type="button" class="btn-ghost" (click)="closeDialog()">Cancel</button>
+            <button type="button" class="btn-primary sm" [disabled]="chosenModules.size === 0" (click)="step = 1">Next</button>
+          </ng-container>
+          <ng-container *ngIf="step === 1">
+            <button type="button" class="btn-ghost" (click)="step = 0">Back</button>
+            <button type="button" class="btn-primary sm" [disabled]="chosenSites.size === 0" (click)="deploy()">
+              Deploy to {{ chosenSites.size }} site{{ chosenSites.size === 1 ? '' : 's' }}
+            </button>
+          </ng-container>
+          <ng-container *ngIf="step === 2">
+            <button type="button" class="btn-ghost" (click)="closeDialog(); activeTab = 'My Templates'">View My Templates</button>
+            <button type="button" class="btn-primary sm" (click)="closeDialog()">Done</button>
+          </ng-container>
+        </footer>
+      </ng-container>
+
+      <ng-container *ngIf="dialog === 'create'">
+        <header class="dialog-head">
+          <span class="tpl-icon" style="background:#ede9fe;color:#6d28d9">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'star', size: 20 }"></ng-container>
+          </span>
+          <div>
+            <h2>Create Custom Template</h2>
+            <span class="muted">Pick the modules your sites need</span>
+          </div>
+          <button type="button" class="icon-btn" (click)="closeDialog()" aria-label="close">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 18 }"></ng-container>
+          </button>
+        </header>
+        <div class="dialog-body">
+          <label class="field"><span>Template name</span><input type="text" [(ngModel)]="draftName" placeholder="e.g. Smart Hotel" maxlength="40" /></label>
+          <label class="field"><span>Industry</span><app-dropdown [options]="draftIndustryOptions" [(ngModel)]="draftIndustry"></app-dropdown></label>
+          <label class="field"><span>Description</span><textarea rows="2" [(ngModel)]="draftDescription" placeholder="What this template is for (optional)"></textarea></label>
+          <span class="field-label">Modules</span>
+          <div class="module-grid">
+            <label class="check" *ngFor="let m of allModules">
+              <input type="checkbox" [checked]="chosenModules.has(m)" (change)="toggle(chosenModules, m)" />{{ m }}
+            </label>
+          </div>
+        </div>
+        <footer class="dialog-foot">
+          <button type="button" class="btn-ghost" (click)="closeDialog()">Cancel</button>
+          <button type="button" class="btn-primary sm" [disabled]="!canCreate" (click)="createTemplate()">Save Template</button>
+        </footer>
+      </ng-container>
+    </div>
+  </div>
+
+  <div class="toast" *ngIf="toast" role="status">{{ toast }}</div>
+</div>

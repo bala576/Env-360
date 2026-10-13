@@ -1,0 +1,282 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<!-- Recursive hierarchy row -->
+<ng-template #treeNode let-node let-depth="depth">
+  <div class="tree-row" [style.padding-left.px]="depth * 18" (click)="toggleNode(node)">
+    <span class="tree-toggle" [class.hidden]="!node.children?.length" [class.open]="expanded.has(node.id)">
+      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 12 }"></ng-container>
+    </span>
+    <span class="tree-icon" [ngClass]="'kind-' + node.kind">
+      <ng-container *ngTemplateOutlet="icon; context: { $implicit: node.kind === 'site' ? 'building' : node.kind === 'level' ? 'folder' : 'cube', size: 15 }"></ng-container>
+    </span>
+    <span class="tree-label" [class.strong]="node.kind === 'site'">{{ node.label }}</span>
+    <span *ngIf="node.devices != null" class="tree-count">{{ node.devices }} devices</span>
+    <button *ngIf="node.kind === 'site'" type="button" class="icon-btn sm" aria-label="site options" (click)="$event.stopPropagation()">
+      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'dots', size: 16 }"></ng-container>
+    </button>
+  </div>
+  <ng-container *ngIf="node.children?.length && expanded.has(node.id)">
+    <ng-container *ngFor="let child of node.children">
+      <ng-container *ngTemplateOutlet="treeNode; context: { $implicit: child, depth: depth + 1 }"></ng-container>
+    </ng-container>
+  </ng-container>
+</ng-template>
+
+<!-- Small building thumbnail; colour varies by site type -->
+<ng-template #thumb let-type>
+  <svg class="thumb" viewBox="0 0 36 24" aria-hidden="true">
+    <rect width="36" height="24" [attr.fill]="type === 'Mall' ? '#c7d2fe' : type === 'Office' ? '#bae6fd' : '#fde68a'"/>
+    <rect y="18" width="36" height="6" fill="#94a3b8"/>
+    <rect x="4" y="8" width="10" height="10" fill="#475569"/>
+    <rect x="15" y="3" width="9" height="15" fill="#334155"/>
+    <rect x="25" y="10" width="8" height="8" fill="#64748b"/>
+    <g fill="#e0f2fe">
+      <rect x="6" y="10" width="2" height="2"/><rect x="10" y="10" width="2" height="2"/>
+      <rect x="17" y="5" width="2" height="2"/><rect x="20" y="5" width="2" height="2"/>
+      <rect x="17" y="9" width="2" height="2"/><rect x="20" y="9" width="2" height="2"/>
+      <rect x="27" y="12" width="2" height="2"/>
+    </g>
+  </svg>
+</ng-template>
+
+<div class="masters">
+
+  <header class="page-header">
+    <h1>Masters &amp; Configuration</h1>
+    <p>Manage master data, system configuration and application settings</p>
+  </header>
+
+  <nav class="page-tabs">
+    <button type="button" *ngFor="let tab of tabs" [class.active]="tab === activeTab" (click)="activeTab = tab">{{ tab }}</button>
+  </nav>
+
+  <!-- KPI row -->
+  <section class="stats">
+    <div class="stat card" *ngFor="let s of stats">
+      <span class="stat-icon" [style.color]="s.color" [style.background]="s.tint">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: s.icon, size: 24 }"></ng-container>
+      </span>
+      <div class="stat-body">
+        <span class="stat-label">{{ s.label }}</span>
+        <strong class="stat-value">{{ s.value }}</strong>
+        <span class="stat-change">
+          <span class="up">&#9650; {{ s.change }}%</span>
+          <span class="muted">vs last month</span>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <ng-container *ngIf="activeTab === 'Master Data'; else comingSoon">
+
+    <div class="row">
+      <!-- Master entity cards -->
+      <section class="card master-data">
+        <h2>Master Data</h2>
+        <div class="entity-grid">
+          <button type="button" class="entity" *ngFor="let e of entities" [class.current]="e.key === 'site'" (click)="openEntity(e)">
+            <span class="entity-icon" [style.color]="e.color" [style.background]="e.tint">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: e.icon, size: 22 }"></ng-container>
+            </span>
+            <span class="entity-text">
+              <strong>{{ e.name }}</strong>
+              <span>{{ e.description }}</span>
+            </span>
+            <span class="entity-foot">
+              <span class="pill">{{ e.items }} items</span>
+              <span class="entity-arrow">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'arrow', size: 16 }"></ng-container>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Configuration shortcuts -->
+      <section class="card config">
+        <h2>Configuration</h2>
+        <div class="config-list">
+          <button type="button" class="config-item" *ngFor="let c of configItems" (click)="activeTab = 'Configuration'">
+            <span class="config-icon" [style.color]="c.color" [style.background]="c.tint">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: c.icon, size: 20 }"></ng-container>
+            </span>
+            <span class="entity-text">
+              <strong>{{ c.name }}</strong>
+              <span>{{ c.description }}</span>
+            </span>
+            <span class="entity-arrow">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'arrow', size: 16 }"></ng-container>
+            </span>
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <div class="row">
+      <!-- Sites list -->
+      <section class="card list">
+        <div class="card-head">
+          <h2>Master Data List - Sites</h2>
+          <div class="list-tools">
+            <label class="search">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 15 }"></ng-container>
+              <input type="text" placeholder="Search sites..." [(ngModel)]="search" (ngModelChange)="onFilterChange()"/>
+            </label>
+            <app-dropdown [options]="statusOptions" [(ngModel)]="status" (ngModelChange)="onFilterChange()"></app-dropdown>
+            <button type="button" class="btn-primary sm" (click)="openAdd()">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 15 }"></ng-container>
+              Add Site
+            </button>
+            <button type="button" class="btn-ghost" *ngIf="selected.size" (click)="deleteSelected()">Delete ({{ selected.size }})</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="col-check"><input type="checkbox" [checked]="allOnPageSelected" (change)="toggleAll()" aria-label="select all"/></th>
+                <th>Site Name</th>
+                <th>Code</th>
+                <th>City</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th class="num">Buildings</th>
+                <th class="num">Devices</th>
+                <th class="center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let s of pageRows" [class.selected]="selected.has(s.id)">
+                <td class="col-check"><input type="checkbox" [checked]="selected.has(s.id)" (change)="toggleRow(s.id)" [attr.aria-label]="'select ' + s.name"/></td>
+                <td>
+                  <span class="site-name">
+                    <ng-container *ngTemplateOutlet="thumb; context: { $implicit: s.type }"></ng-container>
+                    {{ s.name }}
+                  </span>
+                </td>
+                <td>{{ s.code }}</td>
+                <td>{{ s.city }}</td>
+                <td>{{ s.type }}</td>
+                <td>
+                  <span class="status" [class.offline]="s.status === 'Offline'"><span class="dot"></span>{{ s.status }}</span>
+                </td>
+                <td class="num">{{ s.buildings }}</td>
+                <td class="num">{{ s.devices }}</td>
+                <td class="center actions">
+                  <button type="button" class="icon-btn" aria-label="row actions" (click)="toggleMenu(s.id, $event)">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'dots', size: 18 }"></ng-container>
+                  </button>
+                  <div class="row-menu" *ngIf="menuFor === s.id" (click)="$event.stopPropagation()">
+                    <button type="button" (click)="openEdit(s)">
+                      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'edit', size: 14 }"></ng-container> Edit
+                    </button>
+                    <button type="button" (click)="toggleStatus(s)">
+                      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'toggle', size: 14 }"></ng-container>
+                      Mark {{ s.status === 'Active' ? 'Offline' : 'Active' }}
+                    </button>
+                    <button type="button" class="danger" (click)="deleteSite(s)">
+                      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'trash', size: 14 }"></ng-container> Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="!pageRows.length">
+                <td colspan="9" class="empty">No sites match your filters</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="list-foot">
+          <span class="muted">Showing {{ rangeStart }} to {{ rangeEnd }} of {{ filtered.length }} sites</span>
+          <div class="pager">
+            <button type="button" class="page-btn" [disabled]="page === 1" (click)="goTo(page - 1)" aria-label="previous page">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'left', size: 14 }"></ng-container>
+            </button>
+            <ng-container *ngFor="let p of pages">
+              <button *ngIf="p !== null; else gap" type="button" class="page-btn" [class.active]="p === page" (click)="goTo(p)">{{ p }}</button>
+              <ng-template #gap><span class="page-gap">…</span></ng-template>
+            </ng-container>
+            <button type="button" class="page-btn" [disabled]="page === pageCount" (click)="goTo(page + 1)" aria-label="next page">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 14 }"></ng-container>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Hierarchy -->
+      <section class="card hierarchy">
+        <div class="card-head">
+          <h2>Hierarchy View</h2>
+          <app-dropdown [options]="hierarchyOptions" [(ngModel)]="hierarchySite"></app-dropdown>
+        </div>
+        <div class="tree">
+          <ng-container *ngFor="let node of hierarchy">
+            <ng-container *ngTemplateOutlet="treeNode; context: { $implicit: node, depth: 0 }"></ng-container>
+          </ng-container>
+        </div>
+      </section>
+    </div>
+
+  </ng-container>
+
+  <ng-template #comingSoon>
+    <section class="card placeholder">
+      <span class="stat-icon" style="color:#6d28d9;background:#ede9fe">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'gear', size: 26 }"></ng-container>
+      </span>
+      <h2>{{ activeTab }}</h2>
+      <p class="muted">This section is under development.</p>
+      <button type="button" class="btn-ghost" (click)="activeTab = tabs[0]">Back to Master Data</button>
+    </section>
+  </ng-template>
+</div>
+
+<!-- Add / edit site -->
+<div class="overlay" *ngIf="dialogOpen" (click)="dialogOpen = false">
+  <div class="dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+    <div class="dialog-head">
+      <h2>{{ editing ? 'Edit Site' : 'Add Site' }}</h2>
+      <button type="button" class="icon-btn" aria-label="close" (click)="dialogOpen = false">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 18 }"></ng-container>
+      </button>
+    </div>
+    <form class="dialog-body" (ngSubmit)="saveSite()">
+      <label class="field">
+        <span>Site Name</span>
+        <input type="text" name="name" [(ngModel)]="draft.name" placeholder="e.g. Dubai Mall" autofocus/>
+      </label>
+      <div class="field-row">
+        <label class="field">
+          <span>City</span>
+          <input type="text" name="city" [(ngModel)]="draft.city" placeholder="e.g. Dubai"/>
+        </label>
+        <div class="field">
+          <span>Type</span>
+          <app-dropdown name="type" [options]="typeOptions" [(ngModel)]="draft.type"></app-dropdown>
+        </div>
+      </div>
+      <div class="field-row">
+        <label class="field">
+          <span>Buildings</span>
+          <input type="number" min="0" name="buildings" [(ngModel)]="draft.buildings"/>
+        </label>
+        <label class="field">
+          <span>Devices</span>
+          <input type="number" min="0" name="devices" [(ngModel)]="draft.devices"/>
+        </label>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" class="btn-ghost" (click)="dialogOpen = false">Cancel</button>
+        <button type="submit" class="btn-primary sm" [disabled]="!canSave">{{ editing ? 'Save Changes' : 'Add Site' }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" *ngIf="toast">{{ toast }}</div>

@@ -1,0 +1,58 @@
+<div class="auth-page">
+  <div class="auth-layout">
+    <app-brand-panel></app-brand-panel>
+
+    <section class="form-panel">
+      <div class="form-box">
+        <!-- <div class="form-logo" role="img" aria-label="PurpleIQ">
+          <span class="form-logo-mark"></span>
+          <span class="form-logo-name">Purple IQ</span>
+        </div> -->
+
+        <h2>Set up your Authenticator</h2>
+        <p class="form-subtitle">
+          Scan the QR code with Google Authenticator and add your <strong>Environment360</strong> account.
+        </p>
+
+        <div class="qr-frame">
+          @if (qrDataUrl) {
+            <img [src]="qrDataUrl" alt="QR code for setting up Google Authenticator" />
+          } @else {
+            <span class="spinner" aria-hidden="true"></span>
+          }
+        </div>
+
+        <p class="manual-label">Can't scan? Enter this key manually:</p>
+        <div class="secret-box">
+          <code>{{ formattedSecret }}</code>
+          <button
+            type="button"
+            class="copy-button"
+            [class.copied]="copied"
+            (click)="copySecret()"
+            [attr.aria-label]="copied ? 'Copied' : 'Copy key'"
+            [title]="copied ? 'Copied' : 'Copy key'"
+          >
+            @if (copied) {
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>
+            } @else {
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="8" y="8" width="12" height="12" rx="2" />
+                <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
+              </svg>
+            }
+          </button>
+        </div>
+
+        <ol class="steps">
+          <li><span class="step-num">1</span>Open Google Authenticator app</li>
+          <li><span class="step-num">2</span>Tap + and choose "Scan a QR code"</li>
+          <li><span class="step-num">3</span>Scan the QR code above</li>
+        </ol>
+
+        <button type="button" class="btn-primary" (click)="next()">Next</button>
+        <button type="button" class="link-button" (click)="setUpLater()">Set up later</button>
+      </div>
+    </section>
+  </div>
+</div>

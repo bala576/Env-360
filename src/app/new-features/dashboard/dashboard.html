@@ -1,0 +1,372 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 22" [attr.height]="size || 22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<div class="dashboard">
+
+  <!-- Header -->
+  <header class="dash-header">
+    <div>
+      <h1>Dashboard</h1>
+      <p>Real-time overview of your environment, devices and assets</p>
+    </div>
+    <button type="button" class="btn-primary">
+      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'settings', size: 18 }"></ng-container>
+      Customize Dashboard
+    </button>
+  </header>
+
+  <!-- KPI cards -->
+  <section class="kpi-row">
+    <div class="card kpi" *ngFor="let kpi of kpis">
+      <span class="kpi-icon" [ngClass]="'tone-' + kpi.tone">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: kpi.icon, size: 26 }"></ng-container>
+      </span>
+      <div class="kpi-body">
+        <span class="kpi-label">{{ kpi.label }}</span>
+        <span class="kpi-value">{{ kpi.value }}</span>
+        <span class="kpi-change">
+          <span class="trend" [class.good]="kpi.good" [class.bad]="!kpi.good">
+            {{ kpi.direction === 'up' ? '▲' : '▼' }} {{ kpi.change }}
+          </span>
+          vs yesterday
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Map + alarms/health + device/sensors -->
+  <section class="grid-overview">
+
+    <div class="card site-overview">
+      <div class="card-head">
+        <h2>Site Overview</h2>
+        <app-dropdown [options]="siteFilterOptions" [(ngModel)]="siteFilter" (ngModelChange)="renderMarkers()"></app-dropdown>
+      </div>
+
+      <div class="map-wrap">
+        <div class="map-toggle">
+          <button type="button" [class.active]="mapView === 'map'" (click)="setMapView('map')">Map</button>
+          <button type="button" [class.active]="mapView === 'list'" (click)="setMapView('list')">List</button>
+          <button type="button" [class.active]="mapView === 'satellite'" (click)="setMapView('satellite')">Satellite</button>
+        </div>
+
+        <div #mapContainer class="map" [hidden]="mapView === 'list'"></div>
+
+        <div class="map-controls" *ngIf="mapView !== 'list'">
+          <button type="button" (click)="zoom(1)" aria-label="zoom in">+</button>
+          <button type="button" (click)="zoom(-1)" aria-label="zoom out">−</button>
+          <button type="button" (click)="recenter()" aria-label="recenter">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+
+        <div class="site-list" *ngIf="mapView === 'list'">
+          <div class="site-list-row" *ngFor="let site of filteredSites">
+            <span class="status-dot" [style.background]="statusColors[site.status]"></span>
+            <span class="site-name">{{ site.name }}</span>
+            <span class="site-status">{{ site.status }}</span>
+            <span class="site-count">{{ site.count }} sites</span>
+          </div>
+          <div class="empty" *ngIf="filteredSites.length === 0">No sites</div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span *ngFor="let s of siteSummary">
+          <span class="status-dot" [style.background]="statusColors[s.status]"></span>
+          {{ s.label }} <strong>{{ s.count }}</strong>
+        </span>
+      </div>
+    </div>
+
+    <div class="card alarms-category">
+      <div class="card-head"><h2>Alarms by Category</h2></div>
+      <div class="donut-row">
+        <div class="donut">
+          <svg viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="46" fill="none" stroke="#f3f4f6" stroke-width="18"/>
+            <circle
+              *ngFor="let seg of alarmSegments"
+              cx="60" cy="60" r="46" fill="none"
+              [attr.stroke]="seg.color"
+              stroke-width="18"
+              pathLength="100"
+              [attr.stroke-dasharray]="seg.dash"
+              [attr.stroke-dashoffset]="seg.offset"
+              transform="rotate(-90 60 60)"/>
+          </svg>
+          <div class="donut-center">
+            <strong>{{ alarmTotal }}</strong>
+            <span>Active Alarms</span>
+          </div>
+        </div>
+        <ul class="donut-legend">
+          <li *ngFor="let c of alarmCategories">
+            <span class="swatch" [style.background]="c.color"></span>
+            <span class="legend-label">{{ c.label }}</span>
+            <span class="legend-value">{{ c.value }}</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card health">
+      <div class="card-head"><h2>Environmental Health Score</h2></div>
+      <div class="health-body">
+        <div class="gauge">
+          <svg viewBox="0 0 160 96">
+            <defs>
+              <linearGradient id="gaugeGradient" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#16a34a"/>
+                <stop offset="100%" stop-color="#4ade80"/>
+              </linearGradient>
+            </defs>
+            <path d="M16 84 A64 64 0 0 1 144 84" fill="none" stroke="#e5e7eb" stroke-width="14" stroke-linecap="round"/>
+            <path d="M16 84 A64 64 0 0 1 144 84" fill="none" stroke="url(#gaugeGradient)" stroke-width="14" stroke-linecap="round"
+              pathLength="100" [attr.stroke-dasharray]="healthScore.value + ' 100'"/>
+          </svg>
+          <div class="gauge-center">
+            <strong>{{ healthScore.value }}%</strong>
+            <span class="pill-good">{{ healthScore.label }}</span>
+          </div>
+          <div class="gauge-change"><span class="trend good">▲ {{ healthScore.change }}%</span> vs yesterday</div>
+        </div>
+        <ul class="health-list">
+          <li *ngFor="let m of healthMetrics">
+            <span class="mini-icon" [ngClass]="'tone-' + m.tone">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: m.icon, size: 15 }"></ng-container>
+            </span>
+            <span class="legend-label">{{ m.label }}</span>
+            <span class="health-value">{{ m.value }}%</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card device-status">
+      <div class="card-head"><h2>Device Status</h2></div>
+      <div class="donut-row">
+        <div class="donut small">
+          <svg viewBox="0 0 120 120">
+            <circle
+              *ngFor="let seg of deviceSegments"
+              cx="60" cy="60" r="46" fill="none"
+              [attr.stroke]="seg.color"
+              stroke-width="16"
+              pathLength="100"
+              [attr.stroke-dasharray]="seg.dash"
+              [attr.stroke-dashoffset]="seg.offset"
+              transform="rotate(-90 60 60)"/>
+          </svg>
+          <div class="donut-center">
+            <strong>{{ deviceTotal | number }}</strong>
+            <span>Devices</span>
+          </div>
+        </div>
+        <ul class="device-legend">
+          <li>
+            <span class="swatch round" style="background:#16a34a"></span>
+            <div>
+              <span class="legend-label">Online</span>
+              <strong>{{ deviceStatus.online | number }} <small>({{ onlinePct | number:'1.1-1' }}%)</small></strong>
+            </div>
+          </li>
+          <li>
+            <span class="swatch round" style="background:#d1d5db"></span>
+            <div>
+              <span class="legend-label">Offline</span>
+              <strong>{{ deviceStatus.offline | number }} <small>({{ 100 - onlinePct | number:'1.1-1' }}%)</small></strong>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card sensors">
+      <div class="card-head">
+        <h2>Sensor Readings (Live)</h2>
+        <app-dropdown [options]="sensorOptions" placeholder="Select Parameter" [(ngModel)]="selectedSensor" (ngModelChange)="onSensorSelect()"></app-dropdown>
+      </div>
+      <div class="sensor-row">
+        <div class="sensor-card" *ngFor="let s of visibleSensors">
+          <div class="sensor-top">
+            <span class="sensor-icon" [ngClass]="'text-' + s.tone">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: s.icon, size: 28 }"></ng-container>
+            </span>
+            <div>
+              <span class="sensor-label">{{ s.label }}</span>
+              <span class="sensor-value">{{ s.value }} <small>{{ s.unit }}</small></span>
+            </div>
+          </div>
+          <svg class="spark" viewBox="0 0 100 32" preserveAspectRatio="none">
+            <polygon [attr.points]="sparkArea(s.history)" [attr.fill]="s.color" opacity="0.12"/>
+            <polyline [attr.points]="sparkPoints(s.history)" fill="none" [attr.stroke]="s.color" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <button type="button" class="carousel-next" (click)="nextSensors()" aria-label="next sensors">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Trend + top sites + recent alarms -->
+  <section class="grid-middle">
+
+    <div class="card trend">
+      <div class="card-head">
+        <h2>Key Parameters Trend</h2>
+        <app-dropdown [options]="trendRangeOptions" [(ngModel)]="trendRange"></app-dropdown>
+      </div>
+      <div class="tabs">
+        <button type="button" *ngFor="let s of trendSeries" [class.active]="activeTrend === s.key" (click)="selectTrend(s.key)">
+          {{ s.label }}
+        </button>
+      </div>
+      <svg class="line-chart" viewBox="0 0 520 220">
+        <!-- grid + left axis (primary) -->
+        <g *ngFor="let t of axisTicks(primarySeries)">
+          <line [attr.x1]="chart.left" [attr.x2]="chart.right" [attr.y1]="t.y" [attr.y2]="t.y" stroke="#eef0f4"/>
+          <text [attr.x]="chart.left - 8" [attr.y]="t.y + 3" text-anchor="end" class="axis">{{ t.label }}</text>
+        </g>
+        <!-- right axis (secondary) -->
+        <g *ngFor="let t of axisTicks(secondarySeries)">
+          <text [attr.x]="chart.right + 8" [attr.y]="t.y + 3" class="axis">{{ t.label }}</text>
+        </g>
+        <text [attr.x]="12" [attr.y]="(chart.top + chart.bottom) / 2" class="axis-title"
+          [attr.transform]="'rotate(-90 12 ' + (chart.top + chart.bottom) / 2 + ')'">{{ primarySeries.label }} ({{ primarySeries.unit }})</text>
+        <text [attr.x]="510" [attr.y]="(chart.top + chart.bottom) / 2" class="axis-title"
+          [attr.transform]="'rotate(90 510 ' + (chart.top + chart.bottom) / 2 + ')'">{{ secondarySeries.label }} ({{ secondarySeries.unit }})</text>
+        <!-- x labels -->
+        <text *ngFor="let l of trendXLabels; let i = index" [attr.x]="xLabelPos(i)" [attr.y]="chart.bottom + 18" text-anchor="middle" class="axis">{{ l }}</text>
+        <!-- lines -->
+        <g *ngFor="let line of trendLines">
+          <polyline [attr.points]="line.points" fill="none" [attr.stroke]="line.series.color" stroke-width="2" stroke-linejoin="round"/>
+          <circle *ngFor="let p of line.dots" [attr.cx]="p.x" [attr.cy]="p.y" r="2.4" [attr.fill]="line.series.color"/>
+        </g>
+      </svg>
+      <div class="chart-legend">
+        <span *ngFor="let line of trendLines">
+          <span class="legend-line" [style.background]="line.series.color"></span>
+          {{ line.series.label }} ({{ line.series.unit }})
+        </span>
+      </div>
+    </div>
+
+    <div class="card top-sites">
+      <div class="card-head">
+        <h2>Top Sites by Active Alarms</h2>
+        <app-dropdown [options]="topCountOptions" [(ngModel)]="topCount"></app-dropdown>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Site Name</th>
+            <th class="num">Total Alarms</th>
+            <th colspan="3" class="split-head">
+              <span>Critical</span><span>Warning</span><span>Minor</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let site of topSites; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td class="site-cell">{{ site.name }}</td>
+            <td class="num total">{{ siteTotal(site) }}</td>
+            <td colspan="3">
+              <div class="split-bar">
+                <span class="critical" [style.flex-grow]="site.critical || 0.15" [class.empty]="!site.critical"></span>
+                <span class="warning" [style.flex-grow]="site.warning || 0.15" [class.empty]="!site.warning"></span>
+                <span class="minor" [style.flex-grow]="site.minor || 0.15" [class.empty]="!site.minor"></span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card recent-alarms">
+      <div class="card-head">
+        <h2>Recent Alarms</h2>
+        <a class="link" routerLink="/events">View All</a>
+      </div>
+      <ul>
+        <li *ngFor="let a of recentAlarms">
+          <span class="mini-icon lg" [ngClass]="'tone-' + a.tone">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: a.icon, size: 17 }"></ng-container>
+          </span>
+          <div class="alarm-body">
+            <span class="alarm-title">{{ a.title }}</span>
+            <span class="alarm-location">{{ a.location }}</span>
+          </div>
+          <span class="alarm-time">{{ a.time }}</span>
+          <span class="severity" [ngClass]="'sev-' + a.severity">{{ a.severity | titlecase }}</span>
+        </li>
+      </ul>
+    </div>
+
+  </section>
+
+  <!-- Space + energy -->
+  <section class="grid-bottom">
+
+    <div class="card space">
+      <div class="card-head"><h2>Space &amp; Occupancy Overview</h2></div>
+      <div class="space-row">
+        <div class="space-item" *ngFor="let s of spaceUsage">
+          <div class="space-top">
+            <span class="kpi-icon sm" [ngClass]="'tone-' + s.tone">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: s.icon, size: 22 }"></ng-container>
+            </span>
+            <div>
+              <span class="space-label">{{ s.label }}</span>
+              <span class="space-value">{{ s.value }}%</span>
+              <span class="space-caption">{{ s.caption }}</span>
+            </div>
+          </div>
+          <div class="progress" [ngClass]="'tone-' + s.tone"><span [ngClass]="'bar-' + s.tone" [style.width.%]="s.value"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card energy">
+      <div class="card-head">
+        <h2>Energy Consumption</h2>
+        <app-dropdown [options]="energyRangeOptions" [(ngModel)]="energyRange"></app-dropdown>
+      </div>
+      <div class="energy-body">
+        <div class="energy-chart">
+          <span class="y-title">Energy (kWh)</span>
+          <div class="y-axis">
+            <span *ngFor="let t of energyTicks">{{ t }}</span>
+          </div>
+          <div class="plot">
+            <div class="bar-col" *ngFor="let d of energyWeek" [title]="d.label + ': ' + d.value + ' kWh'">
+              <div class="bar-area"><span class="bar" [style.height.%]="d.value / energyMax * 100"></span></div>
+              <span class="bar-label">{{ d.label }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="energy-total">
+          <span class="kpi-icon tone-green">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'bolt', size: 24 }"></ng-container>
+          </span>
+          <div>
+            <span class="space-label">Total Consumption</span>
+            <span class="energy-value">{{ energyTotal.value }} <small>{{ energyTotal.unit }}</small></span>
+          </div>
+          <span class="kpi-change">
+            <span class="trend good">{{ energyTotal.direction === 'up' ? '▲' : '▼' }} {{ energyTotal.change }}</span>
+            vs previous week
+          </span>
+        </div>
+      </div>
+    </div>
+
+  </section>
+</div>

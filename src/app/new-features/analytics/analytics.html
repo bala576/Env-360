@@ -1,0 +1,274 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<div class="analytics">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <h1>Analytics &amp; Predictions</h1>
+      <p>Gain insights, identify trends and predict potential issues using AI/ML driven analytics</p>
+    </div>
+    <button type="button" class="btn-primary lg" (click)="exportCsv()">
+      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'export', size: 16 }"></ng-container>
+      Export
+    </button>
+  </header>
+
+  <nav class="page-tabs">
+    <button type="button" *ngFor="let tab of tabs" [class.active]="tab === activeTab" (click)="activeTab = tab">{{ tab }}</button>
+  </nav>
+
+  <ng-container *ngIf="activeTab === tabs[0]; else comingSoon">
+
+    <!-- KPIs -->
+    <section class="kpi-row">
+      <div class="card kpi" *ngFor="let k of kpis">
+        <div class="kpi-top">
+          <span class="kpi-icon" [ngClass]="'tone-' + params[k.param].tone">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: params[k.param].icon, size: 24 }"></ng-container>
+          </span>
+          <div class="kpi-body">
+            <span class="kpi-label">{{ params[k.param].label }}</span>
+            <span class="kpi-value">{{ formatValue(k.param, k.value) }} <small>{{ params[k.param].unit }}</small></span>
+          </div>
+        </div>
+        <div class="kpi-bottom">
+          <span class="kpi-foot">
+            <span class="delta" [ngClass]="kpiTone(k)">{{ kpiChange(k) > 0 ? '▲' : '▼' }} {{ kpiChange(k) < 0 ? -kpiChange(k) : kpiChange(k) }}%</span>
+            {{ compareLabel }}
+          </span>
+          <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
+            <ng-container *ngIf="sparkline(k) as sp">
+              <polygon [attr.points]="sp.area" [attr.fill]="params[k.param].color" opacity="0.12"/>
+              <polyline [attr.points]="sp.line" fill="none" [attr.stroke]="params[k.param].color" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
+            </ng-container>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filters -->
+    <section class="card filters">
+      <label class="field"><span>Site</span><app-dropdown [options]="siteOptions" [(ngModel)]="draft.site"></app-dropdown></label>
+      <label class="field"><span>Building</span><app-dropdown [options]="buildingOptions" [(ngModel)]="draft.building"></app-dropdown></label>
+      <label class="field"><span>Space Type</span><app-dropdown [options]="spaceTypeOptions" [(ngModel)]="draft.spaceType"></app-dropdown></label>
+      <label class="field wide-field"><span>Parameter</span><app-dropdown [options]="parameterOptions" [(ngModel)]="draft.parameter"></app-dropdown></label>
+      <label class="field"><span>Time Range</span><app-dropdown [options]="timeRangeOptions" [(ngModel)]="draft.range"></app-dropdown></label>
+      <span class="filter-gap"></span>
+      <label class="field"><span>Compare With</span><app-dropdown [options]="compareOptions" [(ngModel)]="draft.compare"></app-dropdown></label>
+      <button type="button" class="btn-primary apply" [class.pulse]="filtersDirty" (click)="apply()">Apply</button>
+    </section>
+
+    <!-- Trends + forecast -->
+    <section class="row-two">
+      <div class="card">
+        <div class="card-head">
+          <h2>Parameter Trends</h2>
+          <app-dropdown class="range" [options]="timeRangeOptions" [(ngModel)]="trendRange"></app-dropdown>
+        </div>
+        <div class="chips">
+          <button type="button" *ngFor="let p of visibleParams" [class.active]="p === trendParam" (click)="trendParam = p">{{ params[p].short }}</button>
+        </div>
+        <svg class="chart" viewBox="0 0 440 200" *ngIf="trendChart as c">
+          <g *ngFor="let t of c.left.ticks">
+            <line [attr.x1]="wide.left" [attr.x2]="wide.right" [attr.y1]="t.y" [attr.y2]="t.y" class="grid"/>
+            <text [attr.x]="wide.left - 6" [attr.y]="t.y + 3" text-anchor="end" class="axis">{{ t.label }}</text>
+          </g>
+          <text *ngFor="let t of c.right.ticks" [attr.x]="wide.right + 6" [attr.y]="t.y + 3" class="axis">{{ t.label }}</text>
+          <text x="8" [attr.y]="(wide.top + wide.bottom) / 2" text-anchor="middle" class="axis"
+            [attr.transform]="'rotate(-90 8 ' + (wide.top + wide.bottom) / 2 + ')'">{{ c.primary.meta.label }} ({{ c.primary.meta.unit }})</text>
+          <text x="434" [attr.y]="(wide.top + wide.bottom) / 2" text-anchor="middle" class="axis"
+            [attr.transform]="'rotate(90 434 ' + (wide.top + wide.bottom) / 2 + ')'">{{ c.secondary.meta.label }} ({{ c.secondary.meta.unit }})</text>
+          <text *ngFor="let d of c.days" [attr.x]="d.x" [attr.y]="wide.bottom + 16" text-anchor="middle" class="axis">{{ d.label }}</text>
+
+          <polygon [attr.points]="c.secondary.area" [attr.fill]="c.secondary.meta.color" opacity="0.1"/>
+          <polyline [attr.points]="c.secondary.points" fill="none" [attr.stroke]="c.secondary.meta.color" stroke-width="1.8" stroke-linejoin="round"/>
+          <circle *ngFor="let d of c.secondary.dots" [attr.cx]="d.x" [attr.cy]="d.y" r="2.3" [attr.fill]="c.secondary.meta.color"/>
+          <polyline [attr.points]="c.primary.points" fill="none" [attr.stroke]="c.primary.meta.color" stroke-width="1.8" stroke-linejoin="round"/>
+          <circle *ngFor="let d of c.primary.dots" [attr.cx]="d.x" [attr.cy]="d.y" r="2.3" [attr.fill]="c.primary.meta.color"/>
+        </svg>
+        <div class="chart-legend">
+          <span><span class="line-swatch" [style.background]="params[trendParam].color"></span>{{ params[trendParam].label }} ({{ params[trendParam].unit }})</span>
+          <span><span class="line-swatch" [style.background]="params[trendSecondary].color"></span>{{ params[trendSecondary].label }} ({{ params[trendSecondary].unit }})</span>
+        </div>
+      </div>
+
+      <div class="card forecast-card">
+        <div class="forecast-main">
+          <div class="card-head">
+            <h2>Predictive Forecast – Temperature</h2>
+            <app-dropdown class="range" [options]="forecastOptions" [(ngModel)]="forecastDays"></app-dropdown>
+          </div>
+          <svg class="chart" viewBox="0 0 440 200" *ngIf="forecastChart as f">
+            <g *ngFor="let t of f.axis.ticks">
+              <line [attr.x1]="wide.left" [attr.x2]="wide.right" [attr.y1]="t.y" [attr.y2]="t.y" class="grid"/>
+              <text [attr.x]="wide.left - 6" [attr.y]="t.y + 3" text-anchor="end" class="axis">{{ t.label }}</text>
+            </g>
+            <text x="8" [attr.y]="(wide.top + wide.bottom) / 2" text-anchor="middle" class="axis"
+              [attr.transform]="'rotate(-90 8 ' + (wide.top + wide.bottom) / 2 + ')'">Temperature (°C)</text>
+            <text *ngFor="let d of f.days" [attr.x]="d.x" [attr.y]="wide.bottom + 16" text-anchor="middle" class="axis">{{ d.label }}</text>
+
+            <polygon [attr.points]="f.band" fill="#f87171" opacity="0.18"/>
+            <line [attr.x1]="f.divider" [attr.x2]="f.divider" [attr.y1]="wide.top" [attr.y2]="wide.bottom" stroke="#9ca3af" stroke-dasharray="4 3"/>
+            <text [attr.x]="f.divider - 6" [attr.y]="wide.top + 10" text-anchor="end" class="axis">Historical</text>
+            <text [attr.x]="f.divider + 6" [attr.y]="wide.top + 10" class="axis">Forecast</text>
+            <polyline [attr.points]="f.history" fill="none" stroke="#dc2626" stroke-width="1.6" stroke-linejoin="round"/>
+            <circle *ngFor="let d of f.historyDots" [attr.cx]="d.x" [attr.cy]="d.y" r="2" fill="#dc2626"/>
+            <polyline [attr.points]="f.forecast" fill="none" stroke="#dc2626" stroke-width="1.6" stroke-dasharray="5 4" stroke-linejoin="round"/>
+          </svg>
+          <div class="chart-legend">
+            <span><span class="line-swatch" style="background:#dc2626"></span>Historical</span>
+            <span><span class="line-swatch dashed"></span>Forecast</span>
+            <span><span class="swatch band"></span>Prediction Range (95%)</span>
+          </div>
+        </div>
+
+        <aside class="prediction">
+          <h3>Prediction Summary</h3>
+          <div class="risk">
+            <span class="risk-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'warning', size: 18 }"></ng-container></span>
+            <div>
+              <strong>High Temperature Risk</strong>
+              <p>Temperature is predicted to exceed 28 °C in Retail Store - 101 on 29 May 2025 at around 14:00.</p>
+            </div>
+          </div>
+          <h4>Recommended Actions</h4>
+          <ul>
+            <li *ngFor="let a of predictionActions">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: a.icon, size: 15 }"></ng-container>
+              {{ a.label }}
+            </li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Correlation, energy, comparison, health + insights -->
+    <section class="row-grid">
+      <div class="card corr">
+        <div class="card-head"><h2>Correlation Analysis</h2></div>
+        <div class="corr-controls" *ngIf="correlation as c">
+          <label class="field"><span>X-Axis</span><app-dropdown [options]="correlationOptions" [(ngModel)]="corrX"></app-dropdown></label>
+          <label class="field"><span>Y-Axis</span><app-dropdown [options]="correlationOptions" [(ngModel)]="corrY"></app-dropdown></label>
+          <div class="corr-badge" [ngClass]="c.tone">
+            <span>Correlation</span>
+            <strong>R = {{ c.r }}</strong>
+            <em>{{ c.strength }}</em>
+          </div>
+        </div>
+        <svg class="chart" viewBox="0 0 400 200" *ngIf="correlation as c">
+          <g *ngFor="let t of c.yAxis.ticks">
+            <line [attr.x1]="narrow.left" [attr.x2]="narrow.right" [attr.y1]="t.y" [attr.y2]="t.y" class="grid"/>
+            <text [attr.x]="narrow.left - 6" [attr.y]="t.y + 3" text-anchor="end" class="axis">{{ t.label }}</text>
+          </g>
+          <text *ngFor="let t of c.xTicks" [attr.x]="t.x" [attr.y]="narrow.bottom + 14" text-anchor="middle" class="axis">{{ t.label }}</text>
+          <text x="7" [attr.y]="(narrow.top + narrow.bottom) / 2" text-anchor="middle" class="axis"
+            [attr.transform]="'rotate(-90 7 ' + (narrow.top + narrow.bottom) / 2 + ')'">{{ params[corrY].label }} ({{ params[corrY].unit }})</text>
+          <text [attr.x]="(narrow.left + narrow.right) / 2" y="198" text-anchor="middle" class="axis">{{ params[corrX].label }} ({{ params[corrX].unit }})</text>
+          <circle *ngFor="let d of c.dots" [attr.cx]="d.x" [attr.cy]="d.y" r="2.6" fill="#7c3aed" opacity="0.75"/>
+          <line [attr.x1]="c.line.x1" [attr.y1]="c.line.y1" [attr.x2]="c.line.x2" [attr.y2]="c.line.y2" stroke="#6d28d9" stroke-width="1.5" stroke-dasharray="5 4"/>
+        </svg>
+      </div>
+
+      <div class="card energy">
+        <div class="card-head">
+          <h2>Energy Consumption Analytics</h2>
+          <app-dropdown class="range" [options]="energyRangeOptions" [(ngModel)]="energyRange"></app-dropdown>
+        </div>
+        <svg class="chart" viewBox="0 0 400 200" *ngIf="energyChart as e">
+          <g *ngFor="let t of e.axis.ticks">
+            <line [attr.x1]="narrow.left" [attr.x2]="narrow.right" [attr.y1]="t.y" [attr.y2]="t.y" class="grid"/>
+            <text [attr.x]="narrow.left - 6" [attr.y]="t.y + 3" text-anchor="end" class="axis">{{ t.label }}</text>
+          </g>
+          <text x="7" [attr.y]="(narrow.top + narrow.bottom) / 2" text-anchor="middle" class="axis"
+            [attr.transform]="'rotate(-90 7 ' + (narrow.top + narrow.bottom) / 2 + ')'">Energy (kWh)</text>
+          <g *ngFor="let b of e.bars" class="bar">
+            <title>{{ b.tooltip }}</title>
+            <rect *ngFor="let s of b.segments" [attr.x]="b.x" [attr.y]="s.y" [attr.width]="b.width" [attr.height]="s.h" [attr.fill]="s.color"/>
+            <text *ngIf="b.label" [attr.x]="b.cx" [attr.y]="narrow.bottom + 14" text-anchor="middle" class="axis">{{ b.label }}</text>
+          </g>
+        </svg>
+        <div class="chart-legend">
+          <span *ngFor="let c of energyCategories"><span class="swatch" [style.background]="c.color"></span>{{ c.label }}</span>
+        </div>
+      </div>
+
+      <div class="card insights">
+        <div class="card-head">
+          <h2>Top Insights</h2>
+          <a class="link">View All</a>
+        </div>
+        <ul class="insight-list">
+          <li *ngFor="let i of insights">
+            <span class="insight-icon" [ngClass]="'tone-' + i.tone">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: i.icon, size: 20 }"></ng-container>
+            </span>
+            <div>
+              <strong>{{ i.title }}</strong>
+              <p>{{ i.text }}</p>
+            </div>
+            <span class="tag" [ngClass]="'tag-' + i.tag.toLowerCase()">{{ i.tag }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card comparison">
+        <div class="card-head">
+          <h2>Site Comparison</h2>
+          <app-dropdown class="range" [options]="comparisonOptions" [(ngModel)]="comparisonParam"></app-dropdown>
+        </div>
+        <svg class="chart" viewBox="0 0 440 160" *ngIf="comparisonChart as s">
+          <g *ngFor="let t of s.axis.ticks">
+            <line [attr.x1]="wide.left" [attr.x2]="wide.right" [attr.y1]="t.y" [attr.y2]="t.y" class="grid"/>
+            <text [attr.x]="wide.left - 6" [attr.y]="t.y + 3" text-anchor="end" class="axis">{{ t.label }}</text>
+          </g>
+          <text x="8" y="69" text-anchor="middle" class="axis" transform="rotate(-90 8 69)">Avg. {{ params[comparisonParam].label }} ({{ params[comparisonParam].unit }})</text>
+          <g *ngFor="let g of s.groups" class="bar">
+            <title>{{ g.tooltip }}</title>
+            <rect [attr.x]="g.current.x" [attr.y]="g.current.y" [attr.width]="g.current.width" [attr.height]="g.current.h" fill="#7c3aed" rx="1.5"/>
+            <rect [attr.x]="g.previous.x" [attr.y]="g.previous.y" [attr.width]="g.previous.width" [attr.height]="g.previous.h" fill="#c4b5fd" rx="1.5"/>
+            <text [attr.x]="g.cx" y="142" text-anchor="middle" class="axis">
+              <tspan *ngFor="let l of g.lines; let n = index" [attr.x]="g.cx" [attr.dy]="n ? 11 : 0">{{ l }}</tspan>
+            </text>
+          </g>
+        </svg>
+        <div class="chart-legend">
+          <span><span class="swatch" style="background:#7c3aed"></span>Current Period</span>
+          <span><span class="swatch" style="background:#c4b5fd"></span>Previous Period</span>
+        </div>
+      </div>
+
+      <div class="card health">
+        <div class="card-head">
+          <h2>Environmental Health Score</h2>
+          <app-dropdown class="range" [options]="healthOptions" [(ngModel)]="healthFilter"></app-dropdown>
+        </div>
+        <div class="table-scroll" appDragScroll>
+          <table>
+            <thead>
+              <tr><th>Site</th><th>Score</th><th></th><th class="center">Trend</th><th class="center">Status</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let h of healthRows">
+                <td>{{ h.site }}</td>
+                <td class="strong">{{ h.score }}</td>
+                <td class="bar-cell"><span class="meter"><span [style.width.%]="h.score" [class.fair]="!h.good"></span></span></td>
+                <td class="center"><span class="trend" [class.down]="h.trend === 'down'">{{ h.trend === 'up' ? '▲' : '▼' }}</span></td>
+                <td class="center"><span class="status" [class.fair]="!h.good">{{ h.good ? 'Good' : 'Fair' }}</span></td>
+              </tr>
+              <tr *ngIf="healthRows.length === 0"><td colspan="5" class="empty">No sites</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+
+  <ng-template #comingSoon>
+    <section class="card empty tab-empty">{{ activeTab }} view coming soon</section>
+  </ng-template>
+</div>

@@ -1,0 +1,409 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<div class="operations">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <h1>Operations &amp; Maintenance</h1>
+      <p>Manage work orders, preventive maintenance, inspections and asset health for all environmental devices</p>
+    </div>
+    <button type="button" class="btn-primary lg" (click)="openCreate()">
+      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 17 }"></ng-container>
+      Create Work Order
+    </button>
+  </header>
+
+  <nav class="page-tabs">
+    <button type="button" *ngFor="let tab of tabs" [class.active]="tab === activeTab" (click)="activeTab = tab">{{ tab }}</button>
+  </nav>
+
+  <ng-container *ngIf="activeTab === tabs[0]; else comingSoon">
+
+    <!-- KPIs -->
+    <section class="kpi-row">
+      <div class="card kpi">
+        <span class="kpi-icon tone-red"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'wrench', size: 24 }"></ng-container></span>
+        <div class="kpi-body">
+          <span class="kpi-label">Total Work Orders</span>
+          <span class="kpi-value">{{ workOrders.length }}</span>
+          <span class="kpi-foot">
+            <span><span class="dot" style="background:#3b82f6"></span>{{ workOrders.length - count('Closed') - count('Overdue') }} Open</span>
+            <span><span class="dot" style="background:#22c55e"></span>{{ count('Closed') }} Closed</span>
+            <span><span class="dot" style="background:#ef4444"></span>{{ count('Overdue') }} Overdue</span>
+          </span>
+        </div>
+      </div>
+      <div class="card kpi">
+        <span class="kpi-icon tone-red"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'clock', size: 24 }"></ng-container></span>
+        <div class="kpi-body">
+          <span class="kpi-label">Overdue Work Orders</span>
+          <span class="kpi-value">{{ count('Overdue') }}</span>
+          <span class="kpi-foot"><span class="up bad">▲ {{ overdueChange }}</span> vs last week</span>
+        </div>
+      </div>
+      <div class="card kpi">
+        <span class="kpi-icon tone-green"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'clipboard', size: 24 }"></ng-container></span>
+        <div class="kpi-body">
+          <span class="kpi-label">Preventive Maintenance</span>
+          <span class="kpi-value">{{ preventive.total }}</span>
+          <span class="kpi-foot"><span class="up good">▲ {{ preventive.completion }}%</span> completion</span>
+        </div>
+      </div>
+      <div class="card kpi">
+        <span class="kpi-icon tone-green"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'shield', size: 24 }"></ng-container></span>
+        <div class="kpi-body">
+          <span class="kpi-label">Device Health</span>
+          <span class="kpi-value">{{ deviceHealth.percent }}%</span>
+          <span class="kpi-foot"><span><span class="dot" style="background:#22c55e"></span>{{ deviceHealth.online | number }} / {{ deviceHealth.total | number }} Online</span></span>
+        </div>
+      </div>
+      <div class="card kpi">
+        <span class="kpi-icon tone-purple"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'gear', size: 24 }"></ng-container></span>
+        <div class="kpi-body">
+          <span class="kpi-label">Avg. Resolution Time</span>
+          <span class="kpi-value">{{ resolution.hours }} hours</span>
+          <span class="kpi-foot"><span class="up good">▼ {{ -resolution.change }}%</span> vs last week</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts -->
+    <section class="chart-row">
+      <div class="card">
+        <div class="card-head"><h2>Work Order Status</h2></div>
+        <div class="donut-row">
+          <div class="donut">
+            <svg viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="46" fill="none" stroke="#f3f4f6" stroke-width="18"/>
+              <circle *ngFor="let s of statusSlices" cx="60" cy="60" r="46" fill="none" [attr.stroke]="s.color" stroke-width="18"
+                pathLength="100" [attr.stroke-dasharray]="s.dash" [attr.stroke-dashoffset]="s.offset" transform="rotate(-90 60 60)">
+                <title>{{ s.label }}: {{ s.value }}</title>
+              </circle>
+            </svg>
+            <div class="donut-center">
+              <strong>{{ workOrders.length }}</strong>
+              <span>Work Orders</span>
+            </div>
+          </div>
+          <ul class="legend-list">
+            <li *ngFor="let s of statusSlices">
+              <span class="swatch" [style.background]="s.color"></span>
+              <span class="legend-label">{{ s.label }}</span>
+              <strong>{{ s.value }}</strong>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Work Orders Trend</h2>
+          <app-dropdown class="range" [options]="trendRangeOptions" [(ngModel)]="trendRange"></app-dropdown>
+        </div>
+        <svg class="chart" viewBox="0 0 400 200" *ngIf="trendChart as c">
+          <g *ngFor="let t of c.ticks">
+            <line [attr.x1]="plot.left" [attr.x2]="plot.right" [attr.y1]="t.y" [attr.y2]="t.y" stroke="#eef0f4"/>
+            <text [attr.x]="plot.left - 6" [attr.y]="t.y + 3" text-anchor="end" class="axis">{{ t.label }}</text>
+          </g>
+          <text x="8" [attr.y]="(plot.top + plot.bottom) / 2" text-anchor="middle" class="axis"
+            [attr.transform]="'rotate(-90 8 ' + (plot.top + plot.bottom) / 2 + ')'">Count</text>
+          <g *ngFor="let b of c.bars" class="bar">
+            <title>{{ b.tooltip }}</title>
+            <rect *ngFor="let s of b.segments" [attr.x]="b.x" [attr.y]="s.y" [attr.width]="b.width" [attr.height]="s.h" [attr.fill]="s.color"/>
+            <text *ngIf="b.label" [attr.x]="b.cx" [attr.y]="plot.bottom + 15" text-anchor="middle" class="axis">{{ b.label }}</text>
+          </g>
+        </svg>
+        <div class="chart-legend">
+          <span *ngFor="let l of trendLabels"><span class="swatch" [style.background]="statusMeta[l].color"></span>{{ l }}</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Maintenance Compliance</h2></div>
+        <div class="donut-row">
+          <div class="donut">
+            <svg viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="48" fill="none" stroke="#dcfce7" stroke-width="12"/>
+              <circle cx="60" cy="60" r="48" fill="none" stroke="#22c55e" stroke-width="12" stroke-linecap="round"
+                pathLength="100" [attr.stroke-dasharray]="complianceRate + ' 100'" transform="rotate(-90 60 60)"/>
+            </svg>
+            <div class="donut-center">
+              <strong>{{ complianceRate }}<small>%</small></strong>
+              <span>On Schedule</span>
+            </div>
+          </div>
+          <dl class="stat-list">
+            <div><dt>Total Scheduled</dt><dd>{{ compliance.scheduled }}</dd></div>
+            <div><dt>Completed</dt><dd>{{ compliance.completed }}</dd></div>
+            <div><dt>Pending</dt><dd>{{ compliance.pending }}</dd></div>
+            <div><dt>Overdue</dt><dd>{{ compliance.overdue }}</dd></div>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <div class="content">
+
+      <!-- Left: filters + work orders -->
+      <div class="left-col">
+        <section class="card filters">
+          <label class="field"><span>Site</span><app-dropdown [options]="siteOptions" [(ngModel)]="site"></app-dropdown></label>
+          <label class="field"><span>Building</span><app-dropdown [options]="buildingOptions" [(ngModel)]="building" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+          <label class="field"><span>Device Type</span><app-dropdown [options]="deviceTypeOptions" [(ngModel)]="deviceType" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+          <label class="field"><span>Status</span><app-dropdown [options]="statusOptions" [(ngModel)]="status" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+          <label class="field"><span>Priority</span><app-dropdown [options]="priorityOptions" [(ngModel)]="priority" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+        </section>
+
+        <section class="card table-card">
+          <div class="card-head table-head">
+            <h2>Work Orders ({{ filtered.length }})</h2>
+            <div class="head-actions">
+              <label class="search">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 14 }"></ng-container>
+                <input type="text" placeholder="Search work orders..." [(ngModel)]="search" (ngModelChange)="onFilterChange()" />
+              </label>
+              <div class="bulk-wrap">
+                <button type="button" class="btn-primary sm" (click)="bulkMenuOpen = !bulkMenuOpen" [attr.aria-expanded]="bulkMenuOpen">
+                  Bulk Actions
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 14 }"></ng-container>
+                </button>
+                <div class="menu" *ngIf="bulkMenuOpen">
+                  <span class="menu-note">{{ checked.size ? checked.size + ' selected' : 'Applies to open work order' }}</span>
+                  <button type="button" (click)="bulkSetStatus('In Progress')">Mark In Progress</button>
+                  <button type="button" (click)="bulkSetStatus('On Hold')">Put On Hold</button>
+                  <button type="button" (click)="bulkSetStatus('Closed')">Close</button>
+                  <button type="button" (click)="bulkSetStatus('Open')">Reopen</button>
+                </div>
+              </div>
+              <button type="button" class="btn-outline sm" (click)="exportCsv()">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'export', size: 13 }"></ng-container>
+                Export
+              </button>
+            </div>
+          </div>
+
+          <div class="table-scroll" appDragScroll>
+            <table>
+              <thead>
+                <tr>
+                  <th class="check"><input type="checkbox" [checked]="allPageChecked" (change)="toggleAllPage()" aria-label="select all" /></th>
+                  <th>WO No.</th>
+                  <th>Title</th>
+                  <th>Device / Asset</th>
+                  <th>Site / Location</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                  <th>Scheduled Date</th>
+                  <th class="center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let w of paged" [class.active]="w === selected" (click)="select(w)">
+                  <td class="check" (click)="$event.stopPropagation()">
+                    <input type="checkbox" [checked]="checked.has(w.id)" (change)="toggleRow(w)" [attr.aria-label]="'select ' + w.number" />
+                  </td>
+                  <td class="strong">{{ w.number }}</td>
+                  <td><span class="wrap">{{ w.title }}</span></td>
+                  <td>{{ w.device }}</td>
+                  <td>{{ w.location }}</td>
+                  <td><span class="pill" [ngClass]="'p-' + w.priority.toLowerCase()">{{ w.priority }}</span></td>
+                  <td><span class="pill" [ngClass]="statusMeta[w.status].cls">{{ w.status }}</span></td>
+                  <td>{{ w.scheduled.slice(0, 11) }}</td>
+                  <td class="center" (click)="$event.stopPropagation()">
+                    <div class="row-menu-wrap">
+                      <button type="button" class="icon-btn" (click)="rowMenuId = rowMenuId === w.id ? null : w.id" [attr.aria-label]="'actions for ' + w.number">
+                        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 18 }"></ng-container>
+                      </button>
+                      <div class="menu row-menu" *ngIf="rowMenuId === w.id">
+                        <button type="button" (click)="select(w); rowMenuId = null">View Details</button>
+                        <button type="button" [disabled]="w.status === 'In Progress'" (click)="setStatus(w, 'In Progress')">Start Work</button>
+                        <button type="button" [disabled]="w.status === 'On Hold'" (click)="setStatus(w, 'On Hold')">Put On Hold</button>
+                        <button type="button" [disabled]="w.status === 'Closed'" (click)="setStatus(w, 'Closed')">Close</button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr *ngIf="paged.length === 0">
+                  <td colspan="9" class="empty">No work orders found</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-foot">
+            <span>Showing {{ rangeStart }} to {{ rangeEnd }} of {{ filtered.length }} work orders</span>
+            <div class="pager">
+              <button type="button" (click)="goToPage(page - 1)" [disabled]="page === 1" aria-label="previous page">‹</button>
+              <ng-container *ngFor="let p of pageList">
+                <button *ngIf="p !== null; else gap" type="button" [class.active]="p === page" (click)="goToPage(p)">{{ p }}</button>
+                <ng-template #gap><span class="gap">…</span></ng-template>
+              </ng-container>
+              <button type="button" (click)="goToPage(page + 1)" [disabled]="page === totalPages" aria-label="next page">›</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Right: work order details -->
+      <aside class="card detail" *ngIf="selected as s; else noDetail">
+        <div class="card-head">
+          <h2>Work Order Details</h2>
+          <div class="head-actions">
+            <button type="button" class="btn-primary sm" *ngIf="!editing" (click)="startEdit()">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'edit', size: 13 }"></ng-container>
+              Edit
+            </button>
+            <div class="more-wrap">
+              <button type="button" class="ghost-btn" (click)="moreMenuOpen = !moreMenuOpen" aria-label="work order actions">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 16 }"></ng-container>
+              </button>
+              <div class="menu" *ngIf="moreMenuOpen">
+                <button type="button" (click)="setStatus(s, 'In Progress'); moreMenuOpen = false">Start Work</button>
+                <button type="button" (click)="setStatus(s, 'Closed'); moreMenuOpen = false">Close</button>
+                <button type="button" (click)="selected = null; moreMenuOpen = false">Hide Panel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-body">
+          <div class="wo-title">
+            <span class="wo-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'thermometer', size: 20 }"></ng-container></span>
+            <div>
+              <div class="wo-number">
+                <strong>{{ s.number }}</strong>
+                <span class="pill" [ngClass]="'p-' + s.priority.toLowerCase()">{{ s.priority }}</span>
+                <span class="pill" [ngClass]="statusMeta[s.status].cls">{{ s.status }}</span>
+              </div>
+              <h3>{{ s.title }}</h3>
+            </div>
+          </div>
+
+          <!-- Edit form -->
+          <div class="edit-form" *ngIf="editing as e">
+            <label class="field"><span>Status</span><app-dropdown [options]="statusEditOptions" [(ngModel)]="e.status"></app-dropdown></label>
+            <label class="field"><span>Priority</span><app-dropdown [options]="priorityEditOptions" [(ngModel)]="e.priority"></app-dropdown></label>
+            <label class="field full"><span>Assigned To</span><app-dropdown [options]="technicianOptions" [(ngModel)]="e.assignee"></app-dropdown></label>
+            <label class="field full"><span>Description</span><textarea rows="3" [(ngModel)]="e.description"></textarea></label>
+            <div class="form-actions full">
+              <button type="button" class="btn-outline sm" (click)="editing = null">Cancel</button>
+              <button type="button" class="btn-primary sm" (click)="saveEdit()">Save</button>
+            </div>
+          </div>
+
+          <div class="info" *ngIf="!editing">
+            <dl class="details">
+              <div><dt>Site</dt><dd>Dubai Mall</dd></div>
+              <div><dt>Building</dt><dd>{{ s.building }}</dd></div>
+              <div><dt>Location</dt><dd>{{ s.location }}</dd></div>
+              <div><dt>Device</dt><dd>{{ s.device }} (SN: {{ s.serial }})</dd></div>
+              <div><dt>Assigned To</dt><dd><span class="avatar xs">{{ initials(s.assignee) }}</span>{{ s.assignee }}</dd></div>
+              <div><dt>Scheduled Date</dt><dd>{{ s.scheduled }}</dd></div>
+              <div><dt>Due Date</dt><dd>{{ s.due }}</dd></div>
+              <div><dt>Description</dt><dd>{{ s.description }}</dd></div>
+            </dl>
+            <div class="visual" aria-hidden="true">
+              <svg viewBox="0 0 120 110">
+                <rect x="10" y="8" width="100" height="94" rx="4" fill="#e2e8f0" stroke="#94a3b8"/>
+                <rect x="16" y="14" width="42" height="82" rx="2" fill="#f8fafc" stroke="#94a3b8"/>
+                <rect x="62" y="14" width="42" height="82" rx="2" fill="#f8fafc" stroke="#94a3b8"/>
+                <rect x="52" y="44" width="2" height="16" rx="1" fill="#64748b"/>
+                <rect x="66" y="44" width="2" height="16" rx="1" fill="#64748b"/>
+                <rect x="22" y="20" width="12" height="8" rx="1" fill="#22c55e" opacity="0.7"/>
+              </svg>
+            </div>
+          </div>
+
+          <h4 class="sub-title">Work Order Progress</h4>
+          <ol class="progress" [style.--fill]="progressFill(s)">
+            <li *ngFor="let step of progressSteps; let i = index" [class.done]="i < stepsDone(s)" [class.current]="i === stepsDone(s)">
+              <span class="step-dot">
+                <ng-container *ngIf="i < stepsDone(s)">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 11 }"></ng-container>
+                </ng-container>
+              </span>
+              <span class="step-label">{{ step }}</span>
+              <span class="step-time">{{ progressTime(s, i) }}</span>
+            </li>
+          </ol>
+
+          <nav class="detail-tabs">
+            <button type="button" *ngFor="let t of detailTabs" [class.active]="t === activeDetailTab" (click)="activeDetailTab = t">
+              {{ t }}<ng-container *ngIf="tabCount(s, t) !== null"> ({{ tabCount(s, t) }})</ng-container>
+            </button>
+          </nav>
+
+          <div class="tab-scroll" [ngSwitch]="activeDetailTab">
+            <ul class="activity" *ngSwitchCase="'Activities'">
+              <li *ngFor="let a of s.activities">
+                <span class="avatar">{{ initials(a.user) }}</span>
+                <div><strong>{{ a.user }}</strong><span>{{ a.text }}</span></div>
+                <time>{{ a.time }}</time>
+              </li>
+            </ul>
+            <ul class="simple-list" *ngSwitchCase="'Parts Used'">
+              <li *ngFor="let p of s.parts">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'box', size: 15 }"></ng-container>
+                <span>{{ p.name }}</span><strong>× {{ p.qty }}</strong>
+              </li>
+              <li class="empty" *ngIf="!s.parts.length">No parts used</li>
+            </ul>
+            <ul class="simple-list" *ngSwitchCase="'Attachments'">
+              <li *ngFor="let f of s.attachments">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'file', size: 15 }"></ng-container>
+                <span>{{ f }}</span>
+              </li>
+              <li class="empty" *ngIf="!s.attachments.length">No attachments</li>
+            </ul>
+            <ul class="simple-list" *ngSwitchCase="'Related Alarms'">
+              <li *ngFor="let r of s.relatedAlarms">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'bell', size: 15 }"></ng-container>
+                <span>{{ r }}</span>
+              </li>
+              <li class="empty" *ngIf="!s.relatedAlarms.length">No related alarms</li>
+            </ul>
+          </div>
+        </div>
+      </aside>
+      <ng-template #noDetail>
+        <aside class="card detail empty-detail">
+          <span>Select a work order to see its details</span>
+        </aside>
+      </ng-template>
+    </div>
+  </ng-container>
+
+  <ng-template #comingSoon>
+    <section class="card empty tab-empty">{{ activeTab }} view coming soon</section>
+  </ng-template>
+
+  <!-- Create work order dialog -->
+  <div class="overlay" *ngIf="createOpen" (click)="createOpen = false">
+    <form class="dialog" role="dialog" aria-modal="true" aria-labelledby="create-title" (click)="$event.stopPropagation()" (ngSubmit)="createWorkOrder()">
+      <div class="card-head">
+        <h2 id="create-title">Create Work Order</h2>
+        <button type="button" class="ghost-btn" (click)="createOpen = false" aria-label="close">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 15 }"></ng-container>
+        </button>
+      </div>
+      <div class="dialog-grid">
+        <label class="field full"><span>Title *</span><input type="text" name="title" [(ngModel)]="draft.title" placeholder="e.g. Inspect smoke detector" /></label>
+        <label class="field"><span>Device / Asset *</span><input type="text" name="device" [(ngModel)]="draft.device" placeholder="e.g. Temperature Sensor" /></label>
+        <label class="field"><span>Location *</span><input type="text" name="location" [(ngModel)]="draft.location" placeholder="e.g. Cold Room 01" /></label>
+        <label class="field"><span>Building</span><app-dropdown name="building" [options]="buildingEditOptions" [(ngModel)]="draft.building"></app-dropdown></label>
+        <label class="field"><span>Priority</span><app-dropdown name="priority" [options]="priorityEditOptions" [(ngModel)]="draft.priority"></app-dropdown></label>
+        <label class="field"><span>Assign To</span><app-dropdown name="assignee" [options]="technicianOptions" [(ngModel)]="draft.assignee"></app-dropdown></label>
+        <label class="field"><span>Due Date</span><input type="datetime-local" name="due" [(ngModel)]="draft.due" /></label>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-outline" (click)="createOpen = false">Cancel</button>
+        <button type="submit" class="btn-primary" [disabled]="!draftValid">Create</button>
+      </div>
+    </form>
+  </div>
+</div>

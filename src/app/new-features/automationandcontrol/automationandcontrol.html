@@ -1,0 +1,249 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<div class="automation">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <h1>Automation &amp; Control</h1>
+      <p>Create rules, schedules and control devices based on environmental conditions</p>
+    </div>
+    <div class="create-split">
+      <a class="create-main" routerLink="/process-automation/create">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 18 }"></ng-container>
+        Create Rule
+      </a>
+      <button type="button" class="create-caret" (click)="createMenuOpen = !createMenuOpen" aria-label="more create options" [attr.aria-expanded]="createMenuOpen">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 15 }"></ng-container>
+      </button>
+      <div class="menu" *ngIf="createMenuOpen">
+        <a routerLink="/process-automation/create" (click)="createMenuOpen = false">New Rule</a>
+        <button type="button" (click)="createMenuOpen = false">New Scene</button>
+        <button type="button" (click)="createMenuOpen = false">New Schedule</button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="page-tabs">
+    <button type="button" *ngFor="let tab of tabs" [class.active]="tab === activeTab" (click)="activeTab = tab">{{ tab }}</button>
+  </nav>
+
+  <ng-container *ngIf="activeTab === tabs[0]; else comingSoon">
+
+    <!-- KPIs -->
+    <section class="kpi-row">
+      <div class="card kpi" *ngFor="let k of kpis">
+        <span class="kpi-icon" [ngClass]="'tone-' + k.tone">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: k.icon, size: 26 }"></ng-container>
+        </span>
+        <div class="kpi-body">
+          <span class="kpi-label">{{ k.label }}</span>
+          <span class="kpi-value">{{ k.value }}</span>
+          <span class="kpi-foot" *ngIf="k.breakdown">
+            <span *ngFor="let b of k.breakdown"><span class="dot" [style.background]="b.color"></span>{{ b.value }} {{ b.label }}</span>
+          </span>
+          <span class="kpi-foot" *ngIf="k.trend">
+            <span class="trend">▲ {{ k.trend.change }}</span> {{ k.trend.note }}
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="content">
+
+      <!-- Left: filters + rules table -->
+      <div class="left-col">
+        <section class="card filters">
+          <label class="field"><span>Site</span><app-dropdown [options]="siteOptions" [(ngModel)]="site"></app-dropdown></label>
+          <label class="field"><span>Space Type</span><app-dropdown [options]="spaceTypeOptions" [(ngModel)]="spaceType" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+          <label class="field"><span>Rule Type</span><app-dropdown [options]="ruleTypeOptions" [(ngModel)]="ruleType" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+          <label class="field"><span>Status</span><app-dropdown [options]="statusOptions" [(ngModel)]="status" (ngModelChange)="onFilterChange()"></app-dropdown></label>
+          <label class="search">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 15 }"></ng-container>
+            <input type="text" placeholder="Search rules..." [(ngModel)]="search" (ngModelChange)="onFilterChange()" />
+          </label>
+        </section>
+
+        <section class="card table-card">
+          <h2>Automation Rules ({{ filteredRules.length }})</h2>
+          <div class="table-scroll" appDragScroll>
+            <table>
+              <thead>
+                <tr>
+                  <th class="check"><input type="checkbox" [checked]="allPageChecked" (change)="toggleAllPage()" aria-label="select all" /></th>
+                  <th>Rule Name</th>
+                  <th>Trigger Condition</th>
+                  <th>Action</th>
+                  <th>Applies To</th>
+                  <th class="center">Status</th>
+                  <th class="center">Priority</th>
+                  <th>Last Triggered</th>
+                  <th class="center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let r of pagedRules" [class.active]="r === selected" (click)="selectRule(r)">
+                  <td class="check" (click)="$event.stopPropagation()">
+                    <input type="checkbox" [checked]="checked.has(r.id)" (change)="toggleRow(r)" [attr.aria-label]="'select ' + r.name" />
+                  </td>
+                  <td>
+                    <div class="rule-name">
+                      <span class="rule-icon" [style.color]="r.color">
+                        <ng-container *ngTemplateOutlet="icon; context: { $implicit: r.icon, size: 18 }"></ng-container>
+                      </span>
+                      <span>{{ r.name }}</span>
+                    </div>
+                  </td>
+                  <td><span class="lines"><span *ngFor="let t of r.trigger">{{ t }}</span></span></td>
+                  <td><span class="lines"><span *ngFor="let a of r.action">{{ a }}</span></span></td>
+                  <td>{{ r.appliesTo }}</td>
+                  <td class="center">
+                    <button type="button" class="switch" role="switch" [attr.aria-checked]="r.enabled" [class.on]="r.enabled"
+                      (click)="toggleRule(r, $event)" [attr.aria-label]="(r.enabled ? 'disable ' : 'enable ') + r.name"></button>
+                  </td>
+                  <td class="center"><span class="priority" [ngClass]="'p-' + r.priority.toLowerCase()">{{ r.priority }}</span></td>
+                  <td><span class="lines"><span>{{ r.lastTriggered[0] }}</span><span>{{ r.lastTriggered[1] }}</span></span></td>
+                  <td class="center">
+                    <button type="button" class="icon-btn" aria-label="more actions" (click)="$event.stopPropagation()">
+                      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 18 }"></ng-container>
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="pagedRules.length === 0">
+                  <td colspan="9" class="empty">No rules found</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-foot">
+            <span>Showing {{ rangeStart }} to {{ rangeEnd }} of {{ filteredRules.length }} rules</span>
+            <div class="pager">
+              <button type="button" (click)="goToPage(page - 1)" [disabled]="page === 1" aria-label="previous page">‹</button>
+              <ng-container *ngFor="let p of pageList">
+                <button *ngIf="p !== null; else gap" type="button" [class.active]="p === page" (click)="goToPage(p)">{{ p }}</button>
+                <ng-template #gap><span class="gap">…</span></ng-template>
+              </ng-container>
+              <button type="button" (click)="goToPage(page + 1)" [disabled]="page === totalPages" aria-label="next page">›</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Right: details, live control, recent actions -->
+      <aside class="right-col">
+        <section class="card">
+          <div class="card-head">
+            <h2>Rule Details</h2>
+            <div class="head-actions">
+              <a class="btn-primary sm" routerLink="/process-automation/create">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'edit', size: 13 }"></ng-container>
+                Edit
+              </a>
+              <button type="button" class="ghost-btn" aria-label="rule actions">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 16 }"></ng-container>
+              </button>
+            </div>
+          </div>
+
+          <div class="rule-title">
+            <span class="rule-icon lg" [style.color]="selected.color">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: selected.icon, size: 20 }"></ng-container>
+            </span>
+            <h3>{{ selected.name }}</h3>
+            <button type="button" class="switch" role="switch" [attr.aria-checked]="selected.enabled" [class.on]="selected.enabled"
+              (click)="toggleRule(selected)" aria-label="toggle rule"></button>
+            <span class="switch-label" [class.off]="!selected.enabled">{{ selected.enabled ? 'Active' : 'Inactive' }}</span>
+          </div>
+
+          <nav class="detail-tabs">
+            <button type="button" *ngFor="let t of detailTabs" [class.active]="t === activeDetailTab" (click)="activeDetailTab = t">{{ t }}</button>
+          </nav>
+
+          <dl class="details" *ngIf="activeDetailTab === detailTabs[0]; else detailSoon">
+            <div><dt>Description</dt><dd>{{ selected.description }}</dd></div>
+            <div><dt>Applies To</dt><dd>{{ selected.appliesTo }} ({{ selected.path }})</dd></div>
+            <div><dt>Priority</dt><dd><span class="priority" [ngClass]="'p-' + selected.priority.toLowerCase()">{{ selected.priority }}</span></dd></div>
+            <div><dt>Created By</dt><dd>{{ selected.createdBy }}</dd></div>
+            <div><dt>Created On</dt><dd>{{ selected.createdOn }}</dd></div>
+            <div><dt>Last Modified</dt><dd>{{ selected.modifiedOn }}</dd></div>
+          </dl>
+          <ng-template #detailSoon>
+            <div class="empty">{{ activeDetailTab }} view coming soon</div>
+          </ng-template>
+        </section>
+
+        <section class="card live">
+          <div class="card-head">
+            <h2>Live Control</h2>
+            <div class="head-actions">
+              <app-dropdown class="zone" [options]="zoneOptions" [(ngModel)]="zone"></app-dropdown>
+              <button type="button" class="ghost-btn" [class.spin]="refreshing" (click)="refresh()" aria-label="refresh">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'refresh', size: 15 }"></ng-container>
+              </button>
+            </div>
+          </div>
+          <div class="controls">
+            <div class="control" *ngFor="let d of devices">
+              <div class="control-top">
+                <span class="control-icon" [ngClass]="'tone-' + d.tone">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: d.icon, size: 18 }"></ng-container>
+                </span>
+                <div>
+                  <span class="control-label">{{ d.label }}</span>
+                  <span class="control-state" [class.off]="!d.on"><span class="dot"></span>{{ d.on ? d.onLabel : d.offLabel }}</span>
+                </div>
+              </div>
+              <button type="button" class="control-btn" [class.primary]="d.on && d.key !== 'door'" (click)="toggleDevice(d)">
+                {{ d.on ? d.onAction : d.offAction }}
+              </button>
+            </div>
+            <div class="control">
+              <div class="control-top">
+                <span class="control-icon tone-red">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'thermometer', size: 18 }"></ng-container>
+                </span>
+                <span class="control-label">Set Temperature</span>
+              </div>
+              <div class="stepper">
+                <button type="button" (click)="stepSetpoint(-1)" aria-label="decrease temperature">−</button>
+                <span>{{ setpoint }} °C</span>
+                <button type="button" (click)="stepSetpoint(1)" aria-label="increase temperature">+</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card recent">
+          <div class="card-head">
+            <h2>Recent Actions</h2>
+            <a class="link">View All</a>
+          </div>
+          <div class="recent-scroll">
+            <table class="recent-table">
+              <thead>
+                <tr><th>Time</th><th>Action</th><th>Triggered By</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let a of recentActions">
+                  <td>{{ a.time }}</td>
+                  <td class="strong">{{ a.action }}</td>
+                  <td>{{ a.by }}</td>
+                  <td><span class="ok" [class.fail]="a.status === 'Failed'"><span class="dot"></span>{{ a.status }}</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </ng-container>
+
+  <ng-template #comingSoon>
+    <section class="card empty tab-empty">{{ activeTab }} view coming soon</section>
+  </ng-template>
+</div>

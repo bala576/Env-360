@@ -1,0 +1,329 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<!-- Recursive hierarchy row -->
+<ng-template #treeNode let-node let-depth="depth">
+  <div
+    class="tree-row"
+    [class.selected]="node.id === selectedNodeId"
+    [class.on-path]="isOnSelectedPath(node)"
+    [style.padding-left.px]="8 + depth * 14"
+    (click)="selectNode(node)"
+  >
+    <button
+      type="button"
+      class="tree-toggle"
+      [class.hidden]="!hasChildren(node)"
+      [class.open]="isExpanded(node)"
+      (click)="toggleNode(node, $event)"
+      [attr.aria-label]="isExpanded(node) ? 'collapse' : 'expand'"
+    >
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <span class="tree-icon">
+      <ng-container *ngTemplateOutlet="icon; context: { $implicit: node.kind, size: 16 }"></ng-container>
+    </span>
+    <span class="tree-label">{{ node.label }}</span>
+    <span class="tree-count">{{ node.count }}</span>
+  </div>
+  <ng-container *ngIf="hasChildren(node) && isExpanded(node)">
+    <ng-container *ngFor="let child of node.children">
+      <ng-container *ngTemplateOutlet="treeNode; context: { $implicit: child, depth: depth + 1 }"></ng-container>
+    </ng-container>
+  </ng-container>
+</ng-template>
+
+<div class="sites">
+
+  <!-- <app-breadcrumb [items]="breadcrumb"></app-breadcrumb> -->
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <h1>Sites &amp; Spaces</h1>
+      <p>Manage your organization hierarchy, sites, buildings, floors, spaces and monitoring points</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-primary">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 16 }"></ng-container>
+        Add Site / Space
+      </button>
+      <button type="button" class="btn-outline">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'import', size: 16 }"></ng-container>
+        Import
+      </button>
+      <button type="button" class="btn-outline">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'export', size: 16 }"></ng-container>
+        Export
+      </button>
+      <div class="view-toggle">
+        <button type="button" [class.active]="viewMode === 'list'" (click)="viewMode = 'list'">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'list', size: 15 }"></ng-container>
+          List
+        </button>
+        <button type="button" [class.active]="viewMode === 'map'" (click)="viewMode = 'map'">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'map', size: 15 }"></ng-container>
+          Map
+        </button>
+        <button type="button" [class.active]="viewMode === 'plan'" (click)="viewMode = 'plan'">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plan', size: 15 }"></ng-container>
+          Floor Plan
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <!-- Hierarchy -->
+    <aside class="card hierarchy">
+      <h2>Hierarchy</h2>
+      <label class="search">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 15 }"></ng-container>
+        <input type="text" placeholder="Search sites or spaces..." [(ngModel)]="treeSearch" />
+      </label>
+      <div class="tree">
+        <ng-container *ngFor="let root of treeRoots">
+          <ng-container *ngTemplateOutlet="treeNode; context: { $implicit: root, depth: 0 }"></ng-container>
+        </ng-container>
+        <div class="empty" *ngIf="treeRoots.length === 0">No matches</div>
+      </div>
+    </aside>
+
+    <div class="main-col">
+      <div class="top-row">
+
+        <!-- Floor plan -->
+        <section class="card floor-plan">
+          <div class="card-head">
+            <h2>{{ currentFloorLabel }} - Floor Plan</h2>
+            <div class="param-filter">
+              <span>Parameters</span>
+              <app-dropdown [options]="parameterOptions" [(ngModel)]="parameterFilter"></app-dropdown>
+            </div>
+          </div>
+
+          <div class="plan-wrap">
+            <div class="plan-legend">
+              <span *ngFor="let s of statuses">
+                <span class="dot" [style.background]="statusColors[s]"></span>{{ s | titlecase }}
+              </span>
+            </div>
+
+            <div class="plan-canvas">
+              <div class="plan-zoom" [style.transform]="'scale(' + zoomLevel + ')'">
+                <svg class="plan-svg" viewBox="0 0 600 380" preserveAspectRatio="none" aria-hidden="true">
+                  <rect x="4" y="4" width="592" height="372" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="3"/>
+                  <g *ngFor="let room of rooms">
+                    <rect [attr.x]="room.x" [attr.y]="room.y" [attr.width]="room.w" [attr.height]="room.h" [attr.fill]="room.fill" stroke="#94a3b8" stroke-width="1.5"/>
+                  </g>
+                  <rect x="250" y="368" width="100" height="12" fill="#ffffff"/>
+                </svg>
+                <span
+                  *ngFor="let room of rooms"
+                  class="room-label"
+                  [style.left.%]="(room.x + room.w / 2) / 6"
+                  [style.top.%]="(room.y + room.h / 2) / 3.8"
+                >{{ room.name }}</span>
+                <span class="entrance">Entrance</span>
+
+                <button
+                  *ngFor="let point of visiblePoints"
+                  type="button"
+                  class="point"
+                  [style.left.%]="point.x"
+                  [style.top.%]="point.y"
+                  [style.background]="statusColors[point.status]"
+                  (mouseenter)="hoveredPoint = point"
+                  (mouseleave)="hoveredPoint = null"
+                  [attr.aria-label]="paramLabels[point.param] + ' ' + point.status"
+                >
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: pointIcon(point), size: 14 }"></ng-container>
+                  <span class="point-tip" *ngIf="hoveredPoint === point">
+                    {{ paramLabels[point.param] }} · {{ point.status | titlecase }}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <div class="floor-switch">
+              <button
+                type="button"
+                *ngFor="let floor of floors"
+                [class.active]="floor.id === currentFloorId"
+                (click)="selectFloor(floor.id)"
+              >{{ floor.short }}</button>
+            </div>
+
+            <div class="zoom-controls">
+              <button type="button" (click)="zoom(1)" aria-label="zoom in">+</button>
+              <button type="button" (click)="zoom(-1)" aria-label="zoom out">−</button>
+              <button type="button" class="reset" (click)="resetZoom()" aria-label="reset zoom">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'expand', size: 14 }"></ng-container>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Space details -->
+        <section class="card space-details">
+          <div class="card-head">
+            <h2>Space Details</h2>
+            <button type="button" class="btn-primary sm">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'edit', size: 13 }"></ng-container>
+              Edit
+            </button>
+          </div>
+
+          <div class="space-info">
+            <div class="space-image">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'store', size: 44 }"></ng-container>
+            </div>
+            <dl>
+              <div class="name-row"><dt>Space Name</dt><dd class="space-name">{{ selectedSpace.name }}</dd></div>
+              <div><dt>Type</dt><dd>{{ selectedSpace.type }}</dd></div>
+              <div><dt>Code</dt><dd>{{ selectedSpace.code }}</dd></div>
+              <div><dt>Floor</dt><dd>{{ selectedSpace.floor }}</dd></div>
+              <div><dt>Area</dt><dd>{{ selectedSpace.area }} m²</dd></div>
+              <div><dt>Capacity</dt><dd>{{ selectedSpace.capacity }} (Persons)</dd></div>
+              <div>
+                <dt>Status</dt>
+                <dd><span class="status-text" [class.inactive]="selectedSpace.status === 'Inactive'"><span class="dot"></span>{{ selectedSpace.status }}</span></dd>
+              </div>
+              <div><dt>Description</dt><dd class="desc">{{ selectedSpace.description }}</dd></div>
+            </dl>
+          </div>
+
+          <div class="card-head live-head">
+            <h2>Live Parameters</h2>
+            <a class="link">View All</a>
+          </div>
+          <div class="live-grid">
+            <div class="live-card" *ngFor="let p of liveParameters">
+              <span class="live-icon" [ngClass]="'tone-' + p.tone">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: p.key, size: 22 }"></ng-container>
+              </span>
+              <div class="live-body">
+                <span class="live-label">{{ p.label }}</span>
+                <span class="live-value">{{ p.value }} <small>{{ p.unit }}</small></span>
+                <span class="live-foot">
+                  <span class="status-text"><span class="dot"></span>{{ p.status | titlecase }}</span>
+                  <svg class="spark" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true">
+                    <polyline class="draw" pathLength="1" [attr.points]="sparkPoints(p.history)" fill="none" [attr.stroke]="p.color" stroke-width="2.4" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Spaces table -->
+      <section class="card table-card">
+        <div class="table-toolbar">
+          <div class="tabs">
+            <button type="button" [class.active]="activeTab === 'spaces'" (click)="activeTab = 'spaces'">Spaces ({{ allSpaces.length }})</button>
+            <button type="button" [class.active]="activeTab === 'points'" (click)="activeTab = 'points'">Monitoring Points ({{ pointCount }})</button>
+            <button type="button" [class.active]="activeTab === 'devices'" (click)="activeTab = 'devices'">Devices ({{ deviceCount }})</button>
+          </div>
+          <div class="filters">
+            <label class="search">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 15 }"></ng-container>
+              <input type="text" placeholder="Search spaces..." [(ngModel)]="spaceSearch" (ngModelChange)="onFilterChange()" />
+            </label>
+            <app-dropdown [options]="typeOptions" [(ngModel)]="typeFilter" (ngModelChange)="onFilterChange()"></app-dropdown>
+            <app-dropdown [options]="statusOptions" [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()"></app-dropdown>
+            <button type="button" class="btn-primary sm">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'columns', size: 14 }"></ng-container>
+              Columns
+            </button>
+          </div>
+        </div>
+
+        <ng-container *ngIf="activeTab === 'spaces'; else comingSoon">
+          <div class="table-scroll" appDragScroll>
+            <table>
+              <thead>
+                <tr>
+                  <th class="check"><input type="checkbox" [checked]="allPageChecked" (change)="toggleAllPage()" aria-label="select all" /></th>
+                  <th>Space Name</th>
+                  <th>Type</th>
+                  <th>Floor</th>
+                  <th>Area (m²)</th>
+                  <th>Capacity</th>
+                  <th>Monitoring Points</th>
+                  <th>Devices</th>
+                  <th>Key Parameters</th>
+                  <th>Status</th>
+                  <th class="actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let space of pagedSpaces"
+                  [class.active]="space === selectedSpace"
+                  (click)="selectSpace(space)"
+                >
+                  <td class="check" (click)="$event.stopPropagation()">
+                    <input type="checkbox" [checked]="checked.has(space.code)" (change)="toggleRow(space)" [attr.aria-label]="'select ' + space.name" />
+                  </td>
+                  <td class="strong">{{ space.name }}</td>
+                  <td>{{ space.type }}</td>
+                  <td>{{ space.floor }}</td>
+                  <td>{{ space.area }}</td>
+                  <td>{{ space.capacity }}</td>
+                  <td>{{ space.points }}</td>
+                  <td>{{ space.devices }}</td>
+                  <td>
+                    <span class="param-chips">
+                      <span
+                        *ngFor="let key of space.params"
+                        class="param-chip"
+                        [style.color]="paramColors[key]"
+                        [title]="paramLabels[key]"
+                      >
+                        <ng-container *ngTemplateOutlet="icon; context: { $implicit: key, size: 13 }"></ng-container>
+                      </span>
+                    </span>
+                  </td>
+                  <td>
+                    <span class="status-pill" [class.inactive]="space.status === 'Inactive'"><span class="dot"></span>{{ space.status }}</span>
+                  </td>
+                  <td class="actions">
+                    <button type="button" class="icon-btn" aria-label="more actions" (click)="$event.stopPropagation()">
+                      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 18 }"></ng-container>
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="pagedSpaces.length === 0">
+                  <td colspan="11" class="empty">No spaces found</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-foot">
+            <span>Showing {{ rangeStart }} to {{ rangeEnd }} of {{ filteredSpaces.length }} spaces</span>
+            <div class="pager">
+              <button type="button" (click)="goToPage(page - 1)" [disabled]="page === 1" aria-label="previous page">‹</button>
+              <ng-container *ngFor="let p of pageList">
+                <button *ngIf="p !== null; else gap" type="button" [class.active]="p === page" (click)="goToPage(p)">{{ p }}</button>
+                <ng-template #gap><span class="gap">…</span></ng-template>
+              </ng-container>
+              <button type="button" (click)="goToPage(page + 1)" [disabled]="page === totalPages" aria-label="next page">›</button>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-template #comingSoon>
+          <div class="empty tab-empty">
+            {{ activeTab === 'points' ? pointCount + ' monitoring points' : deviceCount + ' devices' }} on {{ currentFloorLabel }}. Detailed list coming soon.
+          </div>
+        </ng-template>
+      </section>
+    </div>
+  </div>
+</div>

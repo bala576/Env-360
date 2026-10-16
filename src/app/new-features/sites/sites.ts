@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { Breadcrumb, BreadcrumbItem } from '../../shared/breadcrumb/breadcrumb';
 import { DragScroll } from '../../shared/drag-scroll/drag-scroll';
 import { Dropdown, DropdownOption } from '../../shared/dropdown/dropdown';
@@ -31,7 +32,7 @@ const SPARK = { width: 100, height: 32 };
 
 @Component({
   selector: 'app-sites',
-  imports: [CommonModule, FormsModule, Breadcrumb, Dropdown, DragScroll],
+  imports: [CommonModule, FormsModule, RouterLink, Breadcrumb, Dropdown, DragScroll],
   templateUrl: './sites.html',
   styleUrl: './sites.css',
 })

@@ -1,0 +1,458 @@
+/* ---------- Sharing & Access ---------- */
+.sh-head-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #f1ebff;
+  color: var(--accent);
+}
+
+/* Access level cards */
+.sh-levels {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.sh-level {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.sh-level.active {
+  border-color: var(--accent);
+  background: #faf8ff;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.sh-level-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  align-self: stretch;
+}
+
+.sh-level-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  padding-top: 1px;
+  color: #1e1b4b;
+}
+
+.sh-level.active .sh-level-icon,
+.sh-level.active .sh-level-label {
+  color: var(--accent);
+}
+
+.sh-level-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e1b4b;
+}
+
+.sh-level input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+/* Users & groups */
+.sh-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.sh-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.sh-search svg {
+  position: absolute;
+  left: 10px;
+  color: #6b7280;
+}
+
+.sh-search input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px 8px 32px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 12.5px;
+}
+
+.sh-search input:focus,
+.sh-filter:focus,
+.sh-url:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.sh-filter {
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 12.5px;
+  color: #1e1b4b;
+}
+
+.sh-add,
+.sh-remove {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+}
+
+.sh-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Row menus must escape the table, so this wrapper doesn't clip */
+.sh-table-wrap,
+.s-card .rf-table-wrap:has(.sh-table) {
+  overflow: visible;
+}
+
+.sh-table {
+  font-size: 12px;
+}
+
+.sh-table th,
+.sh-table td {
+  padding: 7px 5px;
+}
+
+.sh-table th:first-child,
+.sh-table td:first-child {
+  width: 1%;
+}
+
+.sh-table input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  vertical-align: middle;
+}
+
+.sh-person {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sh-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #ede9fe;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.sh-avatar.owner {
+  background: #1e1b4b;
+  color: #ffffff;
+}
+
+.sh-avatar.group {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.sh-person-text {
+  min-width: 0;
+}
+
+.sh-name {
+  display: block;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sh-person-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sh-person-edit .rf-input {
+  width: 130px;
+}
+
+.sh-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #ede9fe;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.sh-tag.group {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.sh-table select.rf-input {
+  min-width: 70px;
+}
+
+.sh-perms {
+  display: flex;
+  gap: 10px;
+}
+
+.sh-perms label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sh-date {
+  width: 118px;
+}
+
+.sh-actions {
+  position: relative;
+  text-align: center;
+}
+
+.sh-menu {
+  top: 28px;
+  right: 4px;
+  text-align: left;
+}
+
+/* Share link */
+.sh-link-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sh-link {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.sh-link.off {
+  opacity: 0.55;
+}
+
+.sh-url {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+  font: inherit;
+  font-size: 12px;
+  color: #374151;
+}
+
+.sh-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  font-size: 12.5px;
+}
+
+.sh-link-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sh-scope {
+  width: 100%;
+  margin-top: 8px;
+  padding: 7px 10px;
+}
+
+.sh-scope-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #4b5563;
+}
+
+/* Preview */
+.sh-preview {
+  gap: 12px;
+}
+
+.sh-preview .pv-filter-head {
+  margin-bottom: 0;
+}
+
+.sh-preview .ap-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sh-pv-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.sh-pv-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.sh-pv-title strong {
+  display: block;
+  font-size: 13.5px;
+  color: #1e1b4b;
+}
+
+.sh-pv-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  font-size: 11px;
+  font-weight: 600;
+  color: #4b5563;
+  white-space: nowrap;
+}
+
+.sh-pv-chip.edit {
+  background: #ede9fe;
+  color: var(--accent);
+}
+
+/* Appearance KPI/axis styles are reused here; give them their surface variables */
+.sh-preview {
+  --ap-gap: 8px;
+  --ap-pad: 10px;
+  --ap-radius: 10px;
+  --ap-card-border: #ece9f5;
+  --ap-muted: #6b7280;
+  font-size: 13px;
+}
+
+/* Narrow column: KPI icon sits above the value so nothing truncates */
+.sh-preview .ap-kpi {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px;
+}
+
+.sh-preview .ap-kpi-text,
+.sh-preview .ap-kpi strong {
+  max-width: 100%;
+}
+
+.sh-preview .ap-kpi strong {
+  font-size: 1.05em;
+}
+
+.sh-pv-trend {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 220px;
+}
+
+.sh-summary {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.sh-donut {
+  width: 45%;
+  max-width: 130px;
+}
+
+.sh-legend {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12.5px;
+  color: #1e1b4b;
+}
+
+.sh-legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sh-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.sh-legend span:nth-child(2) {
+  flex: 1;
+}
+
+.sh-legend-count {
+  color: #4b5563;
+}
+
+@media (max-width: 1440px) {
+  .sh-levels {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .s-card .rf-table-wrap:has(.sh-table) {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .sh-toolbar,
+  .sh-link {
+    flex-wrap: wrap;
+  }
+}

@@ -49,10 +49,43 @@
 }
 
 .sidebar-header .logo .logo-text {
-  font-weight: 700;
-  font-size: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   color: #ffffff;
   white-space: nowrap;
+  line-height: 1;
+}
+
+.sidebar-header .logo .logo-name {
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.2px;
+}
+
+.sidebar-header .logo .logo-accent {
+  position: relative;
+  display: inline-block;
+  margin-left: 4px;
+  color: #c4b5fd;
+}
+
+.sidebar-header .logo .logo-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+  overflow: visible;
+  pointer-events: none;
+}
+
+.sidebar-header .logo .logo-by {
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .sidebar-header .collapse-btn {

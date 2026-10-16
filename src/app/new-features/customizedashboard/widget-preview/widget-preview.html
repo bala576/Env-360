@@ -1,0 +1,147 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 16" [attr.height]="size || 16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<ng-container [ngSwitch]="preview?.kind">
+
+  <!-- Line chart -->
+  <ng-container *ngSwitchCase="'line'">
+    <svg class="line-chart" viewBox="0 0 320 116">
+      <g *ngFor="let t of ticks">
+        <line x1="24" x2="314" [attr.y1]="t.y" [attr.y2]="t.y" class="grid-line" />
+        <text x="18" [attr.y]="t.y + 3" class="axis-label">{{ t.label }}</text>
+      </g>
+      <path *ngFor="let l of lines" [attr.d]="l.path" [attr.stroke]="l.color" fill="none" stroke-width="1.8" vector-effect="non-scaling-stroke" />
+    </svg>
+    <div class="legend">
+      <span *ngFor="let l of lines"><i [style.background]="l.color"></i>{{ l.label }}</span>
+    </div>
+  </ng-container>
+
+  <!-- Donut -->
+  <ng-container *ngSwitchCase="'donut'">
+    <div class="donut-wrap" *ngIf="preview as p">
+      <div class="donut">
+        <svg viewBox="0 0 42 42">
+          <circle cx="21" cy="21" r="15.915" fill="none" stroke="#eef0f5" stroke-width="6" />
+          <circle
+            *ngFor="let s of donut"
+            cx="21" cy="21" r="15.915" fill="none" stroke-width="6"
+            [attr.stroke]="s.color" [attr.stroke-dasharray]="s.dash" [attr.stroke-dashoffset]="s.offset"
+          />
+        </svg>
+        <div class="donut-center" *ngIf="p.kind === 'donut'">
+          <strong>{{ p.total }}</strong>
+          <span>{{ p.caption }}</span>
+        </div>
+      </div>
+      <ul class="donut-legend" *ngIf="p.kind === 'donut'">
+        <li *ngFor="let item of p.items">
+          <i [style.background]="item.color"></i>
+          <span><b>{{ item.label }}</b>{{ item.caption }}</span>
+        </li>
+      </ul>
+    </div>
+  </ng-container>
+
+  <!-- Vertical bars -->
+  <ng-container *ngSwitchCase="'bars'">
+    <div class="vbars" *ngIf="preview as p">
+      <ng-container *ngIf="p.kind === 'bars'">
+        <div class="vbar" *ngFor="let item of p.items">
+          <span class="vbar-track">
+            <span class="vbar-col" [style.height.%]="barSize(item, p.items)">
+              <span class="vbar-value">{{ item.value }}</span>
+              <span class="vbar-fill" [style.background]="item.color"></span>
+            </span>
+          </span>
+          <span class="vbar-label">{{ item.label }}</span>
+        </div>
+      </ng-container>
+    </div>
+  </ng-container>
+
+  <!-- Horizontal bars -->
+  <ng-container *ngSwitchCase="'hbars'">
+    <ul class="hbars" *ngIf="preview as p">
+      <ng-container *ngIf="p.kind === 'hbars'">
+        <li *ngFor="let item of p.items">
+          <span class="hbar-label">{{ item.label }}</span>
+          <span class="hbar-track">
+            <span class="hbar-fill" [style.width.%]="barSize(item, p.items)" [style.background]="item.color"></span>
+          </span>
+          <span class="hbar-value">{{ item.value }}</span>
+        </li>
+      </ng-container>
+    </ul>
+  </ng-container>
+
+  <!-- Table -->
+  <ng-container *ngSwitchCase="'table'">
+    <div class="table-wrap" *ngIf="preview as p">
+      <table class="mini-table" *ngIf="p.kind === 'table'">
+        <thead>
+          <tr><th>Time</th><th>Location</th><th>Parameter</th><th>Value</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of p.rows">
+            <td class="muted">{{ r.time }}</td>
+            <td>{{ r.location }}</td>
+            <td>{{ r.parameter }}</td>
+            <td>{{ r.value }}</td>
+            <td><span class="status" [ngClass]="'status-' + r.status.toLowerCase()">{{ r.status }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <!-- Map -->
+  <ng-container *ngSwitchCase="'map'">
+    <div class="floor-map" *ngIf="preview as p">
+      <svg viewBox="0 0 100 60" preserveAspectRatio="none" class="floor-plan">
+        <rect x="2" y="3" width="96" height="54" rx="1" />
+        <path d="M2 22h30M32 3v54M32 36h26M58 3v33M58 20h40M74 20v37M44 36v21M2 42h30" />
+      </svg>
+      <ng-container *ngIf="p.kind === 'map'">
+        <span
+          class="map-pin"
+          *ngFor="let pin of p.pins"
+          [style.left.%]="pin.x"
+          [style.top.%]="pin.y"
+          [style.background]="pin.color"
+        ></span>
+      </ng-container>
+      <div class="map-controls">
+        <span><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'expand', size: 14 }"></ng-container></span>
+        <span><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 14 }"></ng-container></span>
+        <span><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'minus', size: 14 }"></ng-container></span>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- KPI -->
+  <ng-container *ngSwitchCase="'kpi'">
+    <div class="kpi" *ngIf="preview as p">
+      <ng-container *ngIf="p.kind === 'kpi'">
+        <strong>{{ p.value }}<small>{{ p.unit }}</small></strong>
+        <span class="muted">{{ p.caption }}</span>
+        <span class="kpi-change" [class.good]="p.good">{{ p.change }}</span>
+      </ng-container>
+    </div>
+  </ng-container>
+
+  <!-- Value list -->
+  <ng-container *ngSwitchCase="'list'">
+    <ul class="value-list" *ngIf="preview as p">
+      <ng-container *ngIf="p.kind === 'list'">
+        <li *ngFor="let item of p.items">
+          <span><i [style.background]="item.color"></i>{{ item.label }}</span>
+          <b>{{ item.caption }}</b>
+        </li>
+      </ng-container>
+    </ul>
+  </ng-container>
+</ng-container>

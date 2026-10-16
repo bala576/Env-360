@@ -1,0 +1,1750 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 20" [attr.height]="size || 20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<div class="customize-page">
+
+  <!-- Header -->
+  <header class="panel-header">
+    <div>
+      <h1>Customize Dashboard</h1>
+      <p>Select, arrange and configure widgets to personalize your dashboard.</p>
+    </div>
+    <button type="button" class="icon-btn" aria-label="Close" (click)="cancel()">
+      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 20 }"></ng-container>
+    </button>
+  </header>
+
+  <section class="panel">
+
+    <!-- Tabs -->
+    <nav class="tabs" role="tablist">
+      <button type="button" role="tab" [class.active]="activeTab === 'widgets'" (click)="activeTab = 'widgets'">Widgets</button>
+      <button type="button" role="tab" [class.active]="activeTab === 'layout'" (click)="activeTab = 'layout'">Layout</button>
+      <button type="button" role="tab" [class.active]="activeTab === 'settings'" (click)="activeTab = 'settings'">Settings</button>
+    </nav>
+
+    <div class="panel-body" [class.flush]="activeTab !== 'widgets'">
+
+      <!-- ===== Widgets tab ===== -->
+      <ng-container *ngIf="activeTab === 'widgets'">
+        <label class="search">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 18 }"></ng-container>
+          <input type="text" placeholder="Search widgets..." [(ngModel)]="searchTerm" />
+        </label>
+
+        <div class="chips">
+          <button
+            type="button"
+            class="chip"
+            *ngFor="let cat of categories"
+            [class.active]="activeCategory === cat.key"
+            (click)="activeCategory = cat.key"
+          >
+            {{ cat.label }} ({{ categoryCount(cat.key) }})
+          </button>
+        </div>
+
+        <h2 class="section-title">Available Widgets</h2>
+        <p class="section-sub">Drag and drop to add widgets to your dashboard.</p>
+
+        <div class="widget-grid">
+          <div
+            class="widget-card"
+            *ngFor="let w of filteredWidgets"
+            [class.added]="isSelected(w)"
+            [attr.draggable]="!isSelected(w) && !isFull"
+            (dragstart)="onWidgetDragStart($event, w)"
+          >
+            <span class="widget-icon" [ngClass]="'tone-' + w.tone">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: w.icon, size: 22 }"></ng-container>
+            </span>
+            <div class="widget-text">
+              <span class="widget-title">{{ w.title }}</span>
+              <span class="widget-desc">{{ w.description }}</span>
+            </div>
+            <button
+              type="button"
+              class="add-btn"
+              [disabled]="isSelected(w) || isFull"
+              [attr.aria-label]="'Add ' + w.title"
+              (click)="addWidget(w)"
+            >
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 18 }"></ng-container>
+            </button>
+          </div>
+          <p class="empty" *ngIf="!filteredWidgets.length">No widgets match your search.</p>
+        </div>
+
+        <div class="selected-head">
+          <h2 class="section-title">Selected Widgets ({{ selected.length }}/{{ maxSelected }})</h2>
+          <span class="hint">Drag to reorder</span>
+        </div>
+
+        <ul
+          class="selected-list"
+          [class.drop-active]="dropZoneActive"
+          (dragover)="onDropZoneOver($event)"
+          (dragleave)="onDropZoneLeave()"
+          (drop)="onDropZoneDrop($event)"
+        >
+          <li
+            *ngFor="let w of selected; let i = index"
+            class="selected-row"
+            [class.drag-over]="dragOverIndex === i"
+            draggable="true"
+            (dragstart)="onRowDragStart($event, i)"
+            (dragover)="onRowDragOver($event, i)"
+            (drop)="onRowDrop($event, i)"
+            (dragend)="onRowDragEnd()"
+          >
+            <span class="drag-handle">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'drag', size: 18 }"></ng-container>
+            </span>
+            <span class="row-icon" [ngClass]="'tone-' + w.tone">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: w.icon, size: 15 }"></ng-container>
+            </span>
+            <span class="row-title">{{ w.title }}</span>
+            <button type="button" class="delete-btn" [attr.aria-label]="'Remove ' + w.title" (click)="removeWidget(i)">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'trash', size: 17 }"></ng-container>
+            </button>
+          </li>
+          <li class="empty-row" *ngIf="!selected.length">Drop widgets here or click + to add.</li>
+        </ul>
+      </ng-container>
+
+      <!-- ===== Layout tab ===== -->
+      <div class="layout-tab" *ngIf="activeTab === 'layout'">
+
+        <!-- Left: available widgets -->
+        <aside class="layout-col layout-left">
+          <h2 class="section-title">Available Widgets</h2>
+          <label class="search">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 16 }"></ng-container>
+            <input type="text" placeholder="Search widgets..." [(ngModel)]="searchTerm" />
+          </label>
+          <div class="chips small">
+            <button
+              type="button"
+              class="chip"
+              *ngFor="let cat of categories"
+              [class.active]="activeCategory === cat.key"
+              (click)="activeCategory = cat.key"
+            >
+              {{ cat.label }} ({{ categoryCount(cat.key) }})
+            </button>
+          </div>
+          <div class="widget-list">
+            <div
+              class="widget-card"
+              *ngFor="let w of filteredWidgets"
+              [class.added]="isSelected(w)"
+              [attr.draggable]="!isSelected(w) && !isFull"
+              (dragstart)="onWidgetDragStart($event, w)"
+            >
+              <span class="widget-icon" [ngClass]="'tone-' + w.tone">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: w.icon, size: 20 }"></ng-container>
+              </span>
+              <div class="widget-text">
+                <span class="widget-title">{{ w.title }}</span>
+                <span class="widget-desc">{{ w.description }}</span>
+              </div>
+              <button
+                type="button"
+                class="add-btn"
+                [disabled]="isSelected(w) || isFull"
+                [attr.aria-label]="'Add ' + w.title"
+                (click)="addWidget(w)"
+              >
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 18 }"></ng-container>
+              </button>
+            </div>
+            <p class="empty" *ngIf="!filteredWidgets.length">No widgets match your search.</p>
+          </div>
+        </aside>
+
+        <!-- Center: layout canvas -->
+        <section class="layout-col layout-center">
+          <div class="canvas-head">
+            <div>
+              <h2 class="section-title">Dashboard Layout</h2>
+              <p class="section-sub">Drag and drop widgets to arrange them on your dashboard. Resize widgets as needed.</p>
+            </div>
+            <div class="canvas-actions">
+              <label class="pill-btn">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'gridDots', size: 16 }"></ng-container>
+                Show Grid
+                <input type="checkbox" class="toggle" [(ngModel)]="showGrid" />
+              </label>
+              <button type="button" class="pill-btn" (click)="resetLayout()">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'reset', size: 15 }"></ng-container>
+                Reset Layout
+              </button>
+            </div>
+          </div>
+
+          <div
+            class="canvas"
+            [class.show-grid]="showGrid"
+            [class.drop-active]="dropZoneActive"
+            [style.grid-template-columns]="gridTemplate"
+            (dragover)="onDropZoneOver($event)"
+            (dragleave)="onDropZoneLeave()"
+            (drop)="onDropZoneDrop($event)"
+          >
+            <article
+              class="canvas-widget"
+              *ngFor="let w of selected; let i = index"
+              [class.drag-over]="dragOverIndex === i"
+              [style.grid-column]="'span ' + spanOf(w)"
+              draggable="true"
+              (dragstart)="onRowDragStart($event, i)"
+              (dragover)="onRowDragOver($event, i)"
+              (drop)="onRowDrop($event, i)"
+              (dragend)="onRowDragEnd()"
+            >
+              <header class="cw-head">
+                <span class="drag-handle">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'gridDots', size: 16 }"></ng-container>
+                </span>
+                <ng-container *ngIf="showTitles">
+                  <span class="cw-icon" [ngClass]="'text-' + w.tone">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: w.icon, size: 16 }"></ng-container>
+                  </span>
+                  <span class="cw-title">{{ w.title }}</span>
+                </ng-container>
+                <span class="cw-spacer"></span>
+                <select
+                  class="cw-select"
+                  *ngIf="showTimeRange && filterOptions[w.id]"
+                  [(ngModel)]="filters[w.id]"
+                  (mousedown)="$event.stopPropagation()"
+                >
+                  <option *ngFor="let opt of filterOptions[w.id].options" [value]="opt">{{ opt }}</option>
+                </select>
+                <div class="cw-menu" *ngIf="showWidgetMenu">
+                  <button type="button" class="icon-btn small" aria-label="Widget menu" (click)="toggleMenu($event, w.id)">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 18 }"></ng-container>
+                  </button>
+                  <div class="menu" *ngIf="openMenuId === w.id" (click)="$event.stopPropagation()">
+                    <button type="button" [disabled]="spanOf(w) >= columns" (click)="widen(w); openMenuId = null">Make wider</button>
+                    <button type="button" [disabled]="spanOf(w) <= 1" (click)="narrow(w); openMenuId = null">Make narrower</button>
+                    <button type="button" class="danger" (click)="removeById(w.id); openMenuId = null">Remove widget</button>
+                  </div>
+                </div>
+              </header>
+
+              <div class="cw-body">
+                <app-widget-preview [widgetId]="w.id"></app-widget-preview>
+              </div>
+            </article>
+
+            <div class="canvas-empty" *ngIf="!selected.length">Drag widgets here from the left panel.</div>
+          </div>
+        </section>
+
+        <!-- Right: templates + settings -->
+        <aside class="layout-col layout-right">
+          <h2 class="section-title">Layout Templates</h2>
+          <div class="template-list">
+            <button
+              type="button"
+              class="template-card"
+              *ngFor="let t of layoutTemplates"
+              [class.active]="layout === t.key"
+              (click)="selectTemplate(t)"
+            >
+              <span class="template-thumb">
+                <span *ngFor="let cell of t.thumb" [style.grid-area]="thumbArea(cell)"></span>
+              </span>
+              <span class="template-text">
+                <span class="widget-title">{{ t.label }}</span>
+                <span class="widget-desc">{{ t.description }}</span>
+              </span>
+              <span class="template-check" *ngIf="layout === t.key">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 12 }"></ng-container>
+              </span>
+            </button>
+          </div>
+
+          <h2 class="section-title settings-title">Layout Settings</h2>
+          <label class="field">
+            <span class="field-label">Number of Columns</span>
+            <select [ngModel]="columns" (ngModelChange)="onColumnsChange($event)">
+              <option *ngFor="let n of columnOptions" [ngValue]="n">{{ n }}</option>
+            </select>
+          </label>
+          <label class="switch-row">
+            Show Widget Titles
+            <input type="checkbox" class="toggle" [(ngModel)]="showTitles" />
+          </label>
+          <label class="switch-row">
+            Show Time Range
+            <input type="checkbox" class="toggle" [(ngModel)]="showTimeRange" />
+          </label>
+          <label class="switch-row">
+            Show Widget Menu
+            <input type="checkbox" class="toggle" [(ngModel)]="showWidgetMenu" />
+          </label>
+
+          <div class="layout-actions">
+            <button type="button" class="btn-outline" (click)="cancel()">Cancel</button>
+            <button type="button" class="btn-primary" (click)="applyChanges()">Apply Layout</button>
+          </div>
+        </aside>
+      </div>
+
+      <!-- ===== Settings tab ===== -->
+      <div class="settings-tab" *ngIf="activeTab === 'settings'" [class.data-mode]="settingsSection === 'data'" [class.refresh-mode]="settingsSection === 'refresh'" [class.appearance-mode]="settingsSection === 'appearance'" [class.alerts-mode]="settingsSection === 'alerts'" [class.sharing-mode]="settingsSection === 'sharing'" [class.manage-mode]="settingsSection === 'manage'" [style.--accent]="prefs.primaryColor">
+
+        <!-- Left: section nav -->
+        <nav class="settings-nav">
+          <button
+            type="button"
+            *ngFor="let sec of settingsSections"
+            [class.active]="settingsSection === sec.key"
+            (click)="settingsSection = sec.key; notice = ''"
+          >
+            <span class="nav-icon">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: sec.icon, size: 18 }"></ng-container>
+            </span>
+            <span>
+              <span class="nav-label">{{ sec.label }}</span>
+              <span class="widget-desc">{{ sec.description }}</span>
+            </span>
+          </button>
+        </nav>
+
+        <!-- Center: section form -->
+        <div class="settings-form">
+
+          <!-- General -->
+          <ng-container *ngIf="settingsSection === 'general'">
+            <div class="s-card">
+              <h3>Dashboard Details</h3>
+              <p class="section-sub">Configure basic settings for your dashboard.</p>
+              <label class="field">
+                <span class="field-label">Dashboard Name</span>
+                <span class="input-wrap">
+                  <input type="text" maxlength="60" [(ngModel)]="prefs.name" />
+                  <button type="button" class="clear-btn" *ngIf="prefs.name" aria-label="Clear name" (click)="prefs.name = ''">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 14 }"></ng-container>
+                  </button>
+                </span>
+              </label>
+              <label class="field">
+                <span class="field-label">Description (Optional)</span>
+                <textarea rows="3" maxlength="200" [(ngModel)]="prefs.description"></textarea>
+                <span class="counter">{{ prefs.description.length }}/200</span>
+              </label>
+            </div>
+
+            <ng-container *ngTemplateOutlet="defaultView"></ng-container>
+            <ng-container *ngTemplateOutlet="themeCard"></ng-container>
+          </ng-container>
+
+          <!-- Data & Filters -->
+          <ng-container *ngIf="settingsSection === 'data'">
+            <div class="s-card">
+              <div class="section-hero">
+                <span class="hero-icon">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'sliders', size: 24 }"></ng-container>
+                </span>
+                <span>
+                  <h3>Data & Filters</h3>
+                  <span class="section-sub">Configure default filters and data options for your dashboard.</span>
+                </span>
+              </div>
+
+              <div class="df-block">
+                <h4><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'calendar', size: 16 }"></ng-container> Default Date Range</h4>
+                <p class="section-sub">Select the default time range for data in this dashboard.</p>
+                <div class="range-row">
+                  <span class="select-wrap range-select">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'calendar', size: 16 }"></ng-container>
+                    <select [(ngModel)]="prefs.defaultTimeRange">
+                      <option *ngFor="let o of dateRanges" [value]="o">{{ o }}</option>
+                    </select>
+                  </span>
+                  <div class="range-chips">
+                    <button
+                      type="button"
+                      *ngFor="let c of dateRangeChips"
+                      [class.active]="prefs.defaultTimeRange === c.value"
+                      (click)="prefs.defaultTimeRange = c.value"
+                    >{{ c.label }}</button>
+                  </div>
+                </div>
+                <div class="custom-range" *ngIf="prefs.defaultTimeRange === 'Custom Range'">
+                  <label class="field"><span class="field-label">From</span><input type="date" [(ngModel)]="prefs.customFrom" [max]="prefs.customTo" /></label>
+                  <label class="field"><span class="field-label">To</span><input type="date" [(ngModel)]="prefs.customTo" [min]="prefs.customFrom" /></label>
+                </div>
+              </div>
+
+              <div class="df-block">
+                <h4><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'map', size: 16 }"></ng-container> Default Site / Location</h4>
+                <p class="section-sub">Choose the default site, zone, or location.</p>
+                <div class="range-row">
+                  <span class="select-wrap range-select">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'building', size: 16 }"></ng-container>
+                    <select [(ngModel)]="prefs.defaultSite">
+                      <option *ngFor="let o of siteOptions" [value]="o">{{ o }}</option>
+                    </select>
+                  </span>
+                  <p class="info-note">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'info', size: 16 }"></ng-container>
+                    This site will be used as the default context for all dashboard widgets.
+                  </p>
+                </div>
+              </div>
+
+              <div class="df-block">
+                <h4><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'funnel', size: 16 }"></ng-container> Filter Options</h4>
+                <p class="section-sub">Set default filters that will apply when the dashboard loads.</p>
+                <div class="filter-rows">
+                  <div class="filter-row">
+                    <input type="checkbox" class="toggle" checked disabled aria-label="Site filter always on" />
+                    <span class="filter-label">Site / Location</span>
+                    <select [(ngModel)]="prefs.defaultSite">
+                      <option *ngFor="let o of siteOptions" [value]="o">{{ o }}</option>
+                    </select>
+                    <span class="info-icon" title="Same as the default site above">
+                      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'info', size: 16 }"></ng-container>
+                    </span>
+                  </div>
+                  <div class="filter-row" *ngFor="let f of filterDefinitions" [class.off]="!prefs.filters[f.key].enabled">
+                    <input type="checkbox" class="toggle" [(ngModel)]="prefs.filters[f.key].enabled" [attr.aria-label]="'Enable ' + f.label + ' filter'" />
+                    <span class="filter-label">{{ f.label }}</span>
+                    <select [(ngModel)]="prefs.filters[f.key].value" [disabled]="!prefs.filters[f.key].enabled">
+                      <option *ngFor="let o of f.options" [value]="o">{{ o }}</option>
+                    </select>
+                    <span class="info-icon" [title]="f.hint">
+                      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'info', size: 16 }"></ng-container>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="advanced-card">
+                <h4><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'sliders', size: 18 }"></ng-container> Advanced Filters & Segments</h4>
+                <p class="section-sub">Create advanced filters and saved segments for quick access.</p>
+                <div class="advanced-actions">
+                  <button type="button" class="btn-outline" (click)="createFilter()">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 16 }"></ng-container> Create Filter
+                  </button>
+                  <button type="button" class="btn-outline" (click)="manageSegments()">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'save', size: 16 }"></ng-container> Manage Segments
+                  </button>
+                </div>
+                <p class="notice" *ngIf="notice">{{ notice }}</p>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- Refresh -->
+          <ng-container *ngIf="settingsSection === 'refresh'">
+            <div class="rf-intro">
+              <h3>Refresh & Auto Update</h3>
+              <p class="section-sub">Configure how often your dashboard data is refreshed and kept up to date.</p>
+            </div>
+
+            <!-- Auto refresh -->
+            <div class="s-card rf-card" [class.off]="!prefs.autoRefresh">
+              <div class="rf-head">
+                <span class="rf-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'refresh', size: 22 }"></ng-container></span>
+                <span class="rf-head-text">
+                  <span class="rf-title">Auto Refresh</span>
+                  <span class="widget-desc">Automatically refresh dashboard data at defined intervals.</span>
+                </span>
+                <input type="checkbox" class="toggle" aria-label="Auto refresh" [(ngModel)]="prefs.autoRefresh" />
+              </div>
+              <div class="rf-body rf-split">
+                <label class="field">
+                  <span class="field-label">Refresh Interval</span>
+                  <select [(ngModel)]="refreshInterval" [disabled]="!prefs.autoRefresh">
+                    <option *ngFor="let r of refreshOptions" [ngValue]="r.value">{{ r.label }}</option>
+                  </select>
+                </label>
+                <div class="field">
+                  <span class="field-label">Refresh Scope</span>
+                  <div class="rf-radios">
+                    <label class="rf-radio" *ngFor="let o of refreshScopes">
+                      <input type="radio" name="refreshScope" [value]="o.value" [disabled]="!prefs.autoRefresh" [(ngModel)]="prefs.refreshScope" />
+                      {{ o.label }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Scheduled refresh -->
+            <div class="s-card rf-card" [class.off]="!prefs.scheduledRefresh">
+              <div class="rf-head">
+                <span class="rf-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'calendarClock', size: 22 }"></ng-container></span>
+                <span class="rf-head-text">
+                  <span class="rf-title">Scheduled Refresh</span>
+                  <span class="widget-desc">Set custom schedules for automatic refresh (in addition to the interval above).</span>
+                </span>
+                <input type="checkbox" class="toggle" aria-label="Scheduled refresh" [(ngModel)]="prefs.scheduledRefresh" />
+              </div>
+              <div class="rf-body">
+                <div class="rf-table-wrap">
+                  <table class="rf-table">
+                    <thead>
+                      <tr><th>Schedule Name</th><th>Days</th><th>Time</th><th>Time Zone</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let sc of prefs.schedules; let i = index" [class.editing]="editingSchedule === i">
+                        <td>
+                          <span class="rf-name">
+                            <input *ngIf="editingSchedule === i; else nameText" type="text" class="rf-input" maxlength="40" [(ngModel)]="sc.name" [attr.aria-label]="'Schedule name'" />
+                            <ng-template #nameText><span class="rf-name-text">{{ sc.name }}</span></ng-template>
+                            <input type="checkbox" class="toggle" [attr.aria-label]="'Enable ' + sc.name" [disabled]="!prefs.scheduledRefresh" [(ngModel)]="sc.enabled" />
+                          </span>
+                        </td>
+                        <td>
+                          <span class="rf-days">
+                            <ng-container *ngFor="let d of weekdays">
+                              <button
+                                type="button"
+                                class="rf-day"
+                                *ngIf="editingSchedule === i || hasDay(sc, d)"
+                                [class.on]="hasDay(sc, d)"
+                                [disabled]="editingSchedule !== i"
+                                (click)="toggleDay(sc, d)"
+                              >{{ d }}</button>
+                            </ng-container>
+                          </span>
+                        </td>
+                        <td>
+                          <input *ngIf="editingSchedule === i; else timeText" type="time" class="rf-input" [(ngModel)]="sc.time" aria-label="Time" />
+                          <ng-template #timeText>{{ sc.time }}</ng-template>
+                        </td>
+                        <td>
+                          <select *ngIf="editingSchedule === i; else tzText" class="rf-input" [(ngModel)]="sc.timeZone" aria-label="Time zone">
+                            <option *ngFor="let tz of timeZones" [value]="tz">{{ tz }}</option>
+                          </select>
+                          <ng-template #tzText><span class="rf-tz">{{ sc.timeZone }}</span></ng-template>
+                        </td>
+                        <td>
+                          <span class="rf-actions">
+                            <button type="button" class="rf-act" [attr.aria-label]="(editingSchedule === i ? 'Done editing ' : 'Edit ') + sc.name" (click)="toggleEditSchedule(i)">
+                              <ng-container *ngTemplateOutlet="icon; context: { $implicit: editingSchedule === i ? 'check' : 'pencil', size: 15 }"></ng-container>
+                            </button>
+                            <button type="button" class="rf-act danger" [attr.aria-label]="'Delete ' + sc.name" (click)="deleteSchedule(i)">
+                              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'trash', size: 15 }"></ng-container>
+                            </button>
+                          </span>
+                        </td>
+                      </tr>
+                      <tr *ngIf="!prefs.schedules.length">
+                        <td colspan="5" class="rf-empty">No schedules yet.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <button type="button" class="btn-outline rf-add" [disabled]="!prefs.scheduledRefresh" (click)="addSchedule()">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 16 }"></ng-container> Add Schedule
+                </button>
+              </div>
+            </div>
+
+            <!-- Real-time updates -->
+            <div class="s-card rf-card" [class.off]="!prefs.realtimeUpdates">
+              <div class="rf-head">
+                <span class="rf-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'broadcast', size: 22 }"></ng-container></span>
+                <span class="rf-head-text">
+                  <span class="rf-title">Real-time Data Updates</span>
+                  <span class="widget-desc">Configure widgets to receive real-time updates (live streaming).</span>
+                </span>
+                <input type="checkbox" class="toggle" aria-label="Real-time data updates" [(ngModel)]="prefs.realtimeUpdates" />
+              </div>
+              <div class="rf-body">
+                <span class="field-label">Update Method</span>
+                <div class="rf-methods">
+                  <label class="rf-method" *ngFor="let m of updateMethods">
+                    <input type="radio" name="updateMethod" [value]="m.value" [disabled]="!prefs.realtimeUpdates" [(ngModel)]="prefs.updateMethod" />
+                    <span>
+                      <span class="rf-method-label">{{ m.label }}</span>
+                      <span class="rf-method-desc">{{ m.description }}</span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Error handling -->
+            <div class="s-card rf-card">
+              <div class="rf-head">
+                <span class="rf-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'alertCircle', size: 22 }"></ng-container></span>
+                <span class="rf-head-text">
+                  <span class="rf-title">Error Handling</span>
+                  <span class="widget-desc">Define behavior when data refresh fails.</span>
+                </span>
+              </div>
+              <div class="rf-body rf-errors">
+                <label class="rf-inline">
+                  Retry on Failure
+                  <input type="checkbox" class="toggle" [(ngModel)]="prefs.retryOnFailure" />
+                </label>
+                <label class="field">
+                  <span class="field-label">Retry Interval</span>
+                  <select [(ngModel)]="prefs.retryInterval" [disabled]="!prefs.retryOnFailure">
+                    <option *ngFor="let o of retryIntervals" [value]="o">{{ o }}</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span class="field-label">Maximum Retries</span>
+                  <select [(ngModel)]="prefs.maxRetries" [disabled]="!prefs.retryOnFailure">
+                    <option *ngFor="let o of maxRetryOptions" [value]="o">{{ o }}</option>
+                  </select>
+                </label>
+                <div class="rf-notify">
+                  <label class="rf-inline">
+                    Notification on Failure
+                    <input type="checkbox" class="toggle" [(ngModel)]="prefs.notifyOnFailure" />
+                  </label>
+                  <label class="check-row">
+                    <input type="checkbox" [disabled]="!prefs.notifyOnFailure" [(ngModel)]="prefs.failureBanner" /> Show notification banner
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Extra options -->
+            <div class="s-card">
+              <label class="switch-row">
+                Pause refresh when tab is hidden
+                <input type="checkbox" class="toggle" [(ngModel)]="prefs.pauseWhenHidden" />
+              </label>
+              <label class="switch-row">
+                Show "last updated" time
+                <input type="checkbox" class="toggle" [(ngModel)]="prefs.showLastUpdated" />
+              </label>
+            </div>
+          </ng-container>
+
+          <!-- Appearance -->
+          <ng-container *ngIf="settingsSection === 'appearance'">
+            <div class="rf-intro">
+              <h3>Appearance</h3>
+              <p class="section-sub">Customize the visual appearance of your dashboard.</p>
+            </div>
+
+            <div class="ap-row ap-row-2">
+              <div class="s-card">
+                <span class="rf-title">Theme Mode</span>
+                <span class="widget-desc">Choose the overall theme for your dashboard.</span>
+                <div class="ap-options ap-themes">
+                  <label class="ap-option" *ngFor="let m of themeModes" [class.active]="prefs.themeMode === m.key">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: m.icon, size: 20 }"></ng-container>
+                    <span>{{ m.label }}</span>
+                    <input type="radio" name="apThemeMode" [value]="m.key" [(ngModel)]="prefs.themeMode" />
+                  </label>
+                </div>
+              </div>
+              <div class="s-card">
+                <span class="rf-title">Primary Color</span>
+                <span class="widget-desc">Select the accent color for charts, highlights and active elements.</span>
+                <div class="ap-swatches">
+                  <button
+                    type="button"
+                    class="ap-swatch"
+                    *ngFor="let c of primaryColors"
+                    [style.--swatch]="c"
+                    [class.active]="prefs.primaryColor === c"
+                    [attr.aria-label]="'Primary color ' + c"
+                    (click)="prefs.primaryColor = c"
+                  ></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="s-card">
+              <span class="rf-title">Dashboard Style</span>
+              <span class="widget-desc">Choose a visual style for your widgets and cards.</span>
+              <div class="ap-styles">
+                <button type="button" class="ap-style" *ngFor="let st of dashboardStyles" [class.active]="prefs.dashboardStyle === st.value" (click)="prefs.dashboardStyle = st.value">
+                  <span class="ap-thumb" [ngClass]="'thumb-' + st.value">
+                    <span class="t-chart">
+                      <svg viewBox="0 0 40 20" aria-hidden="true"><path d="M2 16 L12 9 L20 12 L30 4 L38 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                    <span class="t-lines"><i></i><i></i><i></i></span>
+                  </span>
+                  <span class="ap-style-label">{{ st.label }}</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="ap-row ap-row-2">
+              <div class="s-card">
+                <span class="rf-title">Widget Density</span>
+                <span class="widget-desc">Adjust the spacing and size of widgets.</span>
+                <div class="ap-options ap-compact-options">
+                  <button type="button" class="ap-option" *ngFor="let d of widgetDensities" [class.active]="prefs.density === d.value" (click)="setDensity(d.value)">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: d.icon, size: 16 }"></ng-container>
+                    <span>{{ d.label }}</span>
+                  </button>
+                </div>
+              </div>
+              <div class="s-card">
+                <span class="rf-title">Widget Corners</span>
+                <span class="widget-desc">Set the corner radius for widgets and cards.</span>
+                <div class="ap-options ap-compact-options">
+                  <button type="button" class="ap-option" *ngFor="let c of widgetCorners" [class.active]="prefs.corners === c.value" (click)="prefs.corners = c.value">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: c.icon, size: 16 }"></ng-container>
+                    <span>{{ c.label }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="ap-row ap-row-3">
+              <div class="s-card">
+                <span class="rf-title">Show / Hide Elements</span>
+                <span class="widget-desc">Toggle visual elements on the dashboard.</span>
+                <div class="ap-list">
+                  <label class="check-row"><input type="checkbox" [(ngModel)]="showTitles" /> Widget Titles</label>
+                  <label class="check-row"><input type="checkbox" [(ngModel)]="showTimeRange" /> Time Range Selector</label>
+                  <label class="check-row"><input type="checkbox" [(ngModel)]="showWidgetMenu" /> Widget Menu (⋯)</label>
+                  <label class="check-row"><input type="checkbox" [(ngModel)]="prefs.showBreadcrumb" /> Breadcrumb / Location</label>
+                  <label class="check-row"><input type="checkbox" [(ngModel)]="showGrid" /> Grid Background</label>
+                </div>
+              </div>
+              <div class="s-card">
+                <span class="rf-title">Fonts & Text</span>
+                <span class="widget-desc">Adjust font size for better readability.</span>
+                <div class="ap-list">
+                  <label class="rf-radio" *ngFor="let f of fontScales">
+                    <input type="radio" name="fontScale" [value]="f.value" [(ngModel)]="prefs.fontScale" /> {{ f.label }}
+                  </label>
+                </div>
+              </div>
+              <div class="s-card">
+                <span class="rf-title">Chart Style</span>
+                <span class="widget-desc">Choose default chart appearance.</span>
+                <div class="ap-list">
+                  <label class="rf-radio" *ngFor="let c of chartStyles">
+                    <input type="radio" name="chartStyle" [value]="c.value" [(ngModel)]="prefs.chartStyle" /> {{ c.label }}
+                  </label>
+                  <label class="rf-inline ap-switch">
+                    <input type="checkbox" class="toggle" [(ngModel)]="prefs.showDataLabels" /> Show Data Labels
+                  </label>
+                  <label class="rf-inline ap-switch">
+                    <input type="checkbox" class="toggle" [(ngModel)]="prefs.smoothLines" (ngModelChange)="buildAppearanceTrend()" /> Smooth Lines
+                  </label>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- Alerts -->
+          <ng-container *ngIf="settingsSection === 'alerts'">
+            <div class="rf-intro">
+              <h3>Alerts & Notifications</h3>
+              <p class="section-sub">Configure alert settings, thresholds, and notification preferences for your dashboard.</p>
+            </div>
+
+            <div class="al-row al-row-top">
+              <div class="s-card al-switch-card">
+                <span class="rf-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'bell', size: 22 }"></ng-container></span>
+                <span class="rf-head-text">
+                  <span class="rf-title">Enable Dashboard Alerts</span>
+                  <span class="widget-desc">Show real-time and threshold-based alerts on the dashboard.</span>
+                </span>
+                <input type="checkbox" class="toggle" aria-label="Enable dashboard alerts" [(ngModel)]="prefs.alertsEnabled" />
+              </div>
+              <div class="s-card al-switch-card">
+                <span class="rf-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'target', size: 22 }"></ng-container></span>
+                <span class="rf-head-text">
+                  <span class="rf-title">Alert Indicator</span>
+                  <span class="widget-desc">Show alert counters on widgets.</span>
+                </span>
+                <input type="checkbox" class="toggle" aria-label="Alert indicator" [(ngModel)]="prefs.alertIndicator" />
+              </div>
+            </div>
+
+            <div class="al-body" [class.off]="!prefs.alertsEnabled">
+              <div class="s-card">
+                <span class="rf-title">Alert Sources</span>
+                <span class="widget-desc">Select which data sources can trigger alerts.</span>
+                <div class="al-sources">
+                  <label class="al-source" *ngFor="let src of alertSources" [class.active]="prefs.alertSources[src.key]">
+                    <span class="al-source-icon" [ngClass]="'tone-' + src.tone"><ng-container *ngTemplateOutlet="icon; context: { $implicit: src.icon, size: 18 }"></ng-container></span>
+                    <span class="al-source-label">{{ src.label }}</span>
+                    <input type="checkbox" [disabled]="!prefs.alertsEnabled" [(ngModel)]="prefs.alertSources[src.key]" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="al-row al-row-mid">
+                <div class="s-card">
+                  <span class="rf-title">Alert Severity Levels</span>
+                  <span class="widget-desc">Configure severity levels and display settings.</span>
+                  <div class="al-severities">
+                    <label class="al-sev" *ngFor="let sev of severityLevels" [class.active]="prefs.severities[sev.key]" [style.--sev]="sev.color">
+                      <span class="al-sev-icon">!</span>
+                      <span class="al-sev-label">{{ sev.label }}</span>
+                      <span class="al-sev-bar"><i [style.width.%]="sev.fill"></i></span>
+                      <input type="checkbox" [disabled]="!prefs.alertsEnabled" [(ngModel)]="prefs.severities[sev.key]" />
+                    </label>
+                  </div>
+                </div>
+
+                <div class="s-card">
+                  <div class="al-card-head">
+                    <span>
+                      <span class="rf-title">Alert Rules</span>
+                      <span class="widget-desc">Set threshold conditions for alerts.</span>
+                    </span>
+                    <button type="button" class="btn-outline al-add" [disabled]="!prefs.alertsEnabled" (click)="addRule()">
+                      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 14 }"></ng-container> Add Rule
+                    </button>
+                  </div>
+                  <div class="rf-table-wrap">
+                    <table class="rf-table al-table">
+                      <thead><tr><th>Parameter</th><th>Condition</th><th>Threshold</th><th>Severity</th><th>Actions</th></tr></thead>
+                      <tbody>
+                        <tr *ngFor="let r of prefs.alertRules; let i = index" [class.editing]="editingRule === i">
+                          <ng-container *ngIf="editingRule === i; else ruleView">
+                            <td><select class="rf-input" [(ngModel)]="r.parameter" aria-label="Parameter"><option *ngFor="let o of ruleParameters" [value]="o">{{ o }}</option></select></td>
+                            <td><select class="rf-input" [(ngModel)]="r.condition" aria-label="Condition"><option *ngFor="let o of ruleConditions" [value]="o">{{ o }}</option></select></td>
+                            <td><input type="text" class="rf-input al-threshold" maxlength="12" [(ngModel)]="r.threshold" aria-label="Threshold" /></td>
+                            <td><select class="rf-input" [(ngModel)]="r.severity" aria-label="Severity"><option *ngFor="let sev of severityLevels" [value]="sev.label">{{ sev.label }}</option></select></td>
+                          </ng-container>
+                          <ng-template #ruleView>
+                            <td>{{ r.parameter }}</td>
+                            <td>{{ r.condition }}</td>
+                            <td>{{ r.threshold || '—' }}</td>
+                            <td><span class="al-dot-label"><i [style.background]="severityColor(r.severity)"></i>{{ r.severity }}</span></td>
+                          </ng-template>
+                          <td>
+                            <span class="rf-actions">
+                              <button type="button" class="rf-act" [attr.aria-label]="editingRule === i ? 'Done editing rule' : 'Edit rule'" (click)="toggleEditRule(i)">
+                                <ng-container *ngTemplateOutlet="icon; context: { $implicit: editingRule === i ? 'check' : 'pencil', size: 14 }"></ng-container>
+                              </button>
+                              <button type="button" class="rf-act danger" aria-label="Delete rule" (click)="deleteRule(i)"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'trash', size: 14 }"></ng-container></button>
+                            </span>
+                          </td>
+                        </tr>
+                        <tr *ngIf="!prefs.alertRules.length"><td colspan="5" class="rf-empty">No rules yet.</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div class="s-card">
+                <span class="rf-title">Notification Channels</span>
+                <span class="widget-desc">Choose how you want to receive alerts.</span>
+                <div class="al-channels">
+                  <label class="al-channel" *ngFor="let ch of notificationChannels" [class.active]="prefs.channels[ch.key]">
+                    <span class="al-channel-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: ch.icon, size: 20 }"></ng-container></span>
+                    <span class="al-channel-text">
+                      <span class="al-channel-label">{{ ch.label }}</span>
+                      <span class="widget-desc">{{ ch.description }}</span>
+                    </span>
+                    <input type="checkbox" class="toggle" [attr.aria-label]="ch.label" [disabled]="!prefs.alertsEnabled" [(ngModel)]="prefs.channels[ch.key]" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="al-row al-row-bottom">
+                <div class="s-card">
+                  <div class="al-card-head">
+                    <span>
+                      <span class="rf-title">Notification Recipients</span>
+                      <span class="widget-desc">Manage who will receive alert notifications.</span>
+                    </span>
+                    <button type="button" class="btn-outline al-add" [disabled]="!prefs.alertsEnabled" (click)="addRecipient()">
+                      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 14 }"></ng-container> Add Recipient
+                    </button>
+                  </div>
+                  <div class="rf-table-wrap">
+                    <table class="rf-table al-table">
+                      <thead><tr><th>Name</th><th>Role</th><th>Email / Mobile</th><th>Notification Types</th><th>Actions</th></tr></thead>
+                      <tbody>
+                        <tr *ngFor="let rc of prefs.recipients; let i = index" [class.editing]="editingRecipient === i">
+                          <ng-container *ngIf="editingRecipient === i; else recipientView">
+                            <td><input type="text" class="rf-input" maxlength="40" placeholder="Name" [(ngModel)]="rc.name" aria-label="Name" /></td>
+                            <td><select class="rf-input" [(ngModel)]="rc.role" aria-label="Role"><option *ngFor="let o of recipientRoles" [value]="o">{{ o }}</option></select></td>
+                            <td><input type="text" class="rf-input" maxlength="60" placeholder="email or mobile" [(ngModel)]="rc.contact" aria-label="Email or mobile" /></td>
+                            <td><select class="rf-input" [(ngModel)]="rc.types" aria-label="Notification types"><option *ngFor="let o of notificationTypes" [value]="o">{{ o }}</option></select></td>
+                          </ng-container>
+                          <ng-template #recipientView>
+                            <td>{{ rc.name || '—' }}</td>
+                            <td>{{ rc.role }}</td>
+                            <td>{{ rc.contact || '—' }}</td>
+                            <td>{{ rc.types }}</td>
+                          </ng-template>
+                          <td>
+                            <span class="rf-actions">
+                              <button type="button" class="rf-act" [attr.aria-label]="editingRecipient === i ? 'Done editing recipient' : 'Edit recipient'" (click)="toggleEditRecipient(i)">
+                                <ng-container *ngTemplateOutlet="icon; context: { $implicit: editingRecipient === i ? 'check' : 'pencil', size: 14 }"></ng-container>
+                              </button>
+                              <button type="button" class="rf-act danger" aria-label="Delete recipient" (click)="deleteRecipient(i)"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'trash', size: 14 }"></ng-container></button>
+                            </span>
+                          </td>
+                        </tr>
+                        <tr *ngIf="!prefs.recipients.length"><td colspan="5" class="rf-empty">No recipients yet.</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div class="s-card">
+                  <span class="rf-title">Alert Display Options</span>
+                  <div class="ap-list">
+                    <label class="check-row"><input type="checkbox" [disabled]="!prefs.alertsEnabled" [(ngModel)]="prefs.alertBanner" /> Show alert banner on dashboard</label>
+                    <label class="check-row"><input type="checkbox" [disabled]="!prefs.alertsEnabled" [(ngModel)]="prefs.alarmBadges" /> Show alert counter on widget</label>
+                    <label class="check-row"><input type="checkbox" [disabled]="!prefs.alertsEnabled" [(ngModel)]="prefs.criticalSound" /> Play sound for critical alerts</label>
+                    <label class="check-row"><input type="checkbox" [disabled]="!prefs.alertsEnabled" [(ngModel)]="prefs.highlightAlarmWidgets" /> Highlight affected widgets</label>
+                    <label class="check-row"><input type="checkbox" [disabled]="!prefs.alertsEnabled" [(ngModel)]="prefs.autoOpenPanel" /> Auto open alert panel on critical alert</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- Sharing -->
+          <ng-container *ngIf="settingsSection === 'sharing'">
+            <div class="rf-intro">
+              <h3>Sharing & Access</h3>
+              <p class="section-sub">Manage who can view, edit, and share this dashboard.</p>
+            </div>
+
+            <div class="s-card al-switch-card">
+              <span class="sh-head-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'users', size: 20 }"></ng-container></span>
+              <span class="rf-head-text">
+                <span class="rf-title">Enable Sharing</span>
+                <span class="widget-desc">Allow other users or groups to access this dashboard.</span>
+              </span>
+              <input type="checkbox" class="toggle" aria-label="Enable sharing" [(ngModel)]="prefs.sharingEnabled" />
+            </div>
+
+            <div class="al-body" [class.off]="!prefs.sharingEnabled">
+              <div class="s-card">
+                <span class="rf-title">Access Level</span>
+                <span class="widget-desc">Set the default sharing level for new users.</span>
+                <div class="sh-levels">
+                  <label class="sh-level" *ngFor="let lv of accessLevels" [class.active]="prefs.accessLevel === lv.value">
+                    <span class="sh-level-top">
+                      <span class="sh-level-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: lv.icon, size: 18 }"></ng-container></span>
+                      <span>
+                        <span class="sh-level-label">{{ lv.label }}</span>
+                        <span class="widget-desc">{{ lv.description }}</span>
+                      </span>
+                    </span>
+                    <input type="radio" name="accessLevel" [value]="lv.value" [disabled]="!prefs.sharingEnabled" [(ngModel)]="prefs.accessLevel" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="s-card">
+                <span class="rf-title">Users and Groups</span>
+                <span class="widget-desc">Add users or groups and set their access permissions.</span>
+                <div class="sh-toolbar">
+                  <span class="sh-search">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 15 }"></ng-container>
+                    <input type="text" placeholder="Search users or groups..." [(ngModel)]="memberSearch" aria-label="Search users or groups" />
+                  </span>
+                  <select class="sh-filter" [(ngModel)]="memberFilter" aria-label="Filter by access level">
+                    <option value="all">All Access Levels</option>
+                    <option *ngFor="let a of memberAccessOptions" [value]="a">{{ a }}</option>
+                  </select>
+                  <button type="button" class="btn-outline sh-remove" *ngIf="selectedMembers.size" (click)="removeSelectedMembers()">Remove ({{ selectedMembers.size }})</button>
+                  <button type="button" class="btn-primary sh-add" [disabled]="!prefs.sharingEnabled" (click)="addMember()">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 15 }"></ng-container> Add Users / Groups
+                  </button>
+                </div>
+                <div class="rf-table-wrap">
+                  <table class="rf-table sh-table">
+                    <thead>
+                      <tr>
+                        <th><input type="checkbox" aria-label="Select all" [checked]="allMembersSelected" (change)="toggleAllMembers($any($event.target).checked)" /></th>
+                        <th>Name</th><th>Type</th><th>Access Level</th><th>Permissions</th><th>Expiry</th><th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let m of filteredMembers; let i = index" [class.editing]="editingMember === m">
+                        <td><input type="checkbox" [attr.aria-label]="'Select ' + m.name" [checked]="selectedMembers.has(m)" (change)="toggleMember(m, $any($event.target).checked)" /></td>
+                        <td>
+                          <span class="sh-person">
+                            <span class="sh-avatar" [class.owner]="m.access === 'Owner'" [class.group]="m.type === 'Group'">
+                              <ng-container *ngIf="m.type === 'Group'; else userInitials"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'users', size: 15 }"></ng-container></ng-container>
+                              <ng-template #userInitials>{{ initials(m) }}</ng-template>
+                            </span>
+                            <span class="sh-person-text" *ngIf="editingMember !== m; else editPerson">
+                              <span class="sh-name">{{ m.name || 'New member' }}</span>
+                              <span class="widget-desc">{{ m.detail || '—' }}</span>
+                            </span>
+                            <ng-template #editPerson>
+                              <span class="sh-person-edit">
+                                <input type="text" class="rf-input" maxlength="40" placeholder="Name" [(ngModel)]="m.name" aria-label="Name" />
+                                <input type="text" class="rf-input" maxlength="60" [placeholder]="m.type === 'Group' ? 'e.g. 12 members' : 'email'" [(ngModel)]="m.detail" aria-label="Email or members" />
+                              </span>
+                            </ng-template>
+                          </span>
+                        </td>
+                        <td>
+                          <select *ngIf="editingMember === m; else typeTag" class="rf-input" [(ngModel)]="m.type" aria-label="Type">
+                            <option value="User">User</option>
+                            <option value="Group">Group</option>
+                          </select>
+                          <ng-template #typeTag><span class="sh-tag" [class.group]="m.type === 'Group'">{{ m.type }}</span></ng-template>
+                        </td>
+                        <td>
+                          <select class="rf-input" [ngModel]="m.access" (ngModelChange)="setMemberAccess(m, $event)" [disabled]="!prefs.sharingEnabled" [attr.aria-label]="'Access level for ' + m.name">
+                            <option *ngFor="let a of memberAccessOptions" [value]="a">{{ a }}</option>
+                          </select>
+                        </td>
+                        <td>
+                          <span class="sh-perms">
+                            <label><input type="checkbox" [(ngModel)]="m.view" [disabled]="m.access === 'Owner' || !prefs.sharingEnabled" /> View</label>
+                            <label><input type="checkbox" [(ngModel)]="m.edit" [disabled]="m.access === 'Owner' || !prefs.sharingEnabled" /> Edit</label>
+                            <label><input type="checkbox" [(ngModel)]="m.share" [disabled]="m.access === 'Owner' || !prefs.sharingEnabled" /> Share</label>
+                          </span>
+                        </td>
+                        <td>
+                          <span *ngIf="m.access === 'Owner'; else expiryInput">-</span>
+                          <ng-template #expiryInput>
+                            <input type="date" class="rf-input sh-date" [(ngModel)]="m.expiry" [disabled]="!prefs.sharingEnabled" [attr.aria-label]="'Access expiry for ' + m.name" />
+                          </ng-template>
+                        </td>
+                        <td class="sh-actions">
+                          <button type="button" class="rf-act" [attr.aria-label]="'More actions for ' + m.name" (click)="toggleMenu($event, 'member-' + i)"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 16 }"></ng-container></button>
+                          <div class="menu sh-menu" *ngIf="openMenuId === 'member-' + i" (click)="$event.stopPropagation()">
+                            <button type="button" (click)="editMember(m)">{{ editingMember === m ? 'Done editing' : 'Edit details' }}</button>
+                            <button type="button" class="danger" [disabled]="m.access === 'Owner'" (click)="removeMember(m)">Remove access</button>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr *ngIf="!filteredMembers.length"><td colspan="7" class="rf-empty">No users or groups match.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="s-card">
+                <div class="sh-link-head">
+                  <span class="sh-head-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'link', size: 20 }"></ng-container></span>
+                  <span class="rf-head-text">
+                    <span class="rf-title">Share via Link</span>
+                    <span class="widget-desc">Generate a secure link to share this dashboard.</span>
+                  </span>
+                  <input type="checkbox" class="toggle" aria-label="Share via link" [disabled]="!prefs.sharingEnabled" [(ngModel)]="prefs.shareLink" />
+                </div>
+                <div class="sh-link" [class.off]="!prefs.shareLink">
+                  <input type="text" class="sh-url" readonly [value]="shareUrl" aria-label="Share link" (focus)="$any($event.target).select()" />
+                  <button type="button" class="btn-outline sh-link-btn" [disabled]="!prefs.shareLink || !prefs.sharingEnabled" (click)="copyShareLink()">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'copy', size: 14 }"></ng-container> Copy Link
+                  </button>
+                  <button type="button" class="btn-outline sh-link-btn" [disabled]="!prefs.shareLink || !prefs.sharingEnabled" (click)="showLinkSettings = !showLinkSettings">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'gear', size: 14 }"></ng-container> Link Settings
+                  </button>
+                </div>
+                <select class="rf-input sh-scope" *ngIf="showLinkSettings && prefs.shareLink" [(ngModel)]="prefs.linkScope" aria-label="Who can open the link">
+                  <option *ngFor="let o of linkScopes" [value]="o">{{ o }}</option>
+                </select>
+                <p class="sh-scope-note"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'globe', size: 14 }"></ng-container> {{ prefs.shareLink ? prefs.linkScope : 'Link sharing is turned off' }}</p>
+                <p class="notice" *ngIf="notice">{{ notice }}</p>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- Reset & Manage -->
+          <ng-container *ngIf="settingsSection === 'manage'">
+            <div class="rf-intro">
+              <h3>Reset & Manage</h3>
+              <p class="section-sub">Reset to default settings, create copies, or manage this dashboard.</p>
+            </div>
+
+            <div class="s-card mg-row">
+              <span class="mg-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'refresh', size: 20 }"></ng-container></span>
+              <span class="rf-head-text">
+                <span class="rf-title">Reset to Default</span>
+                <span class="widget-desc">Revert this dashboard to the system default layout and settings.</span>
+              </span>
+              <button type="button" class="btn-outline mg-btn" (click)="resetDashboard()">Reset to Default</button>
+            </div>
+            <div class="s-card mg-row">
+              <span class="mg-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'copy', size: 20 }"></ng-container></span>
+              <span class="rf-head-text">
+                <span class="rf-title">Duplicate Dashboard</span>
+                <span class="widget-desc">Create a copy of this dashboard with the same configuration.</span>
+              </span>
+              <button type="button" class="btn-outline mg-btn" (click)="duplicateDashboard()">Duplicate</button>
+            </div>
+            <div class="s-card mg-row">
+              <span class="mg-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'download', size: 20 }"></ng-container></span>
+              <span class="rf-head-text">
+                <span class="rf-title">Export Configuration</span>
+                <span class="widget-desc">Download the dashboard configuration (widgets, layout, filters, settings).</span>
+              </span>
+              <span class="mg-export">
+                <button type="button" class="btn-outline mg-btn mg-split" (click)="toggleMenu($event, 'export')" aria-haspopup="menu" [attr.aria-expanded]="openMenuId === 'export'">
+                  Export as JSON <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevronDown', size: 14 }"></ng-container>
+                </button>
+                <div class="menu" *ngIf="openMenuId === 'export'" role="menu" (click)="$event.stopPropagation()">
+                  <button type="button" role="menuitem" *ngFor="let f of exportFormats" (click)="exportConfiguration(f.value)">{{ f.label }}</button>
+                </div>
+              </span>
+            </div>
+            <div class="s-card mg-row">
+              <span class="mg-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'upload', size: 20 }"></ng-container></span>
+              <span class="rf-head-text">
+                <span class="rf-title">Import Configuration</span>
+                <span class="widget-desc">Upload a previously exported dashboard configuration.</span>
+              </span>
+              <label class="btn-outline mg-btn mg-file">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'upload', size: 15 }"></ng-container> Choose File
+                <input type="file" accept=".json,application/json" (change)="importConfiguration($event)" />
+              </label>
+            </div>
+            <div class="s-card mg-row">
+              <span class="mg-icon danger"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'trash', size: 20 }"></ng-container></span>
+              <span class="rf-head-text">
+                <span class="rf-title">Delete Dashboard</span>
+                <span class="widget-desc">Permanently delete this dashboard. This action cannot be undone.</span>
+              </span>
+              <button type="button" class="btn-danger mg-btn" (click)="deleteDashboard()">Delete Dashboard</button>
+            </div>
+
+            <p class="notice" *ngIf="notice">{{ notice }}</p>
+
+            <div class="mg-versions">
+              <span class="rf-title mg-title">Dashboard Versions</span>
+              <span class="widget-desc">View and restore previous versions of this dashboard.</span>
+              <div class="rf-table-wrap mg-table-wrap">
+                <table class="rf-table mg-table">
+                  <thead><tr><th>Version</th><th>Date & Time</th><th>Changed By</th><th>Description</th><th>Actions</th></tr></thead>
+                  <tbody>
+                    <tr *ngFor="let v of versions; let i = index; let first = first">
+                      <td><span class="mg-ver">{{ v.version }} <span class="mg-current" *ngIf="first">Current</span></span></td>
+                      <td>{{ v.date }}</td>
+                      <td>{{ v.by }}</td>
+                      <td>{{ v.description }}</td>
+                      <td class="sh-actions">
+                        <ng-container *ngIf="!first; else currentDash">
+                          <span class="mg-actions">
+                            <button type="button" class="btn-outline mg-restore" (click)="restoreVersion(v)">Restore</button>
+                            <button type="button" class="rf-act" [attr.aria-label]="'More actions for ' + v.version" (click)="toggleMenu($event, 'version-' + i)"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 16 }"></ng-container></button>
+                          </span>
+                          <div class="menu sh-menu" *ngIf="openMenuId === 'version-' + i" (click)="$event.stopPropagation()">
+                            <button type="button" class="danger" (click)="deleteVersion(v)">Delete version</button>
+                          </div>
+                        </ng-container>
+                        <ng-template #currentDash>-</ng-template>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- Right: refresh preview -->
+        <section class="settings-preview rf-preview" *ngIf="settingsSection === 'refresh'">
+          <div class="pv-filter-head">
+            <span class="rf-preview-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'monitor', size: 20 }"></ng-container></span>
+            <span>
+              <h2 class="section-title">Preview</h2>
+              <span class="section-sub">Example of refresh settings in action.</span>
+            </span>
+          </div>
+
+          <article class="rf-pv-card">
+            <header class="rf-pv-head">
+              <span class="rf-pv-badge"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'leaf', size: 16 }"></ng-container></span>
+              <span class="rf-pv-title">Environment Overview</span>
+              <span class="rf-auto">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'refresh', size: 14 }"></ng-container>
+                Auto refresh: {{ refreshShortLabel }}
+              </span>
+            </header>
+            <div class="rf-metric-tabs" role="tablist">
+              <button type="button" role="tab" *ngFor="let m of previewMetrics" [class.active]="previewMetric === m" (click)="selectMetric(m)">{{ m }}</button>
+            </div>
+            <div class="rf-chart">
+              <span class="rf-axis-label">{{ trendUnit }}</span>
+              <svg [attr.viewBox]="'0 0 ' + chart.width + ' ' + chart.height" role="img" [attr.aria-label]="previewMetric + ' trend'">
+                <g *ngFor="let t of trendYTicks">
+                  <line [attr.x1]="chart.left" [attr.x2]="chart.width" [attr.y1]="t.y" [attr.y2]="t.y" class="rf-gridline" />
+                  <text [attr.x]="chart.left - 5" [attr.y]="t.y + 3" text-anchor="end" class="rf-tick">{{ t.label }}</text>
+                </g>
+                <text *ngFor="let x of chartXTicks; let i = index"
+                  [attr.x]="chart.left + 12 + ((chart.width - chart.left - 24) / (chartXTicks.length - 1)) * i"
+                  [attr.y]="chart.height - 4" text-anchor="middle" class="rf-tick">{{ x }}</text>
+                <g *ngFor="let l of trendLines">
+                  <path [attr.d]="l.area" [attr.fill]="l.color" fill-opacity="0.1" />
+                  <path [attr.d]="l.line" [attr.stroke]="l.color" fill="none" stroke-width="1.6" stroke-linejoin="round" />
+                  <circle *ngFor="let p of l.points" [attr.cx]="p.x" [attr.cy]="p.y" r="1.6" [attr.fill]="l.color" />
+                </g>
+              </svg>
+            </div>
+            <div class="rf-legend">
+              <span *ngFor="let l of trendLines"><i [style.background]="l.color"></i>{{ l.label }}</span>
+            </div>
+          </article>
+
+          <article class="rf-pv-card">
+            <header class="rf-pv-head">
+              <span class="rf-pv-badge alarm"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'alert', size: 16 }"></ng-container></span>
+              <span class="rf-pv-title">Recent Alarms</span>
+              <span class="rf-auto">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'refresh', size: 14 }"></ng-container>
+                Auto refresh: {{ refreshShortLabel }}
+              </span>
+            </header>
+            <table class="rf-alarms">
+              <thead><tr><th>Time</th><th>Location</th><th>Parameter</th><th>Value</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let a of previewAlarms">
+                  <td>{{ a.time }}</td>
+                  <td>{{ a.location }}</td>
+                  <td>{{ a.parameter }}</td>
+                  <td>{{ a.value }}</td>
+                  <td><span class="rf-status" [class.low]="a.status === 'Low'">{{ a.status }}</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+        </section>
+
+        <!-- Right: appearance preview -->
+        <section class="settings-preview ap-preview" *ngIf="settingsSection === 'appearance'">
+          <div class="pv-filter-head">
+            <span class="rf-preview-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'eye', size: 20 }"></ng-container></span>
+            <span>
+              <h2 class="section-title">Preview</h2>
+              <span class="section-sub">See how your appearance settings will look.</span>
+            </span>
+            <select class="ap-select" [(ngModel)]="appearanceDashboard" aria-label="Preview dashboard">
+              <option *ngFor="let d of appearanceDashboards" [value]="d">{{ d }}</option>
+            </select>
+          </div>
+
+          <div
+            class="ap-surface"
+            [ngClass]="['style-' + prefs.dashboardStyle, 'density-' + prefs.density, 'corners-' + prefs.corners, 'font-' + prefs.fontScale, 'chart-' + prefs.chartStyle]"
+            [class.dark]="previewDark"
+            [class.grid-bg]="showGrid"
+            [style.--accent]="prefs.primaryColor"
+          >
+            <div class="ap-card ap-top">
+              <div class="ap-brand-row">
+                <span class="ap-brand">
+                  <span class="ap-logo"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'leaf', size: 18 }"></ng-container></span>
+                  <span>
+                    <strong>Environment360</strong>
+                    <small>by Purple IQ</small>
+                  </span>
+                </span>
+                <span class="ap-crumb" *ngIf="prefs.showBreadcrumb">{{ appearanceDashboard }} / {{ prefs.defaultSite }}</span>
+                <select class="ap-mini-select" *ngIf="showTimeRange" [(ngModel)]="appearanceRange" aria-label="Time range">
+                  <option *ngFor="let r of dateRanges.slice(0, 4)" [value]="r">{{ r }}</option>
+                </select>
+              </div>
+              <div class="ap-kpis">
+                <div class="ap-kpi" *ngFor="let k of appearanceKpis; let first = first" [class.highlight]="first">
+                  <span class="ap-kpi-icon" [ngClass]="'tone-' + k.tone"><ng-container *ngTemplateOutlet="icon; context: { $implicit: k.icon, size: 16 }"></ng-container></span>
+                  <span class="ap-kpi-text">
+                    <span class="ap-kpi-label" *ngIf="showTitles">{{ k.label }}</span>
+                    <strong>{{ k.value }}</strong>
+                    <span class="ap-kpi-change" *ngIf="k.change" [class.bad]="!k.good">{{ k.good ? '↑' : '↓' }} {{ k.change }}</span>
+                  </span>
+                  <span class="ap-more" *ngIf="showWidgetMenu"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 14 }"></ng-container></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="ap-card ap-trend-card">
+              <header class="ap-head">
+                <span class="ap-title" *ngIf="showTitles">Environmental Trends</span>
+                <select class="ap-mini-select" *ngIf="showTimeRange" [(ngModel)]="appearanceRange" aria-label="Trend time range">
+                  <option *ngFor="let r of dateRanges.slice(0, 4)" [value]="r">{{ r }}</option>
+                </select>
+                <span class="ap-more" *ngIf="showWidgetMenu"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 14 }"></ng-container></span>
+              </header>
+              <div class="ap-plot-wrap">
+                <div class="ap-y-axis">
+                  <span *ngFor="let t of apYTicks" [style.top.%]="t.pct">{{ t.label }}</span>
+                </div>
+                <div class="ap-plot">
+                  <svg class="ap-trend" [attr.viewBox]="'0 0 ' + apChart.width + ' ' + apChart.height" preserveAspectRatio="none" role="img" aria-label="Environmental trends">
+                    <defs>
+                      <linearGradient *ngFor="let l of apTrend; let i = index" [attr.id]="'ap-grad-' + i" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" [attr.stop-color]="l.color" stop-opacity="0.35" />
+                        <stop offset="100%" [attr.stop-color]="l.color" stop-opacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <line *ngFor="let t of apYTicks" x1="0" [attr.x2]="apChart.width" [attr.y1]="t.y" [attr.y2]="t.y" class="rf-gridline" vector-effect="non-scaling-stroke" />
+                    <g *ngFor="let l of apTrend; let i = index">
+                      <path *ngIf="prefs.chartStyle !== 'outline'" [attr.d]="l.area"
+                        [attr.fill]="prefs.chartStyle === 'gradient' ? 'url(#ap-grad-' + i + ')' : l.color"
+                        [attr.fill-opacity]="prefs.chartStyle === 'gradient' ? 1 : 0.12" />
+                      <path [attr.d]="l.line" [attr.stroke]="l.color" fill="none" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+                      <!-- Zero-length round-capped segments stay circular when the SVG stretches -->
+                      <path *ngFor="let p of l.points" [attr.d]="'M' + p.x + ' ' + p.y + 'h0'" [attr.stroke]="l.color" stroke-width="5" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+                    </g>
+                  </svg>
+                </div>
+                <div class="ap-x-axis">
+                  <span *ngFor="let x of chartXTicks">{{ x }}</span>
+                </div>
+              </div>
+              <div class="rf-legend">
+                <span *ngFor="let l of apTrend"><i [style.background]="l.color"></i>{{ l.label }}</span>
+              </div>
+            </div>
+
+            <div class="ap-bottom">
+              <div class="ap-card">
+                <header class="ap-head">
+                  <span class="ap-title" *ngIf="showTitles">Device Status</span>
+                  <span class="ap-more" *ngIf="showWidgetMenu"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 14 }"></ng-container></span>
+                </header>
+                <div class="ap-donut-wrap">
+                  <span class="ap-donut">
+                    <svg viewBox="0 0 42 42" aria-hidden="true">
+                      <circle *ngFor="let a of donutArcs" cx="21" cy="21" r="15.9" fill="none"
+                        [attr.stroke]="a.color" stroke-width="6" [attr.stroke-dasharray]="a.dash" [attr.stroke-dashoffset]="a.offset" />
+                    </svg>
+                    <span class="ap-donut-label"><strong>3,120</strong><small>Devices</small></span>
+                  </span>
+                  <ul class="ap-status">
+                    <li *ngFor="let st of deviceStatus">
+                      <i [style.background]="st.color"></i>
+                      <span>{{ st.label }}<small *ngIf="prefs.showDataLabels">{{ st.count }} ({{ st.pct }}%)</small></span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              <div class="ap-card">
+                <header class="ap-head">
+                  <span class="ap-title" *ngIf="showTitles">Alarms by Category</span>
+                  <span class="ap-more" *ngIf="showWidgetMenu"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 14 }"></ng-container></span>
+                </header>
+                <div class="ap-bars">
+                  <div class="ap-bar" *ngFor="let c of alarmCategories" [title]="c.label + ': ' + c.value">
+                    <span class="ap-bar-value" *ngIf="prefs.showDataLabels">{{ c.value }}</span>
+                    <span class="ap-bar-fill" [style.height.%]="(c.value / alarmMax) * 100" [style.--bar]="c.color"></span>
+                    <span class="ap-bar-label" [title]="c.label">{{ c.short }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right: alerts preview -->
+        <section class="settings-preview al-preview" *ngIf="settingsSection === 'alerts'">
+          <div class="pv-filter-head">
+            <span class="rf-preview-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'monitor', size: 20 }"></ng-container></span>
+            <span>
+              <h2 class="section-title">Preview</h2>
+              <span class="section-sub">See how alerts and notifications will appear.</span>
+            </span>
+          </div>
+
+          <div class="al-banner" *ngIf="prefs.alertsEnabled && prefs.alertBanner && criticalActive">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'alert', size: 15 }"></ng-container> 2 critical alerts need attention
+          </div>
+
+          <article class="rf-pv-card al-aqi" [class.alarmed]="prefs.alertsEnabled && prefs.highlightAlarmWidgets && criticalActive">
+            <header class="al-aqi-head">
+              <span class="rf-pv-badge alarm"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'alert', size: 16 }"></ng-container></span>
+              <span class="al-aqi-value">
+                <span class="widget-desc">Air Quality</span>
+                <strong>182</strong>
+                <span class="widget-desc">AQI</span>
+              </span>
+              <span class="al-aqi-side">
+                <span class="ap-more"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 14 }"></ng-container></span>
+                <span class="al-critical" *ngIf="criticalActive && prefs.alertIndicator"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'alert', size: 12 }"></ng-container> Critical</span>
+              </span>
+            </header>
+            <div class="al-spark">
+              <svg [attr.viewBox]="'0 0 ' + aqiChart.width + ' ' + aqiChart.height" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id="al-aqi-grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#ef4444" stop-opacity="0.3" />
+                    <stop offset="100%" stop-color="#ef4444" stop-opacity="0" />
+                  </linearGradient>
+                </defs>
+                <path [attr.d]="aqiArea" fill="url(#al-aqi-grad)" />
+                <path [attr.d]="aqiLine" fill="none" stroke="#ef4444" stroke-width="1.6" vector-effect="non-scaling-stroke" />
+                <path *ngFor="let p of aqiPoints" [attr.d]="'M' + p.x + ' ' + p.y + 'h0'" stroke="#ef4444" stroke-width="4" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+              </svg>
+            </div>
+            <div class="ap-x-axis"><span *ngFor="let x of chartXTicks">{{ x }}</span></div>
+          </article>
+
+          <h4 class="al-pv-heading">Alert Counter on Widget</h4>
+          <article class="rf-pv-card al-counter">
+            <span class="al-counter-icon">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'file', size: 26 }"></ng-container>
+              <span class="al-count" *ngIf="prefs.alertsEnabled && prefs.alertIndicator && prefs.alarmBadges">{{ previewAlerts.length }}</span>
+            </span>
+            <span>
+              <span class="widget-desc">Devices</span>
+              <strong>3,120</strong>
+              <span class="widget-desc">Total Devices</span>
+            </span>
+          </article>
+
+          <h4 class="al-pv-heading">Alert Panel (In Dashboard)</h4>
+          <article class="rf-pv-card al-panel">
+            <header class="al-panel-head">
+              <span class="rf-pv-title">Recent Alerts</span>
+              <button type="button" class="clear-all">View All</button>
+            </header>
+            <ng-container *ngIf="prefs.alertsEnabled && prefs.channels['inApp']; else alertsOff">
+              <div class="al-item" *ngFor="let a of previewAlerts" [style.--sev]="severityColor(a.severity)">
+                <span class="al-item-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'alert', size: 15 }"></ng-container></span>
+                <span class="al-item-text">
+                  <strong>{{ a.title }}</strong>
+                  <span class="widget-desc">{{ a.detail }}</span>
+                </span>
+                <span class="al-item-time">{{ a.time }}</span>
+              </div>
+              <p class="rf-empty" *ngIf="!previewAlerts.length">No severity levels selected.</p>
+            </ng-container>
+            <ng-template #alertsOff>
+              <p class="rf-empty">{{ prefs.alertsEnabled ? 'In-App channel is turned off.' : 'Dashboard alerts are turned off.' }}</p>
+            </ng-template>
+          </article>
+        </section>
+
+        <!-- Right: sharing preview -->
+        <section class="settings-preview sh-preview" *ngIf="settingsSection === 'sharing'">
+          <div class="pv-filter-head">
+            <span class="rf-preview-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'monitor', size: 20 }"></ng-container></span>
+            <span>
+              <h2 class="section-title">Preview</h2>
+              <span class="section-sub">See how sharing and access will work.</span>
+            </span>
+            <select class="ap-select" [(ngModel)]="previewRole" aria-label="Preview as">
+              <option *ngFor="let r of previewRoles" [value]="r">{{ r }}</option>
+            </select>
+          </div>
+
+          <article class="rf-pv-card sh-pv-top">
+            <header class="sh-pv-head">
+              <span class="rf-pv-badge"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'leaf', size: 16 }"></ng-container></span>
+              <span class="sh-pv-title">
+                <strong>{{ prefs.name || 'Environment360' }}</strong>
+                <span class="widget-desc">{{ previewAccessNote }}</span>
+              </span>
+              <span class="sh-pv-chip" [class.edit]="previewCanEdit">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: previewCanEdit ? 'pencil' : 'lock', size: 12 }"></ng-container>
+                {{ previewCanEdit ? 'Can edit' : 'View only' }}
+              </span>
+            </header>
+            <div class="ap-kpis">
+              <div class="ap-kpi" *ngFor="let k of appearanceKpis; let first = first" [class.highlight]="first">
+                <span class="ap-kpi-icon" [ngClass]="'tone-' + k.tone"><ng-container *ngTemplateOutlet="icon; context: { $implicit: k.icon, size: 16 }"></ng-container></span>
+                <span class="ap-kpi-text">
+                  <span class="ap-kpi-label">{{ k.label }}</span>
+                  <strong>{{ k.value }}</strong>
+                  <span class="ap-kpi-change" *ngIf="k.change" [class.bad]="!k.good">{{ k.good ? '↑' : '↓' }} {{ k.change }}</span>
+                </span>
+              </div>
+            </div>
+          </article>
+
+          <article class="rf-pv-card sh-pv-trend">
+            <header class="ap-head">
+              <span class="ap-title">Temperature Trend</span>
+              <span class="widget-desc">°C</span>
+            </header>
+            <div class="ap-plot-wrap">
+              <div class="ap-y-axis"><span *ngFor="let t of shareYTicks" [style.top.%]="t.pct">{{ t.label }}</span></div>
+              <div class="ap-plot">
+                <svg class="ap-trend" [attr.viewBox]="'0 0 ' + shareChart.width + ' ' + shareChart.height" preserveAspectRatio="none" role="img" aria-label="Temperature trend">
+                  <defs>
+                    <linearGradient id="sh-grad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.3" />
+                      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <line *ngFor="let t of shareYTicks" x1="0" [attr.x2]="shareChart.width" [attr.y1]="t.y" [attr.y2]="t.y" class="rf-gridline" vector-effect="non-scaling-stroke" />
+                  <path [attr.d]="shareArea" fill="url(#sh-grad)" />
+                  <path [attr.d]="shareLine" fill="none" stroke="#5b21b6" stroke-width="1.6" vector-effect="non-scaling-stroke" />
+                  <path *ngFor="let p of sharePoints" [attr.d]="'M' + p.x + ' ' + p.y + 'h0'" stroke="#5b21b6" stroke-width="4" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+                </svg>
+              </div>
+              <div class="ap-x-axis"><span *ngFor="let x of chartXTicks">{{ x }}</span></div>
+            </div>
+          </article>
+
+          <article class="rf-pv-card">
+            <header class="ap-head"><span class="ap-title">Access Summary</span></header>
+            <div class="sh-summary" *ngIf="prefs.sharingEnabled && prefs.accessLevel !== 'private'; else privateNote">
+              <span class="ap-donut sh-donut">
+                <svg viewBox="0 0 42 42" aria-hidden="true">
+                  <circle *ngFor="let a of accessArcs" cx="21" cy="21" r="15.9" fill="none" [attr.stroke]="a.color" stroke-width="6" [attr.stroke-dasharray]="a.dash" [attr.stroke-dashoffset]="a.offset" />
+                </svg>
+                <span class="ap-donut-label"><strong>{{ totalMembers }}</strong><small>Users</small></span>
+              </span>
+              <ul class="sh-legend">
+                <li *ngFor="let a of accessSummary">
+                  <i [style.background]="a.color"></i>
+                  <span>{{ a.label }}</span>
+                  <span class="sh-legend-count">{{ a.count }} ({{ a.pct }}%)</span>
+                </li>
+              </ul>
+            </div>
+            <ng-template #privateNote>
+              <p class="rf-empty">This dashboard is private. Only you can access it.</p>
+            </ng-template>
+          </article>
+        </section>
+
+        <!-- Right: manage preview -->
+        <section class="settings-preview sh-preview mg-preview" *ngIf="settingsSection === 'manage'">
+          <div class="pv-filter-head">
+            <span class="rf-preview-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'monitor', size: 20 }"></ng-container></span>
+            <span>
+              <h2 class="section-title">Preview</h2>
+              <span class="section-sub">See how reset and manage options affect your dashboard.</span>
+            </span>
+            <select class="ap-select" [(ngModel)]="appearanceDashboard" aria-label="Preview dashboard">
+              <option *ngFor="let d of appearanceDashboards" [value]="d">{{ d }}</option>
+            </select>
+          </div>
+
+          <article class="rf-pv-card">
+            <header class="sh-pv-head">
+              <span class="rf-pv-badge"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'leaf', size: 16 }"></ng-container></span>
+              <span class="sh-pv-title"><strong>{{ prefs.name || 'Untitled dashboard' }}</strong></span>
+              <span class="widget-desc">{{ restoredVersion ? 'Restored ' + restoredVersion : 'Current View' }}</span>
+            </header>
+            <div class="mg-kpis">
+              <div class="ap-kpi" *ngFor="let k of manageKpis" [class.highlight]="k.tone === 'green'">
+                <span class="ap-kpi-icon" [ngClass]="'tone-' + k.tone"><ng-container *ngTemplateOutlet="icon; context: { $implicit: k.icon, size: 16 }"></ng-container></span>
+                <span class="ap-kpi-text">
+                  <span class="ap-kpi-label">{{ k.label }}</span>
+                  <strong>{{ k.value }}</strong>
+                  <span class="ap-kpi-change" *ngIf="k.change" [class.bad]="!k.good">{{ k.good ? '↓' : '↑' }} {{ k.change }}</span>
+                </span>
+              </div>
+            </div>
+          </article>
+
+          <article class="rf-pv-card sh-pv-trend">
+            <header class="ap-head">
+              <span class="ap-title">Temperature Trend</span>
+              <select class="ap-mini-select" [(ngModel)]="appearanceRange" aria-label="Trend time range">
+                <option *ngFor="let r of dateRanges.slice(0, 4)" [value]="r">{{ r }}</option>
+              </select>
+            </header>
+            <div class="ap-plot-wrap">
+              <div class="ap-y-axis"><span *ngFor="let t of shareYTicks" [style.top.%]="t.pct">{{ t.label }}</span></div>
+              <div class="ap-plot">
+                <svg class="ap-trend" [attr.viewBox]="'0 0 ' + shareChart.width + ' ' + shareChart.height" preserveAspectRatio="none" role="img" aria-label="Temperature trend">
+                  <defs>
+                    <linearGradient id="mg-grad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.3" />
+                      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <line *ngFor="let t of shareYTicks" x1="0" [attr.x2]="shareChart.width" [attr.y1]="t.y" [attr.y2]="t.y" class="rf-gridline" vector-effect="non-scaling-stroke" />
+                  <path [attr.d]="shareArea" fill="url(#mg-grad)" />
+                  <path [attr.d]="shareLine" fill="none" stroke="#5b21b6" stroke-width="1.6" vector-effect="non-scaling-stroke" />
+                  <path *ngFor="let p of sharePoints" [attr.d]="'M' + p.x + ' ' + p.y + 'h0'" stroke="#5b21b6" stroke-width="4" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+                </svg>
+              </div>
+              <div class="ap-x-axis"><span *ngFor="let x of chartXTicks">{{ x }}</span></div>
+            </div>
+          </article>
+
+          <article class="rf-pv-card">
+            <header class="ap-head"><span class="ap-title">Dashboard Information</span></header>
+            <dl class="mg-info">
+              <dt>Name</dt><dd>{{ prefs.name || '—' }}</dd>
+              <dt>Type</dt><dd>Custom Dashboard</dd>
+              <dt>Created By</dt><dd>{{ ownerName }}</dd>
+              <dt>Created On</dt><dd>{{ versions[versions.length - 1]?.date ?? '—' }}</dd>
+              <dt>Last Modified</dt><dd>{{ currentVersion?.date ?? '—' }}</dd>
+              <dt>Total Widgets</dt><dd>{{ selected.length }}</dd>
+              <dt>Shared With</dt><dd>{{ prefs.sharingEnabled && prefs.accessLevel !== 'private' ? totalMembers + ' Users (' + groupCount + ' Groups)' : 'Only you' }}</dd>
+            </dl>
+          </article>
+        </section>
+
+        <!-- Right: live preview -->
+        <section class="settings-preview" *ngIf="settingsSection !== 'refresh' && settingsSection !== 'appearance' && settingsSection !== 'alerts' && settingsSection !== 'sharing' && settingsSection !== 'manage'">
+          <ng-container *ngIf="settingsSection !== 'data'; else filterHeader">
+            <h2 class="section-title">Preview</h2>
+            <p class="section-sub">This is a preview of your dashboard with the current settings.</p>
+          </ng-container>
+          <ng-template #filterHeader>
+            <div class="pv-filter-head">
+              <span class="hero-icon small">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'history', size: 18 }"></ng-container>
+              </span>
+              <span>
+                <h2 class="section-title">Preview – Applied Filters</h2>
+                <span class="section-sub">This preview shows how the dashboard will look with your selected data and filters.</span>
+              </span>
+              <button type="button" class="pill-btn" (click)="viewDashboard()">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'external', size: 15 }"></ng-container>
+                View Dashboard
+              </button>
+            </div>
+            <div class="applied-bar">
+              <span class="applied-label">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'checkCircle', size: 18 }"></ng-container>
+                Filters Applied
+              </span>
+              <span class="applied-chip" *ngFor="let f of appliedFilters">{{ f }}</span>
+              <button type="button" class="clear-all" (click)="clearFilters()">Clear All</button>
+            </div>
+          </ng-template>
+
+          <div class="preview-surface" [class.dark]="previewDark" [class.compact]="compactMode">
+            <div class="pv-kpis" *ngIf="settingsSection !== 'data'">
+              <div class="pv-kpi" *ngFor="let k of previewKpis">
+                <span class="pv-kpi-icon" [ngClass]="'tone-' + k.tone">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: k.icon, size: 18 }"></ng-container>
+                </span>
+                <span>
+                  <span class="pv-kpi-label">{{ k.label }}</span>
+                  <strong>{{ k.value }}</strong>
+                  <span class="pv-kpi-change" [class.bad]="!k.good">{{ k.good ? '▲' : '▼' }} {{ k.change }} <small>vs last month</small></span>
+                </span>
+              </div>
+            </div>
+
+            <div class="pv-grid">
+              <article class="pv-card" *ngFor="let w of selected | slice: 0 : (settingsSection === 'data' ? 4 : selected.length)">
+                <header class="pv-head" *ngIf="showTitles || (showTimeRange && filterOptions[w.id])">
+                  <span class="cw-title" *ngIf="showTitles">{{ w.title }}</span>
+                  <span class="cw-spacer"></span>
+                  <select class="cw-select" *ngIf="showTimeRange && filterOptions[w.id]" [(ngModel)]="filters[w.id]">
+                    <option *ngFor="let opt of filterOptions[w.id].options" [value]="opt">{{ opt }}</option>
+                  </select>
+                  <span class="pv-more" *ngIf="showWidgetMenu">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 16 }"></ng-container>
+                  </span>
+                </header>
+                <app-widget-preview [widgetId]="w.id" [compact]="true"></app-widget-preview>
+              </article>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Shared settings cards -->
+      <ng-template #defaultView>
+        <div class="s-card">
+          <h3>Default View & Time Range</h3>
+          <p class="section-sub">Set the default view and time range when the dashboard is opened.</p>
+          <div class="field-grid">
+            <label class="field">
+              <span class="field-label">Default Time Range</span>
+              <span class="select-wrap">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'calendar', size: 16 }"></ng-container>
+                <select [(ngModel)]="prefs.defaultTimeRange">
+                  <option *ngFor="let o of dateRanges" [value]="o">{{ o }}</option>
+                </select>
+              </span>
+            </label>
+            <label class="field">
+              <span class="field-label">Default Site / Location</span>
+              <span class="select-wrap">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'map', size: 16 }"></ng-container>
+                <select [(ngModel)]="prefs.defaultSite">
+                  <option *ngFor="let o of siteOptions" [value]="o">{{ o }}</option>
+                </select>
+              </span>
+            </label>
+          </div>
+        </div>
+      </ng-template>
+
+      <ng-template #themeCard>
+        <div class="s-card">
+          <h3>Theme & Appearance</h3>
+          <p class="section-sub">Customize the visual appearance of your dashboard.</p>
+          <div class="field-grid">
+            <div class="field">
+              <span class="field-label">Theme Mode</span>
+              <div class="theme-modes">
+                <label class="theme-card" *ngFor="let m of themeModes" [class.active]="prefs.themeMode === m.key">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: m.icon, size: 18 }"></ng-container>
+                  <span>{{ m.label }}</span>
+                  <input type="radio" name="themeMode" [value]="m.key" [(ngModel)]="prefs.themeMode" />
+                </label>
+              </div>
+            </div>
+            <div class="field">
+              <span class="field-label">Primary Color</span>
+              <div class="swatches">
+                <button
+                  type="button"
+                  class="swatch"
+                  *ngFor="let c of primaryColors"
+                  [style.background]="c"
+                  [class.active]="prefs.primaryColor === c"
+                  [attr.aria-label]="'Primary color ' + c"
+                  (click)="prefs.primaryColor = c"
+                ></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-grid display-grid">
+            <div class="field">
+              <span class="field-label">Widget Display Options</span>
+              <label class="check-row"><input type="checkbox" [(ngModel)]="showTitles" /> Show widget titles</label>
+              <label class="check-row"><input type="checkbox" [(ngModel)]="showTimeRange" /> Show time range selector on widgets</label>
+              <label class="check-row"><input type="checkbox" [(ngModel)]="showWidgetMenu" /> Show widget menu (⋯)</label>
+            </div>
+            <div class="mini-fields">
+              <label class="field">
+                <span class="field-label">Data Display</span>
+                <select [(ngModel)]="prefs.dataDisplay">
+                  <option *ngFor="let o of dataDisplayOptions" [value]="o">{{ o }}</option>
+                </select>
+              </label>
+              <label class="field">
+                <span class="field-label">Number Format</span>
+                <select [(ngModel)]="prefs.numberFormat">
+                  <option *ngFor="let o of numberFormats" [value]="o">{{ o }}</option>
+                </select>
+              </label>
+              <div class="field-grid">
+                <label class="field">
+                  <span class="field-label">Temperature Unit</span>
+                  <select [(ngModel)]="prefs.temperatureUnit">
+                    <option *ngFor="let o of temperatureUnits" [value]="o">{{ o }}</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span class="field-label">Date & Time Format</span>
+                  <select [(ngModel)]="prefs.dateFormat">
+                    <option *ngFor="let o of dateFormats" [value]="o">{{ o }}</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- Footer -->
+    <footer class="panel-footer" *ngIf="activeTab !== 'layout'">
+      <button type="button" class="btn-outline" (click)="resetToDefault()">Reset to Default</button>
+      <div class="footer-right">
+        <button type="button" class="btn-outline" (click)="cancel()">Cancel</button>
+        <button type="button" class="btn-primary" (click)="applyChanges()">{{ activeTab === 'settings' ? 'Apply Settings' : 'Apply Changes' }}</button>
+      </div>
+    </footer>
+  </section>
+</div>

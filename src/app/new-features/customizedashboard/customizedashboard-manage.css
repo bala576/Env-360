@@ -1,0 +1,198 @@
+/* ---------- Reset & Manage ---------- */
+.mg-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+}
+
+.mg-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #f1ebff;
+  color: var(--accent);
+}
+
+.mg-icon.danger {
+  background: #fdecec;
+  color: #dc2626;
+}
+
+.mg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-width: 140px;
+  padding: 8px 16px;
+  box-sizing: border-box;
+  font-size: 12.5px;
+}
+
+.mg-split {
+  justify-content: space-between;
+}
+
+.mg-export {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.mg-export .menu {
+  top: 40px;
+}
+
+.mg-file {
+  cursor: pointer;
+}
+
+.mg-file input {
+  display: none;
+}
+
+.btn-danger.mg-btn {
+  padding: 8px 16px;
+}
+
+/* Versions */
+.mg-versions {
+  margin-top: 4px;
+}
+
+.mg-title {
+  font-size: 15px;
+}
+
+.mg-table-wrap {
+  margin-top: 10px;
+  overflow: visible;
+}
+
+.mg-table {
+  font-size: 12px;
+}
+
+.mg-table td {
+  padding: 8px 6px;
+}
+
+.mg-ver {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.mg-current {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #dcfce7;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #15803d;
+}
+
+.mg-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mg-restore {
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+/* Preview */
+.mg-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  align-items: start;
+}
+
+/* Air Quality + Water Level stack in a shared green column */
+.mg-kpis .ap-kpi:nth-child(3),
+.mg-kpis .ap-kpi:nth-child(4) {
+  grid-column: 3;
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.mg-kpis .ap-kpi:nth-child(3) {
+  grid-row: 1;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.mg-kpis .ap-kpi:nth-child(4) {
+  grid-row: 2;
+  margin-top: -8px;
+  border-top: none;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.mg-preview .ap-kpi {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.mg-info {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0;
+  margin: 0;
+  font-size: 12.5px;
+}
+
+.mg-info dt,
+.mg-info dd {
+  margin: 0;
+  padding: 7px 0;
+  border-bottom: 1px solid #f1eef8;
+}
+
+.mg-info dt {
+  padding-right: 20px;
+  color: #4b5563;
+}
+
+.mg-info dd {
+  color: #1e1b4b;
+}
+
+.mg-info dt:last-of-type,
+.mg-info dd:last-of-type {
+  border-bottom: none;
+}
+
+@media (max-width: 900px) {
+  .mg-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mg-kpis .ap-kpi:nth-child(3),
+  .mg-kpis .ap-kpi:nth-child(4) {
+    grid-column: auto;
+    grid-row: auto;
+    margin-top: 0;
+    border: 1px solid #bbf7d0;
+    border-radius: calc(var(--ap-radius) * 0.8);
+  }
+
+  .mg-row {
+    flex-wrap: wrap;
+  }
+
+  .mg-table-wrap {
+    overflow-x: auto;
+  }
+}

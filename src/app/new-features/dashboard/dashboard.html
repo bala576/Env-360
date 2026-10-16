@@ -12,7 +12,7 @@
       <h1>Dashboard</h1>
       <p>Real-time overview of your environment, devices and assets</p>
     </div>
-    <button type="button" class="btn-primary">
+    <button type="button" class="btn-primary" (click)="openCustomize()">
       <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'settings', size: 18 }"></ng-container>
       Customize Dashboard
     </button>

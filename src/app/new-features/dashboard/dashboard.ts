@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { Dropdown, DropdownOption } from '../../shared/dropdown/dropdown';
 import * as L from 'leaflet';
 import {
@@ -141,8 +141,14 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   energyMax = 600;
   energyTicks = [600, 400, 200, 0];
 
+  private readonly router = inject(Router);
+
   constructor() {
     this.buildTrend();
+  }
+
+  openCustomize(): void {
+    this.router.navigate(['/customize-dashboard']);
   }
 
   ngAfterViewInit(): void {

@@ -1,0 +1,900 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<!-- Section blocks, reused by the overview and individual steps -->
+<ng-template #basicTpl>
+      <!-- Basic information -->
+      <section class="block">
+        <div class="block-head">
+          <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'basic', size: 20 }"></ng-container></span>
+          <div>
+            <h2>Basic Information</h2>
+            <p>Enter primary details for the site or space.</p>
+          </div>
+        </div>
+        <div class="grid cols-2">
+          <label class="field">
+            <span class="lbl">Name <em>*</em></span>
+            <input type="text" [(ngModel)]="form.name" placeholder="Enter name" />
+          </label>
+          <div class="field">
+            <span class="lbl">Type <em>*</em></span>
+            <app-dropdown [options]="typeOptions" [(ngModel)]="form.type"></app-dropdown>
+          </div>
+          <label class="field">
+            <span class="lbl">Code
+              <span class="info" title="Short unique identifier used in reports and device mapping">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'info', size: 15 }"></ng-container>
+              </span>
+            </span>
+            <input type="text" [(ngModel)]="form.code" placeholder="e.g. DM-MB" />
+          </label>
+          <div class="field">
+            <span class="lbl">Status</span>
+            <div class="status-dd" [attr.data-status]="form.status">
+              <app-dropdown [options]="statusOptions" [(ngModel)]="form.status"></app-dropdown>
+            </div>
+          </div>
+          <label class="field span-2">
+            <span class="lbl">Description</span>
+            <div class="textarea-wrap">
+              <textarea rows="3" [(ngModel)]="form.description" [maxlength]="descriptionLimit" placeholder="Describe this site or space"></textarea>
+              <span class="counter">{{ form.description.length }}/{{ descriptionLimit }}</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+</ng-template>
+
+<ng-template #locationTpl>
+      <!-- Location & map -->
+      <section class="block">
+        <div class="block-head">
+          <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'location', size: 20 }"></ng-container></span>
+          <div>
+            <h2>Location &amp; Map</h2>
+            <p>Set the physical location and map for the site/space.</p>
+          </div>
+        </div>
+        <div class="location">
+          <div class="grid cols-2">
+            <div class="field">
+              <span class="lbl">Country <em>*</em></span>
+              <app-dropdown [options]="countryOptions" [ngModel]="form.country" (ngModelChange)="onCountryChange($event)"></app-dropdown>
+            </div>
+            <div class="field">
+              <span class="lbl">City <em>*</em></span>
+              <app-dropdown [options]="cityOptions" [(ngModel)]="form.city"></app-dropdown>
+            </div>
+            <label class="field span-2">
+              <span class="lbl">Address</span>
+              <input type="text" [(ngModel)]="form.address" placeholder="Street, area" />
+            </label>
+            <div class="span-2 latlng">
+              <label class="field">
+                <span class="lbl">Latitude</span>
+                <input type="text" [(ngModel)]="form.latitude" />
+              </label>
+              <label class="field">
+                <span class="lbl">Longitude</span>
+                <input type="text" [(ngModel)]="form.longitude" />
+              </label>
+              <button type="button" class="btn-soft" (click)="getFromMap()">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'pin', size: 16 }"></ng-container>
+                Get from Map
+              </button>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="lbl">Location on Map</span>
+            <div class="map-box">
+              <div class="map-zoom" [style.transform]="'scale(' + mapZoom + ')'">
+                <svg viewBox="0 0 240 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                  <rect width="240" height="150" fill="#3f4a3c"/>
+                  <path d="M0 40 L240 20 M0 110 L240 95 M60 0 L80 150 M170 0 L150 150" stroke="#8a8f86" stroke-width="5"/>
+                  <path d="M0 40 L240 20 M0 110 L240 95 M60 0 L80 150 M170 0 L150 150" stroke="#b9bdb4" stroke-width="1" stroke-dasharray="4 4"/>
+                  <rect x="8" y="48" width="40" height="50" fill="#5b6156"/>
+                  <rect x="90" y="40" width="50" height="45" rx="4" fill="#6b705f"/>
+                  <ellipse cx="118" cy="98" rx="26" ry="12" fill="#2f6f86"/>
+                  <rect x="182" y="35" width="48" height="50" fill="#565c50"/>
+                  <rect x="12" y="115" width="44" height="30" fill="#4d5548"/>
+                  <rect x="176" y="105" width="56" height="40" fill="#5d6455"/>
+                  <circle cx="118" cy="98" r="5" fill="#9ccfe0" opacity="0.6"/>
+                </svg>
+                <div class="map-pin">
+                  <svg width="22" height="28" viewBox="0 0 24 30" aria-hidden="true">
+                    <path d="M12 29s10-9.5 10-17A10 10 0 002 12c0 7.5 10 17 10 17z" fill="#ef4444"/>
+                    <circle cx="12" cy="12" r="4" fill="#ffffff"/>
+                  </svg>
+                  <span>{{ form.name.split(' - ')[0] || 'New Site' }}</span>
+                </div>
+              </div>
+              <div class="zoom-ctrl">
+                <button type="button" aria-label="Zoom in" (click)="zoomMap(0.25)">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 14 }"></ng-container>
+                </button>
+                <button type="button" aria-label="Zoom out" (click)="zoomMap(-0.25)">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'minus', size: 14 }"></ng-container>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+</ng-template>
+
+<ng-template #hierarchyTpl>
+      <!-- Hierarchy -->
+      <section class="block">
+        <div class="hierarchy">
+          <div>
+            <div class="block-head">
+              <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'hierarchy', size: 20 }"></ng-container></span>
+              <div>
+                <h2>Hierarchy</h2>
+                <p>Define the parent-child structure for this site/space.</p>
+              </div>
+            </div>
+            <div class="grid cols-2">
+              <div class="field span-2">
+                <span class="lbl">Parent Site / Space <em>*</em></span>
+                <ng-container *ngTemplateOutlet="parentSelect"></ng-container>
+              </div>
+            </div>
+          </div>
+
+          <div class="tree-preview">
+            <h3>Hierarchy Preview</h3>
+            <div
+              class="tree-node"
+              *ngFor="let n of hierarchyPath; let i = index; let last = last; trackBy: trackById"
+              [class.child]="i > 0"
+              [class.current]="last"
+              [style.margin-left.px]="i * 20"
+            >
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: nodeIcon(n), size: 14 }"></ng-container>
+              {{ n.name }}
+            </div>
+          </div>
+        </div>
+      </section>
+
+</ng-template>
+
+<!-- Parent selector with clear button, shared by overview and hierarchy step -->
+<ng-template #parentSelect>
+  <div class="parent-select" [class.has-value]="form.parentId">
+    <app-dropdown [options]="parentOptions" [ngModel]="form.parentId" (ngModelChange)="onParentChange($event)" placeholder="None (top level)"></app-dropdown>
+    <button type="button" class="parent-clear" *ngIf="form.parentId" aria-label="Clear parent" (click)="onParentChange(null)">
+      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 14 }"></ng-container>
+    </button>
+  </div>
+</ng-template>
+
+<!-- Recursive tree for the hierarchy preview -->
+<ng-template #treeLevel let-nodes>
+  <ul class="tree">
+    <li *ngFor="let n of nodes; trackBy: trackById">
+      <div class="tree-row" [class.current]="n === currentNode" [class.parent]="n.id === form.parentId">
+        <button
+          type="button"
+          class="tree-toggle"
+          *ngIf="n.children?.length; else leafToggle"
+          [class.open]="expanded.has(n.id)"
+          [attr.aria-expanded]="expanded.has(n.id)"
+          [attr.aria-label]="(expanded.has(n.id) ? 'Collapse ' : 'Expand ') + n.name"
+          (click)="toggleNode(n.id)"
+        >
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 14 }"></ng-container>
+        </button>
+        <ng-template #leafToggle><span class="tree-toggle leaf"></span></ng-template>
+        <span class="tree-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: nodeIcon(n), size: 16 }"></ng-container></span>
+        <span class="tree-name">{{ n.name }}</span>
+      </div>
+      <ng-container *ngIf="n.children?.length && expanded.has(n.id)">
+        <ng-container *ngTemplateOutlet="treeLevel; context: { $implicit: n.children }"></ng-container>
+      </ng-container>
+    </li>
+  </ul>
+</ng-template>
+
+<ng-template #specsTpl>
+      <!-- Specifications -->
+      <section class="block">
+        <div class="block-head">
+          <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'specs', size: 20 }"></ng-container></span>
+          <div>
+            <h2>Specifications</h2>
+            <p>Enter physical and operational details.</p>
+          </div>
+        </div>
+        <div class="grid cols-4">
+          <label class="field">
+            <span class="lbl">Total Area (sq.m)</span>
+            <input type="text" [(ngModel)]="form.totalArea" />
+          </label>
+          <label class="field">
+            <span class="lbl">Number of Floors</span>
+            <input type="number" min="0" [(ngModel)]="form.floors" />
+          </label>
+          <div class="field">
+            <span class="lbl">Construction Type</span>
+            <app-dropdown [options]="constructionOptions" [(ngModel)]="form.construction"></app-dropdown>
+          </div>
+          <div class="field">
+            <span class="lbl">Usage Type</span>
+            <app-dropdown [options]="usageOptions" [(ngModel)]="form.usage"></app-dropdown>
+          </div>
+        </div>
+      </section>
+
+</ng-template>
+
+<ng-template #contactsTpl>
+      <!-- Contacts -->
+      <section class="block">
+        <div class="block-head">
+          <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'contacts', size: 20 }"></ng-container></span>
+          <div>
+            <h2>Contacts</h2>
+            <p>Assign owners and managers responsible for this site/space.</p>
+          </div>
+        </div>
+        <div class="grid cols-4">
+          <label class="field">
+            <span class="lbl">Contact Name</span>
+            <input type="text" [(ngModel)]="form.contactName" />
+          </label>
+          <div class="field">
+            <span class="lbl">Role</span>
+            <app-dropdown [options]="roleOptions" [(ngModel)]="form.contactRole"></app-dropdown>
+          </div>
+          <label class="field">
+            <span class="lbl">Email</span>
+            <input type="email" [(ngModel)]="form.contactEmail" />
+          </label>
+          <label class="field">
+            <span class="lbl">Phone</span>
+            <input type="tel" [(ngModel)]="form.contactPhone" />
+          </label>
+        </div>
+      </section>
+
+</ng-template>
+
+<ng-template #settingsTpl>
+      <!-- Settings -->
+      <section class="block">
+        <div class="block-head">
+          <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'settings', size: 20 }"></ng-container></span>
+          <div>
+            <h2>Settings</h2>
+            <p>Time zone and operational hours.</p>
+          </div>
+        </div>
+        <div class="grid cols-4">
+          <div class="field">
+            <span class="lbl">Time Zone</span>
+            <app-dropdown [options]="timezoneOptions" [(ngModel)]="form.timezone"></app-dropdown>
+          </div>
+          <label class="field">
+            <span class="lbl">Opening Time</span>
+            <input type="time" [(ngModel)]="form.openTime" />
+          </label>
+          <label class="field">
+            <span class="lbl">Closing Time</span>
+            <input type="time" [(ngModel)]="form.closeTime" />
+          </label>
+          <div class="field">
+            <span class="lbl">Monitoring</span>
+            <button type="button" class="switch" [class.on]="form.monitoringEnabled" (click)="form.monitoringEnabled = !form.monitoringEnabled" [attr.aria-pressed]="form.monitoringEnabled">
+              <span class="knob"></span>
+              {{ form.monitoringEnabled ? 'Enabled' : 'Disabled' }}
+            </button>
+          </div>
+        </div>
+      </section>
+</ng-template>
+
+<ng-template #floorplanTpl>
+      <section class="block">
+        <div class="block-head">
+          <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'floorplan', size: 20 }"></ng-container></span>
+          <div>
+            <h2>Floor Plan / Map</h2>
+            <p>Upload indoor map or select from existing maps.</p>
+          </div>
+        </div>
+
+        <div class="dropzone">
+          <span class="dz-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'upload', size: 22 }"></ng-container></span>
+          <strong>{{ floorPlanFile || 'Upload Floor Plan' }}</strong>
+          <small>PNG, JPG or PDF (Max 10 MB)</small>
+          <button type="button" class="btn-outline" (click)="planInput.click()">Choose File</button>
+          <input #planInput type="file" accept=".png,.jpg,.jpeg,.pdf" hidden (change)="onFloorPlanSelected(planInput)" />
+        </div>
+
+        <span class="lbl sub">Or Select Existing Map</span>
+        <div class="map-select">
+          <app-dropdown [options]="mapOptions" [(ngModel)]="form.selectedMap"></app-dropdown>
+          <button type="button" class="icon-btn bordered" aria-label="Preview map">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'eye', size: 17 }"></ng-container>
+          </button>
+        </div>
+
+        <div class="plan-box">
+          <div class="plan-zoom" [style.transform]="'scale(' + planZoom + ')'">
+            <svg viewBox="0 0 300 170" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+              <rect x="4" y="4" width="292" height="162" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+              <rect *ngFor="let r of planRooms" [attr.x]="r.x" [attr.y]="r.y" [attr.width]="r.w" [attr.height]="r.h" [attr.fill]="r.fill" stroke="#94a3b8" stroke-width="0.8"/>
+              <circle cx="122" cy="80" r="26" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+              <circle cx="122" cy="80" r="14" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.8"/>
+            </svg>
+          </div>
+          <div class="zoom-ctrl">
+            <button type="button" aria-label="Zoom in" (click)="zoomPlan(0.25)">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 14 }"></ng-container>
+            </button>
+            <button type="button" aria-label="Zoom out" (click)="zoomPlan(-0.25)">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'minus', size: 14 }"></ng-container>
+            </button>
+          </div>
+          <span class="level-tag">{{ mapLevelLabel }}</span>
+          <button type="button" class="expand-btn" aria-label="Expand" (click)="planZoom = 1">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'expand', size: 14 }"></ng-container>
+          </button>
+        </div>
+      </section>
+</ng-template>
+
+<ng-template #mediaTpl>
+      <section class="block">
+        <div class="block-head">
+          <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'media', size: 20 }"></ng-container></span>
+          <div>
+            <h2>Images &amp; Documents</h2>
+            <p>Add photos, site plans, or relevant documents.</p>
+          </div>
+        </div>
+
+        <div class="thumbs">
+          <div
+            *ngFor="let img of images"
+            class="thumb"
+            [style.background-image]="img.url ? 'url(' + img.url + ')' : img.gradient"
+          >
+            <button type="button" class="thumb-remove" aria-label="Remove" (click)="removeAttachment(img.id)">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 12 }"></ng-container>
+            </button>
+            <span class="thumb-caption">{{ img.caption }}</span>
+          </div>
+          <button type="button" class="thumb add" (click)="fileInput.click()">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 22 }"></ng-container>
+            Add More
+          </button>
+          <input #fileInput type="file" multiple accept="image/*,.pdf" hidden (change)="onFilesSelected(fileInput)" />
+        </div>
+
+        <div class="doc" *ngFor="let doc of documents">
+          <span class="doc-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'pdf', size: 22 }"></ng-container></span>
+          <div class="doc-meta">
+            <strong>{{ doc.name }}</strong>
+            <small>{{ doc.size }}</small>
+          </div>
+          <button type="button" class="doc-remove" aria-label="Remove" (click)="removeAttachment(doc.id)">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 16 }"></ng-container>
+          </button>
+        </div>
+      </section>
+</ng-template>
+
+
+<div class="add-site">
+
+  <!-- Header -->
+  <header class="page-header">
+    <button type="button" class="icon-btn" aria-label="Back" (click)="cancel()">
+      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'back', size: 20 }"></ng-container>
+    </button>
+    <div class="titles">
+      <h1>Add Site / Space</h1>
+      <p>Create a new site or space to organize your assets, devices and data.</p>
+    </div>
+    <button type="button" class="icon-btn" aria-label="Close" (click)="cancel()">
+      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 20 }"></ng-container>
+    </button>
+  </header>
+
+  <div class="panel">
+  <div class="body">
+
+    <!-- Steps -->
+    <nav class="section-nav">
+      <button
+        *ngFor="let s of sections; let i = index"
+        type="button"
+        class="nav-item"
+        [style.--i]="i"
+        [class.active]="i === stepIndex"
+        [class.done]="i < stepIndex"
+        [attr.aria-current]="i === stepIndex ? 'step' : null"
+        (click)="goToStep(i)"
+      >
+        <span class="step-num">
+          <ng-container *ngIf="i < stepIndex; else stepNo">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 13 }"></ng-container>
+          </ng-container>
+          <ng-template #stepNo>{{ i + 1 }}</ng-template>
+        </span>
+        <span class="nav-text">
+          <strong>{{ s.label }}</strong>
+          <small>{{ s.hint }}</small>
+        </span>
+      </button>
+    </nav>
+
+    <ng-container *ngIf="!loading; else loadingTpl">
+    <ng-container [ngSwitch]="activeSection">
+      <!-- Step: Basic Information (overview of all details) -->
+      <div class="overview" *ngSwitchCase="'basic'">
+        <div class="form-scroll">
+          <ng-container *ngTemplateOutlet="basicTpl"></ng-container>
+          <ng-container *ngTemplateOutlet="locationTpl"></ng-container>
+          <ng-container *ngTemplateOutlet="hierarchyTpl"></ng-container>
+          <ng-container *ngTemplateOutlet="specsTpl"></ng-container>
+          <ng-container *ngTemplateOutlet="contactsTpl"></ng-container>
+          <ng-container *ngTemplateOutlet="settingsTpl"></ng-container>
+        </div>
+        <aside class="side">
+          <ng-container *ngTemplateOutlet="floorplanTpl"></ng-container>
+          <ng-container *ngTemplateOutlet="mediaTpl"></ng-container>
+        </aside>
+      </div>
+
+      <!-- Step: Location & Map -->
+      <div class="step-scroll" *ngSwitchCase="'location'">
+        <div class="step-head">
+          <span class="step-head-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'location', size: 24 }"></ng-container></span>
+          <div>
+            <h2>Location &amp; Map</h2>
+            <p>Set the physical location and map for the site/space.</p>
+          </div>
+        </div>
+
+        <div class="loc-grid">
+          <div class="loc-col">
+            <!-- Address details -->
+            <section class="card">
+              <div class="block-head">
+                <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'address', size: 20 }"></ng-container></span>
+                <div>
+                  <h2>Address Details</h2>
+                  <p>Enter the official address and select the location on map.</p>
+                </div>
+              </div>
+              <div class="grid cols-2">
+                <div class="field">
+                  <span class="lbl">Country <em>*</em></span>
+                  <app-dropdown [options]="countryOptions" [ngModel]="form.country" (ngModelChange)="onCountryChange($event)"></app-dropdown>
+                </div>
+                <div class="field">
+                  <span class="lbl">Emirate / City <em>*</em></span>
+                  <app-dropdown [options]="cityOptions" [ngModel]="form.city" (ngModelChange)="onCityChange($event)"></app-dropdown>
+                </div>
+                <label class="field span-2">
+                  <span class="lbl">Address Line 1 <em>*</em></span>
+                  <input type="text" [(ngModel)]="form.address" placeholder="Street, area" />
+                </label>
+                <label class="field span-2">
+                  <span class="lbl">Address Line 2</span>
+                  <input type="text" [(ngModel)]="form.address2" placeholder="Building, Floor, Unit, etc. (Optional)" />
+                </label>
+                <label class="field">
+                  <span class="lbl">Postal Code</span>
+                  <input type="text" [(ngModel)]="form.postalCode" />
+                </label>
+                <div class="field">
+                  <span class="lbl">Area / Community</span>
+                  <app-dropdown [options]="areaOptions" [(ngModel)]="form.area" placeholder="Select area"></app-dropdown>
+                </div>
+              </div>
+            </section>
+
+            <!-- Coordinates -->
+            <section class="card">
+              <div class="block-head">
+                <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'target', size: 20 }"></ng-container></span>
+                <div>
+                  <h2>Coordinates</h2>
+                  <p>Set the exact geolocation. You can select from the map or enter manually.</p>
+                </div>
+              </div>
+              <div class="latlng">
+                <label class="field">
+                  <span class="lbl">Latitude <em>*</em></span>
+                  <input type="text" inputmode="decimal" [(ngModel)]="form.latitude" (ngModelChange)="onCoordsChange()" />
+                </label>
+                <label class="field">
+                  <span class="lbl">Longitude <em>*</em></span>
+                  <input type="text" inputmode="decimal" [(ngModel)]="form.longitude" (ngModelChange)="onCoordsChange()" />
+                </label>
+                <button type="button" class="btn-soft" (click)="getFromMap()">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'pin', size: 16 }"></ng-container>
+                  Get from Map
+                </button>
+              </div>
+            </section>
+
+            <!-- Map selection mode -->
+            <section class="card">
+              <div class="block-head">
+                <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'mapfold', size: 20 }"></ng-container></span>
+                <div>
+                  <h2>Map Selection</h2>
+                  <p>Choose how to set the map for this site/space.</p>
+                </div>
+              </div>
+              <div class="mode-grid">
+                <button
+                  *ngFor="let m of mapModes"
+                  type="button"
+                  class="mode-tile"
+                  [class.active]="mapMode === m.id"
+                  [attr.aria-pressed]="mapMode === m.id"
+                  (click)="setMapMode(m.id)"
+                >
+                  <span class="mode-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: m.icon, size: 16 }"></ng-container></span>
+                  <span class="mode-text">
+                    <strong>{{ m.label }}</strong>
+                    <small>{{ m.hint }}</small>
+                  </span>
+                </button>
+              </div>
+            </section>
+          </div>
+
+          <div class="loc-col">
+            <!-- Map -->
+            <section class="card">
+              <div class="block-head">
+                <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'mapfold', size: 20 }"></ng-container></span>
+                <div>
+                  <h2>Map</h2>
+                  <p>Search, navigate and place the marker for the site/space location.</p>
+                </div>
+              </div>
+
+              <div class="map-search">
+                <label class="search-input">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 15 }"></ng-container>
+                  <input
+                    type="text"
+                    placeholder="Search location (e.g. Dubai Mall, Downtown Dubai)"
+                    [(ngModel)]="mapSearch"
+                    (focus)="searchOpen = true"
+                    (blur)="searchOpen = false"
+                    (keydown.enter)="searchResults[0] && selectPlace(searchResults[0])"
+                  />
+                </label>
+                <ul class="search-results" *ngIf="searchOpen && searchResults.length">
+                  <li *ngFor="let p of searchResults" (mousedown)="selectPlace(p)">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: p.icon, size: 15 }"></ng-container>
+                    <span><strong>{{ p.name }}</strong><small>{{ p.address }}</small></span>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="big-map" [attr.data-type]="mapType" [class.pickable]="mapMode === 'map'">
+                <div class="map-zoom" [style.transform]="'scale(' + mapZoom + ')'" [style.transform-origin]="markerX() + '% ' + markerY() + '%'">
+                  <div class="map-surface" #surface (click)="onMapClick($event, surface)">
+                    <svg viewBox="0 0 440 290" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                      <rect class="m-ground" width="440" height="290"/>
+                      <g class="m-blocks">
+                        <rect x="10" y="10" width="110" height="80" rx="4"/>
+                        <rect x="135" y="14" width="90" height="70" rx="4"/>
+                        <rect x="300" y="10" width="130" height="60" rx="4"/>
+                        <rect x="10" y="200" width="90" height="80" rx="4"/>
+                        <rect x="360" y="210" width="70" height="70" rx="4"/>
+                        <rect x="330" y="90" width="100" height="90" rx="6"/>
+                      </g>
+                      <path class="m-mall" d="M210 95 h110 v95 h-60 l-20 -20 h-30z"/>
+                      <path class="m-water" d="M70 175 C110 150 200 160 255 190 C300 215 290 250 230 255 C170 262 120 245 90 225 C60 205 50 190 70 175z"/>
+                      <circle class="m-dome" cx="395" cy="250" r="28"/>
+                      <g class="m-roads">
+                        <path d="M0 105 C120 98 230 92 440 86"/>
+                        <path d="M130 0 C135 90 128 190 150 290"/>
+                        <path d="M0 285 C150 275 300 275 440 285"/>
+                        <path d="M260 0 L262 92"/>
+                      </g>
+                      <g class="m-road-labels">
+                        <text x="18" y="100" transform="rotate(-2 18 100)">Sheikh Mohammed bin Rashid Blvd</text>
+                        <text x="300" y="82">Financial Center Rd</text>
+                      </g>
+                    </svg>
+                  </div>
+
+                  <!-- Points of interest -->
+                  <span
+                    *ngFor="let p of places.slice(1)"
+                    class="poi"
+                    [style.left.%]="markerX(p.lng)"
+                    [style.top.%]="markerY(p.lat)"
+                    (click)="selectPlace(p)"
+                  >
+                    <span class="poi-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: p.icon, size: 13 }"></ng-container></span>
+                    <span class="poi-label">{{ p.name }}</span>
+                  </span>
+
+                  <!-- Marker -->
+                  <div class="marker" *ngIf="markerInView" [style.left.%]="markerX()" [style.top.%]="markerY()">
+                    <div class="marker-popup" *ngIf="popupOpen">
+                      <strong>{{ markerLabel }}</strong>
+                      <button type="button" aria-label="Close" (click)="popupOpen = false">
+                        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 13 }"></ng-container>
+                      </button>
+                    </div>
+                    <svg width="24" height="30" viewBox="0 0 24 30" aria-hidden="true">
+                      <path d="M12 29s10-9.5 10-17A10 10 0 002 12c0 7.5 10 17 10 17z" fill="#ef4444"/>
+                      <circle cx="12" cy="12" r="4" fill="#ffffff"/>
+                    </svg>
+                    <span class="marker-label">{{ markerLabel }}</span>
+                  </div>
+                </div>
+
+                <div class="zoom-ctrl">
+                  <button type="button" aria-label="Zoom in" (click)="zoomMap(0.25)">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 14 }"></ng-container>
+                  </button>
+                  <button type="button" aria-label="Zoom out" (click)="zoomMap(-0.25)">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'minus', size: 14 }"></ng-container>
+                  </button>
+                </div>
+                <div class="map-type">
+                  <button *ngFor="let t of mapTypes" type="button" [class.active]="mapType === t.id" (click)="mapType = t.id">{{ t.label }}</button>
+                </div>
+                <button type="button" class="locate-btn" aria-label="Recenter on site" (click)="recenter()">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'locate', size: 16 }"></ng-container>
+                </button>
+                <span class="out-of-view" *ngIf="!markerInView">Coordinates are outside the visible map area</span>
+              </div>
+            </section>
+
+            <!-- Selected location -->
+            <section class="card">
+              <div class="block-head">
+                <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'pin', size: 20 }"></ng-container></span>
+                <div>
+                  <h2>Selected Location</h2>
+                  <p>Location selected from map. You can fine-tune the coordinates if required.</p>
+                </div>
+              </div>
+              <div class="selected-loc">
+                <span class="loc-thumb"></span>
+                <div class="loc-meta">
+                  <strong>{{ markerLabel }}</strong>
+                  <small>{{ selectedAddress }}</small>
+                  <small>{{ form.city }}, {{ form.country }}</small>
+                </div>
+                <div class="loc-coord"><span>Latitude</span><strong>{{ marker.lat.toFixed(4) }}</strong></div>
+                <div class="loc-coord"><span>Longitude</span><strong>{{ marker.lng.toFixed(4) }}</strong></div>
+                <button type="button" class="btn-outline sm" (click)="updateFromMap()">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'refresh', size: 14 }"></ng-container>
+                  Update from Map
+                </button>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step: Hierarchy -->
+      <div class="hier-step" *ngSwitchCase="'hierarchy'">
+        <div class="hier-main">
+          <div class="step-head">
+            <span class="step-head-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'hierarchy', size: 24 }"></ng-container></span>
+            <div>
+              <h2>Hierarchy</h2>
+              <p>Define the parent-child structure for this site/space.</p>
+            </div>
+          </div>
+
+          <div class="hier-parent">
+            <div class="field">
+              <span class="lbl">Parent Site / Space <em>*</em></span>
+              <ng-container *ngTemplateOutlet="parentSelect"></ng-container>
+            </div>
+            <div class="info-note">
+              <span class="info-note-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'info', size: 18 }"></ng-container></span>
+              <div>
+                <strong>What is a Parent Site / Space?</strong>
+                <p>Select the existing site or space under which this new site/space will be created. This helps to maintain a logical hierarchy for better organization, reporting and access control.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Path -->
+          <div class="hier-section">
+            <h3>Hierarchy Path</h3>
+            <p>This shows where the new site/space will be placed.</p>
+            <div class="path-bar">
+              <ng-container *ngFor="let n of hierarchyPath; let last = last; trackBy: trackById">
+                <span class="path-chip" [class.current]="last">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: nodeIcon(n), size: 16 }"></ng-container>
+                  {{ n.name }}
+                </span>
+                <span class="path-sep" *ngIf="!last"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 14 }"></ng-container></span>
+              </ng-container>
+            </div>
+          </div>
+
+          <!-- Level -->
+          <section class="card hier-card">
+            <h3>Level in Hierarchy</h3>
+            <p>Select the level/type for this site/space.</p>
+            <div class="level-grid">
+              <div class="field">
+                <span class="lbl">Level Type <em>*</em></span>
+                <app-dropdown [options]="typeOptions" [(ngModel)]="form.type"></app-dropdown>
+              </div>
+              <label class="field">
+                <span class="lbl">Level Order
+                  <span class="info" title="Position of this site/space among its siblings">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'info', size: 15 }"></ng-container>
+                  </span>
+                </span>
+                <input type="number" min="1" [max]="siblings.length" [ngModel]="levelOrder" (ngModelChange)="onLevelOrderChange($event)" />
+              </label>
+            </div>
+
+            <!-- Siblings -->
+            <div class="sib-head">
+              <div>
+                <h3>Siblings at Same Level <span class="muted">(Optional)</span></h3>
+                <p>Existing {{ siblingLabel }} under {{ parentNode?.name || 'All Sites' }}. You can set the order or view siblings.</p>
+              </div>
+              <button type="button" class="btn-outline sm" (click)="addSibling()">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 15 }"></ng-container>
+                Add Sibling
+              </button>
+            </div>
+            <div class="sib-table-wrap">
+              <table class="sib-table">
+                <thead>
+                  <tr>
+                    <th class="col-grip"></th>
+                    <th>Order</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th class="col-actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    *ngFor="let n of siblings; let i = index; trackBy: trackById"
+                    draggable="true"
+                    [class.current]="n === currentNode"
+                    (dragstart)="onRowDragStart(i)"
+                    (dragover)="$event.preventDefault()"
+                    (drop)="onRowDrop(i)"
+                  >
+                    <td class="col-grip"><span class="grip"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'grip', size: 16 }"></ng-container></span></td>
+                    <td>{{ i + 1 }}</td>
+                    <td>
+                      <input
+                        *ngIf="editingId === n.id; else nameText"
+                        class="sib-input"
+                        type="text"
+                        [(ngModel)]="n.name"
+                        (blur)="finishEdit(n)"
+                        (keydown.enter)="finishEdit(n)"
+                        autofocus
+                      />
+                      <ng-template #nameText>{{ n.name }}</ng-template>
+                    </td>
+                    <td><span class="type-pill">{{ n.type }}</span></td>
+                    <td>
+                      <span class="status-dot" [class.inactive]="n.status === 'Inactive'" [class.warn]="n.status === 'Under Maintenance'"></span>
+                      {{ n.status }}
+                    </td>
+                    <td class="col-actions">
+                      <span *ngIf="n === currentNode; else editBtn" class="muted">-</span>
+                      <ng-template #editBtn>
+                        <button type="button" class="row-btn" [attr.aria-label]="'Edit ' + n.name" (click)="editingId = n.id">
+                          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'edit', size: 15 }"></ng-container>
+                        </button>
+                      </ng-template>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <aside class="hier-preview">
+          <div class="block-head">
+            <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'hierarchy', size: 20 }"></ng-container></span>
+            <div>
+              <h2>Hierarchy Preview</h2>
+              <p>Visual representation of the site/space structure.</p>
+            </div>
+          </div>
+          <div class="tree-root">
+            <div class="tree-row" [class.parent]="!form.parentId">
+              <button
+                type="button"
+                class="tree-toggle"
+                [class.open]="expanded.has('root')"
+                [attr.aria-expanded]="expanded.has('root')"
+                aria-label="Toggle all sites"
+                (click)="toggleNode('root')"
+              >
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 14 }"></ng-container>
+              </button>
+              <span class="tree-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'globe', size: 16 }"></ng-container></span>
+              <span class="tree-name">All Sites</span>
+            </div>
+            <ng-container *ngIf="expanded.has('root')">
+              <ng-container *ngTemplateOutlet="treeLevel; context: { $implicit: hierarchy }"></ng-container>
+            </ng-container>
+          </div>
+        </aside>
+      </div>
+      <div class="step-scroll" *ngSwitchCase="'specs'"><ng-container *ngTemplateOutlet="specsTpl"></ng-container></div>
+      <div class="step-scroll" *ngSwitchCase="'contacts'"><ng-container *ngTemplateOutlet="contactsTpl"></ng-container></div>
+      <div class="step-scroll" *ngSwitchCase="'settings'"><ng-container *ngTemplateOutlet="settingsTpl"></ng-container></div>
+      <div class="step-scroll media-step" *ngSwitchCase="'media'">
+        <ng-container *ngTemplateOutlet="floorplanTpl"></ng-container>
+        <ng-container *ngTemplateOutlet="mediaTpl"></ng-container>
+      </div>
+    </ng-container>
+    </ng-container>
+
+    <!-- Loading skeleton shown briefly while the form data loads -->
+    <ng-template #loadingTpl>
+      <div class="skeleton" aria-busy="true" aria-label="Loading site details">
+        <div class="sk-main">
+          <div class="sk-block" *ngFor="let b of [0, 1, 2]; let bi = index" [style.--i]="bi">
+            <div class="sk-head">
+              <span class="sk sk-icon"></span>
+              <div class="sk-head-text">
+                <span class="sk sk-line w40"></span>
+                <span class="sk sk-line w70 thin"></span>
+              </div>
+            </div>
+            <div class="sk-grid">
+              <div class="sk-field" *ngFor="let f of [0, 1, 2, 3]">
+                <span class="sk sk-line w30 thin"></span>
+                <span class="sk sk-input"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="sk-side">
+          <span class="sk sk-card tall"></span>
+          <span class="sk sk-card"></span>
+        </div>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- Footer -->
+  <footer class="page-footer">
+    <button type="button" class="btn-outline wide" (click)="cancel()">Cancel</button>
+    <div class="footer-right">
+      <button type="button" class="btn-outline wide" *ngIf="stepIndex > 0" (click)="back()">Back</button>
+      <button type="button" class="btn-primary" *ngIf="nextLabel; else saveBtn" (click)="next()">Next: {{ nextLabel }}</button>
+      <ng-template #saveBtn>
+        <button type="button" class="btn-primary" [disabled]="!canSave" (click)="save()">Save Site / Space</button>
+      </ng-template>
+    </div>
+  </footer>
+  </div>
+</div>

@@ -847,7 +847,262 @@
           </div>
         </aside>
       </div>
-      <div class="step-scroll" *ngSwitchCase="'specs'"><ng-container *ngTemplateOutlet="specsTpl"></ng-container></div>
+      <!-- Step: Specifications -->
+      <div class="spec-step" *ngSwitchCase="'specs'">
+        <div class="spec-main">
+          <section class="card">
+            <div class="block-head">
+              <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'grid', size: 22 }"></ng-container></span>
+              <div>
+                <h2>Specifications</h2>
+                <p>Enter physical and operational details for this site/space.</p>
+              </div>
+            </div>
+            <div class="grid cols-4">
+              <label class="field">
+                <span class="lbl">Total Area (sq.m) <em>*</em></span>
+                <input type="text" inputmode="decimal" [(ngModel)]="form.totalArea" placeholder="e.g. 500,000" />
+              </label>
+              <label class="field">
+                <span class="lbl">Number of Floors <em>*</em></span>
+                <input type="number" min="0" [(ngModel)]="form.floors" />
+              </label>
+              <div class="field">
+                <span class="lbl">Usage Type <em>*</em></span>
+                <app-dropdown [options]="usageOptions" [(ngModel)]="form.usage"></app-dropdown>
+              </div>
+              <div class="field">
+                <span class="lbl">Construction Type</span>
+                <app-dropdown [options]="constructionOptions" [(ngModel)]="form.construction"></app-dropdown>
+              </div>
+              <label class="field">
+                <span class="lbl">Built Year</span>
+                <input type="number" min="1900" [max]="currentYear" [(ngModel)]="form.builtYear" placeholder="e.g. 2010" />
+              </label>
+              <label class="field">
+                <span class="lbl">Occupancy Capacity</span>
+                <input type="text" inputmode="numeric" [(ngModel)]="form.occupancy" placeholder="e.g. 200,000" />
+              </label>
+              <div class="field">
+                <span class="lbl">Operating Status</span>
+                <div class="status-dd" [attr.data-status]="form.operatingStatus">
+                  <app-dropdown [options]="operatingStatusOptions" [(ngModel)]="form.operatingStatus"></app-dropdown>
+                </div>
+              </div>
+              <label class="field">
+                <span class="lbl"><span>Site Code <span class="muted">(Optional)</span></span></span>
+                <input type="text" [(ngModel)]="form.siteCode" placeholder="e.g. DM-MB-01" />
+              </label>
+            </div>
+          </section>
+
+          <!-- Floors -->
+          <section class="card">
+            <div class="spec-head">
+              <div class="block-head">
+                <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'layers', size: 22 }"></ng-container></span>
+                <div>
+                  <h2>Floors / Levels</h2>
+                  <p>Define the floors/levels within this site/space.</p>
+                </div>
+              </div>
+              <button type="button" class="btn-primary sm" (click)="addFloor()">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 15 }"></ng-container>
+                Add Floor
+              </button>
+            </div>
+            <div class="sib-table-wrap">
+              <table class="sib-table spec-table">
+                <thead>
+                  <tr>
+                    <th>Floor / Level</th>
+                    <th>Name</th>
+                    <th>Area (sq.m)</th>
+                    <th>Usage</th>
+                    <th>Status</th>
+                    <th class="col-actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let f of floors; trackBy: trackByRowId" [class.editing]="editingFloorId === f.id">
+                    <ng-container *ngIf="editingFloorId === f.id; else floorView">
+                      <td><input class="sib-input" type="text" [(ngModel)]="f.level" (keydown.enter)="finishFloorEdit(f)" aria-label="Floor level" /></td>
+                      <td><input class="sib-input" type="text" [(ngModel)]="f.name" (keydown.enter)="finishFloorEdit(f)" aria-label="Floor name" /></td>
+                      <td><input class="sib-input" type="text" inputmode="decimal" [(ngModel)]="f.area" (keydown.enter)="finishFloorEdit(f)" aria-label="Floor area" /></td>
+                      <td>
+                        <select class="sib-input" [(ngModel)]="f.usage" aria-label="Floor usage">
+                          <option *ngFor="let o of floorUsageOptions" [value]="o.value">{{ o.label }}</option>
+                        </select>
+                      </td>
+                      <td>
+                        <select class="sib-input" [(ngModel)]="f.status" aria-label="Floor status">
+                          <option *ngFor="let o of floorStatusOptions" [value]="o.value">{{ o.label }}</option>
+                        </select>
+                      </td>
+                      <td class="col-actions">
+                        <button type="button" class="row-btn ok" aria-label="Save floor" (click)="finishFloorEdit(f)">
+                          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 15 }"></ng-container>
+                        </button>
+                        <button type="button" class="row-btn danger" [attr.aria-label]="'Delete ' + f.name" (click)="removeFloor(f.id)">
+                          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'trash', size: 15 }"></ng-container>
+                        </button>
+                      </td>
+                    </ng-container>
+                    <ng-template #floorView>
+                      <td>{{ f.level }}</td>
+                      <td>{{ f.name }}</td>
+                      <td>{{ f.area || '-' }}</td>
+                      <td>{{ f.usage }}</td>
+                      <td class="status-cell" [class.inactive]="f.status === 'Inactive'" [class.warn]="f.status === 'Under Maintenance'">
+                        <span class="status-dot" [class.inactive]="f.status === 'Inactive'" [class.warn]="f.status === 'Under Maintenance'"></span>{{ f.status }}
+                      </td>
+                      <td class="col-actions">
+                        <button type="button" class="row-btn" [attr.aria-label]="'Edit ' + f.name" (click)="editingFloorId = f.id">
+                          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'edit', size: 15 }"></ng-container>
+                        </button>
+                        <button type="button" class="row-btn danger" [attr.aria-label]="'Delete ' + f.name" (click)="removeFloor(f.id)">
+                          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'trash', size: 15 }"></ng-container>
+                        </button>
+                      </td>
+                    </ng-template>
+                  </tr>
+                  <tr *ngIf="!floors.length" class="empty-row">
+                    <td colspan="6">No floors added yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Key attributes -->
+          <section class="card">
+            <div class="spec-head">
+              <div class="block-head">
+                <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'clipboard', size: 22 }"></ng-container></span>
+                <div>
+                  <h2>Key Attributes</h2>
+                  <p>Define important attributes for this site/space.</p>
+                </div>
+              </div>
+              <button type="button" class="btn-primary sm" (click)="addAttribute()">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 15 }"></ng-container>
+                Add Attribute
+              </button>
+            </div>
+            <div class="sib-table-wrap">
+              <table class="sib-table spec-table">
+                <thead>
+                  <tr>
+                    <th>Attribute</th>
+                    <th>Value</th>
+                    <th>Unit</th>
+                    <th>Description</th>
+                    <th class="col-actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let a of attributes; trackBy: trackByRowId" [class.editing]="editingAttrId === a.id">
+                    <ng-container *ngIf="editingAttrId === a.id; else attrView">
+                      <td><input class="sib-input" type="text" [(ngModel)]="a.name" (keydown.enter)="finishAttrEdit(a)" placeholder="Attribute" aria-label="Attribute name" /></td>
+                      <td><input class="sib-input" type="text" [(ngModel)]="a.value" (keydown.enter)="finishAttrEdit(a)" placeholder="Value" aria-label="Attribute value" /></td>
+                      <td><input class="sib-input narrow" type="text" [(ngModel)]="a.unit" (keydown.enter)="finishAttrEdit(a)" aria-label="Attribute unit" /></td>
+                      <td><input class="sib-input" type="text" [(ngModel)]="a.description" (keydown.enter)="finishAttrEdit(a)" placeholder="Description" aria-label="Attribute description" /></td>
+                      <td class="col-actions">
+                        <button type="button" class="row-btn ok" aria-label="Save attribute" (click)="finishAttrEdit(a)">
+                          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 15 }"></ng-container>
+                        </button>
+                        <button type="button" class="row-btn danger" [attr.aria-label]="'Delete ' + (a.name || 'attribute')" (click)="removeAttribute(a.id)">
+                          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'trash', size: 15 }"></ng-container>
+                        </button>
+                      </td>
+                    </ng-container>
+                    <ng-template #attrView>
+                      <td>{{ a.name }}</td>
+                      <td>{{ a.value || '-' }}</td>
+                      <td>{{ a.unit }}</td>
+                      <td class="desc-cell">{{ a.description || '-' }}</td>
+                      <td class="col-actions">
+                        <button type="button" class="row-btn" [attr.aria-label]="'Edit ' + a.name" (click)="editingAttrId = a.id">
+                          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'edit', size: 15 }"></ng-container>
+                        </button>
+                        <button type="button" class="row-btn danger" [attr.aria-label]="'Delete ' + a.name" (click)="removeAttribute(a.id)">
+                          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'trash', size: 15 }"></ng-container>
+                        </button>
+                      </td>
+                    </ng-template>
+                  </tr>
+                  <tr *ngIf="!attributes.length" class="empty-row">
+                    <td colspan="5">No attributes added yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <aside class="spec-side">
+          <!-- Preview -->
+          <section class="card">
+            <div class="block-head">
+              <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'hierarchy', size: 22 }"></ng-container></span>
+              <div>
+                <h2>Site/Space Preview</h2>
+                <p>View key specifications for this site/space.</p>
+              </div>
+            </div>
+            <div class="spec-preview-head">
+              <span class="spec-thumb"></span>
+              <div>
+                <strong>{{ currentNode.name }}</strong>
+                <small>{{ form.type }}</small>
+              </div>
+            </div>
+            <dl class="spec-list">
+              <div><dt><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'area', size: 15 }"></ng-container>Total Area</dt><dd>{{ form.totalArea ? form.totalArea + ' sq.m' : '-' }}</dd></div>
+              <div><dt><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'layers', size: 15 }"></ng-container>Floors</dt><dd>{{ form.floors || '-' }}</dd></div>
+              <div><dt><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'usage', size: 15 }"></ng-container>Usage Type</dt><dd>{{ form.usage || '-' }}</dd></div>
+              <div><dt><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'construction', size: 15 }"></ng-container>Construction Type</dt><dd>{{ form.construction || '-' }}</dd></div>
+              <div><dt><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'people', size: 15 }"></ng-container>Occupancy Capacity</dt><dd>{{ form.occupancy || '-' }}</dd></div>
+              <div>
+                <dt><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'status', size: 15 }"></ng-container>Status</dt>
+                <dd><span class="status-dot" [class.inactive]="form.operatingStatus === 'Closed'" [class.warn]="form.operatingStatus.startsWith('Under')"></span>{{ form.operatingStatus }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <!-- Templates -->
+          <section class="card">
+            <div class="block-head">
+              <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'template', size: 22 }"></ng-container></span>
+              <div>
+                <h2>Quick Templates</h2>
+                <p>Use a template to pre-fill specifications.</p>
+              </div>
+            </div>
+            <div class="template-row">
+              <app-dropdown [options]="templateOptions" [(ngModel)]="selectedTemplate" placeholder="Select Template"></app-dropdown>
+              <button type="button" class="btn-primary sm" [disabled]="!selectedTemplate" (click)="applyTemplate()">Apply</button>
+            </div>
+          </section>
+
+          <!-- Notes -->
+          <section class="card">
+            <div class="block-head">
+              <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'hierarchy', size: 22 }"></ng-container></span>
+              <div>
+                <h2>Additional Information <span class="muted">(Optional)</span></h2>
+                <p>Add any other relevant specifications.</p>
+              </div>
+            </div>
+            <label class="field">
+              <div class="textarea-wrap">
+                <textarea rows="4" [(ngModel)]="form.specNotes" [maxlength]="specNotesLimit" placeholder="Enter additional specifications, notes or special requirements..." aria-label="Additional information"></textarea>
+                <span class="counter">{{ form.specNotes.length }}/{{ specNotesLimit }}</span>
+              </div>
+            </label>
+          </section>
+        </aside>
+      </div>
       <div class="step-scroll" *ngSwitchCase="'contacts'"><ng-container *ngTemplateOutlet="contactsTpl"></ng-container></div>
       <div class="step-scroll" *ngSwitchCase="'settings'"><ng-container *ngTemplateOutlet="settingsTpl"></ng-container></div>
       <div class="step-scroll media-step" *ngSwitchCase="'media'">

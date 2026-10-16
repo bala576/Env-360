@@ -72,7 +72,9 @@ export const routes: Routes = [
     children: [
       { path: 'dashboard', component: MainDashboard },
       { path: 'new-dashboard', component: Dashboard },
+      { path: 'customize-dashboard', loadComponent: () => import('./new-features/customizedashboard/customizedashboard').then(m => m.Customizedashboard) },
       { path: 'sites', component: Sites },
+      { path: 'sites/add', loadComponent: () => import('./new-features/addsitespace/addsitespace').then(m => m.Addsitespace) },
       { path: 'monitoring', component: Monitoring },
       { path: 'devices', component: Devicesandsensor },
       { path: 'automation', component: Automationandcontrol },

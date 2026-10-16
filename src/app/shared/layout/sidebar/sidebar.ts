@@ -51,7 +51,7 @@ export class Sidebar {
       label: 'Dashboard',
       icon: 'dashboard',
       route: '/new-dashboard',
-      matchRoutes: ['/dashboard', '/new-dashboard', '/manhole-dashboard', '/equipment-dashboard']
+      matchRoutes: ['/dashboard', '/new-dashboard', '/customize-dashboard', '/manhole-dashboard', '/equipment-dashboard']
     },
     { label: 'Sites & Spaces', icon: 'sites', route: '/sites' },
     { label: 'Monitoring', icon: 'monitoring', route: '/monitoring' },

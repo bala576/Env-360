@@ -11,6 +11,10 @@ import {
   CONSTRUCTION_OPTIONS,
   COUNTRY_OPTIONS,
   DEFAULT_ATTACHMENTS,
+  DEFAULT_ATTRIBUTES,
+  DEFAULT_FLOORS,
+  FLOOR_STATUS_OPTIONS,
+  FLOOR_USAGE_OPTIONS,
   FORM_SECTIONS,
   HierarchyNode,
   MAP_BOUNDS,
@@ -23,16 +27,21 @@ import {
   MapType,
   MINI_PLAN_ROOMS,
   NEW_NODE_ID,
+  OPERATING_STATUS_OPTIONS,
   ROLE_OPTIONS,
   STATUS_OPTIONS,
   SectionId,
   SITE_HIERARCHY,
+  SiteAttribute,
+  SiteFloor,
+  SPEC_TEMPLATES,
   TIMEZONE_OPTIONS,
   TYPE_OPTIONS,
   USAGE_OPTIONS,
 } from './addsitespace.data';
 
 const DESCRIPTION_LIMIT = 500;
+const SPEC_NOTES_LIMIT = 500;
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const LOAD_DELAY_MS = 700;
 
@@ -51,12 +60,17 @@ export class Addsitespace implements OnDestroy {
   loading = true;
   private loadTimer?: ReturnType<typeof setTimeout>;
   descriptionLimit = DESCRIPTION_LIMIT;
+  specNotesLimit = SPEC_NOTES_LIMIT;
 
   typeOptions = TYPE_OPTIONS;
   statusOptions = STATUS_OPTIONS;
   countryOptions = COUNTRY_OPTIONS;
   constructionOptions = CONSTRUCTION_OPTIONS;
   usageOptions = USAGE_OPTIONS;
+  operatingStatusOptions = OPERATING_STATUS_OPTIONS;
+  floorUsageOptions = FLOOR_USAGE_OPTIONS;
+  floorStatusOptions = FLOOR_STATUS_OPTIONS;
+  templateOptions: DropdownOption[] = SPEC_TEMPLATES.map(t => ({ label: t.label, value: t.id }));
   timezoneOptions = TIMEZONE_OPTIONS;
   roleOptions = ROLE_OPTIONS;
   mapOptions = MAP_OPTIONS;
@@ -84,6 +98,11 @@ export class Addsitespace implements OnDestroy {
     floors: '5',
     construction: 'Commercial',
     usage: 'Retail & Entertainment',
+    builtYear: '2010',
+    occupancy: '200,000',
+    operatingStatus: 'Operational',
+    siteCode: '',
+    specNotes: '',
     contactName: 'Ahmed Al Mansoori',
     contactRole: 'Facility Manager',
     contactEmail: 'ahmed.mansoori@dubaimall.ae',
@@ -109,6 +128,16 @@ export class Addsitespace implements OnDestroy {
   attachments: Attachment[] = DEFAULT_ATTACHMENTS.map(a => ({ ...a }));
   private nextId = DEFAULT_ATTACHMENTS.length + 1;
   private objectUrls: string[] = [];
+
+  // ---------- Specifications state ----------
+  floors: SiteFloor[] = DEFAULT_FLOORS.map(f => ({ ...f }));
+  attributes: SiteAttribute[] = DEFAULT_ATTRIBUTES.map(a => ({ ...a }));
+  editingFloorId: number | null = null;
+  editingAttrId: number | null = null;
+  selectedTemplate: string | null = null;
+  readonly currentYear = new Date().getFullYear();
+  private nextFloorId = DEFAULT_FLOORS.length + 1;
+  private nextAttrId = DEFAULT_ATTRIBUTES.length + 1;
 
   // ---------- Hierarchy state ----------
   hierarchy: HierarchyNode[] = structuredClone(SITE_HIERARCHY);
@@ -300,6 +329,56 @@ export class Addsitespace implements OnDestroy {
       get type() { return form.type; },
       get status() { return form.status; },
     };
+  }
+
+  // ---------- Specifications ----------
+  trackByRowId(_: number, row: { id: number }): number {
+    return row.id;
+  }
+
+  addFloor(): void {
+    const level = `Level ${this.floors.length}`;
+    const floor: SiteFloor = { id: this.nextFloorId++, level, name: level, area: '', usage: 'Retail', status: 'Active' };
+    this.floors.push(floor);
+    this.editingFloorId = floor.id;
+  }
+
+  finishFloorEdit(floor: SiteFloor): void {
+    floor.level = floor.level.trim() || 'Level';
+    floor.name = floor.name.trim() || floor.level;
+    floor.area = floor.area.trim();
+    this.editingFloorId = null;
+  }
+
+  removeFloor(id: number): void {
+    this.floors = this.floors.filter(f => f.id !== id);
+    if (this.editingFloorId === id) this.editingFloorId = null;
+  }
+
+  addAttribute(): void {
+    const attr: SiteAttribute = { id: this.nextAttrId++, name: '', value: '', unit: '-', description: '' };
+    this.attributes.push(attr);
+    this.editingAttrId = attr.id;
+  }
+
+  finishAttrEdit(attr: SiteAttribute): void {
+    attr.name = attr.name.trim() || 'Untitled Attribute';
+    attr.unit = attr.unit.trim() || '-';
+    this.editingAttrId = null;
+  }
+
+  removeAttribute(id: number): void {
+    this.attributes = this.attributes.filter(a => a.id !== id);
+    if (this.editingAttrId === id) this.editingAttrId = null;
+  }
+
+  applyTemplate(): void {
+    const template = SPEC_TEMPLATES.find(t => t.id === this.selectedTemplate);
+    if (!template) return;
+    Object.assign(this.form, template.specs);
+    this.floors = template.floors.map(f => ({ ...f, id: this.nextFloorId++ }));
+    this.attributes = template.attributes.map(a => ({ ...a, id: this.nextAttrId++ }));
+    this.editingFloorId = this.editingAttrId = null;
   }
 
   onCountryChange(country: string): void {

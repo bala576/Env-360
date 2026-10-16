@@ -32,7 +32,7 @@ const SPARK = { width: 100, height: 32 };
 
 @Component({
   selector: 'app-sites',
-  imports: [CommonModule, FormsModule, RouterLink, Breadcrumb, Dropdown, DragScroll],
+  imports: [CommonModule, FormsModule, RouterLink, Dropdown, DragScroll],
   templateUrl: './sites.html',
   styleUrl: './sites.css',
 })

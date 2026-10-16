@@ -57,6 +57,15 @@ export const ADD_ICONS: Record<string, string[]> = {
   chevron: ['M9 6l6 6-6 6'],
   grip: ['M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01'],
   edit: ['M4 20h4L19 9l-4-4L4 16z', 'M13.5 6.5l4 4'],
+  trash: ['M4 7h16', 'M10 11v6M14 11v6', 'M6 7l1 13h10l1-13', 'M9 7V4h6v3'],
+  grid: ['M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z'],
+  clipboard: ['M9 4h6v3H9z', 'M9 5H6v16h12V5h-3', 'M9 12h6M9 16h4'],
+  template: ['M7 3h7l5 5v13H7z', 'M14 3v5h5', 'M10 13h6M10 17h4'],
+  area: ['M4 4h16v16H4z', 'M4 9h16M9 4v16'],
+  usage: ['M12 3l8 4.5v9L12 21l-8-4.5v-9z', 'M12 12l8-4.5M12 12v9M12 12L4 7.5'],
+  construction: ['M3 21h18', 'M5 21V11l7-5 7 5v10', 'M9 21v-6h6v6'],
+  people: ['M9 4a3 3 0 100 6 3 3 0 000-6z', 'M3 20v-1a6 6 0 0112 0v1', 'M16 4a3 3 0 010 6', 'M18 14a5 5 0 013 4.6V20'],
+  status: ['M4 4h16v16H4z', 'M8 15l3-3 2 2 3-4'],
 };
 
 export const FORM_SECTIONS: FormSection[] = [
@@ -83,6 +92,9 @@ export const CITY_OPTIONS: Record<string, DropdownOption[]> = {
 };
 export const CONSTRUCTION_OPTIONS = opts('Commercial', 'Residential', 'Industrial', 'Mixed Use');
 export const USAGE_OPTIONS = opts('Retail & Entertainment', 'Office', 'Hospitality', 'Healthcare', 'Warehouse');
+export const OPERATING_STATUS_OPTIONS = opts('Operational', 'Under Construction', 'Under Renovation', 'Closed');
+export const FLOOR_USAGE_OPTIONS = opts('Retail', 'F&B', 'Parking', 'Office', 'Entertainment', 'Services', 'Storage', 'Plant Room');
+export const FLOOR_STATUS_OPTIONS = opts('Active', 'Inactive', 'Under Maintenance');
 export const TIMEZONE_OPTIONS = opts('(GMT+04:00) Dubai', '(GMT+03:00) Riyadh', '(GMT+05:30) India', '(GMT+00:00) UTC');
 export const ROLE_OPTIONS = opts('Site Owner', 'Facility Manager', 'Security Lead', 'Maintenance Lead');
 export const MAP_OPTIONS = opts('Dubai Mall - Level 1', 'Dubai Mall - Level 2', 'Dubai Mall - Ground Floor', 'Dubai Mall - Basement 1');
@@ -184,6 +196,86 @@ export const SITE_HIERARCHY: HierarchyNode[] = [
       { id: 'cw', name: 'City Walk', type: 'Site', status: 'Active', children: [
         { id: 'cw-a', name: 'Block A', type: 'Building', status: 'Active' },
       ] },
+    ],
+  },
+];
+
+// ---------- Specifications ----------
+export interface SiteFloor {
+  id: number;
+  level: string;
+  name: string;
+  area: string;
+  usage: string;
+  status: string;
+}
+
+export interface SiteAttribute {
+  id: number;
+  name: string;
+  value: string;
+  unit: string;
+  description: string;
+}
+
+export const DEFAULT_FLOORS: SiteFloor[] = [
+  { id: 1, level: 'Level 2', name: 'Level 2', area: '120,000', usage: 'Retail', status: 'Active' },
+  { id: 2, level: 'Level 1', name: 'Level 1 (Ground)', area: '150,000', usage: 'Retail', status: 'Active' },
+  { id: 3, level: 'Level 0', name: 'Basement', area: '80,000', usage: 'Parking', status: 'Active' },
+  { id: 4, level: 'Level -1', name: 'Lower Basement', area: '80,000', usage: 'Parking', status: 'Active' },
+  { id: 5, level: 'Level 3', name: 'Level 3', area: '70,000', usage: 'F&B', status: 'Active' },
+];
+
+export const DEFAULT_ATTRIBUTES: SiteAttribute[] = [
+  { id: 1, name: 'Building Height', value: '35', unit: 'm', description: 'Overall building height' },
+  { id: 2, name: 'Number of Entrances', value: '8', unit: '-', description: 'Public entrances' },
+  { id: 3, name: 'Number of Parking Bays', value: '4,000', unit: '-', description: 'Car parking capacity' },
+  { id: 4, name: 'HVAC Type', value: 'Central', unit: '-', description: 'Cooling system type' },
+  { id: 5, name: 'Power Supply', value: '10', unit: 'MW', description: 'Total power capacity' },
+];
+
+export interface SpecTemplate {
+  id: string;
+  label: string;
+  specs: { totalArea: string; floors: string; usage: string; construction: string; occupancy: string; operatingStatus: string };
+  floors: Omit<SiteFloor, 'id'>[];
+  attributes: Omit<SiteAttribute, 'id'>[];
+}
+
+export const SPEC_TEMPLATES: SpecTemplate[] = [
+  {
+    id: 'mall',
+    label: 'Shopping Mall',
+    specs: { totalArea: '500,000', floors: '5', usage: 'Retail & Entertainment', construction: 'Commercial', occupancy: '200,000', operatingStatus: 'Operational' },
+    floors: DEFAULT_FLOORS.map(({ id, ...f }) => f),
+    attributes: DEFAULT_ATTRIBUTES.map(({ id, ...a }) => a),
+  },
+  {
+    id: 'office',
+    label: 'Office Tower',
+    specs: { totalArea: '60,000', floors: '4', usage: 'Office', construction: 'Commercial', occupancy: '3,500', operatingStatus: 'Operational' },
+    floors: [
+      { level: 'Level 0', name: 'Lobby', area: '4,000', usage: 'Services', status: 'Active' },
+      { level: 'Level 1', name: 'Office Floor 1', area: '18,000', usage: 'Office', status: 'Active' },
+      { level: 'Level 2', name: 'Office Floor 2', area: '18,000', usage: 'Office', status: 'Active' },
+      { level: 'Level -1', name: 'Basement Parking', area: '20,000', usage: 'Parking', status: 'Active' },
+    ],
+    attributes: [
+      { name: 'Building Height', value: '120', unit: 'm', description: 'Overall building height' },
+      { name: 'Number of Elevators', value: '12', unit: '-', description: 'Passenger elevators' },
+      { name: 'HVAC Type', value: 'VAV', unit: '-', description: 'Variable air volume system' },
+      { name: 'Power Supply', value: '4', unit: 'MW', description: 'Total power capacity' },
+    ],
+  },
+  {
+    id: 'warehouse',
+    label: 'Warehouse / Logistics',
+    specs: { totalArea: '25,000', floors: '1', usage: 'Warehouse', construction: 'Industrial', occupancy: '150', operatingStatus: 'Operational' },
+    floors: [{ level: 'Level 0', name: 'Ground Floor', area: '25,000', usage: 'Storage', status: 'Active' }],
+    attributes: [
+      { name: 'Clear Height', value: '12', unit: 'm', description: 'Usable racking height' },
+      { name: 'Loading Docks', value: '24', unit: '-', description: 'Truck loading bays' },
+      { name: 'Cold Storage', value: '3,000', unit: 'sq.m', description: 'Refrigerated area' },
     ],
   },
 ];

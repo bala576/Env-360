@@ -1629,6 +1629,194 @@
   gap: 10px;
 }
 
+/* ---------- Specifications step ---------- */
+.spec-step {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  min-height: 0;
+}
+
+.spec-main,
+.spec-side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 18px 18px;
+  overflow-y: auto;
+}
+
+.spec-main {
+  background: #fcfcfe;
+}
+
+.spec-side {
+  padding-left: 14px;
+  padding-right: 14px;
+  border-left: 1px solid #f1f0f7;
+  background: #ffffff;
+}
+
+.spec-step .card .block-head {
+  margin-bottom: 12px;
+}
+
+.spec-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.btn-primary.sm {
+  padding: 7px 14px;
+  font-size: 12px;
+  box-shadow: 0 4px 10px rgba(109, 40, 217, 0.2);
+}
+
+.spec-table tbody tr {
+  cursor: default;
+}
+
+.spec-table tr.editing td {
+  background: #faf8ff;
+}
+
+.spec-table td {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.spec-table .sib-input {
+  max-width: 180px;
+  font-size: 12px;
+  background: #ffffff;
+}
+
+.spec-table .sib-input.narrow {
+  max-width: 70px;
+}
+
+.spec-table .col-actions {
+  width: 84px;
+}
+
+.status-cell {
+  color: #16a34a !important;
+}
+
+.status-cell.inactive {
+  color: #6b7280 !important;
+}
+
+.status-cell.warn {
+  color: #b45309 !important;
+}
+
+.desc-cell {
+  white-space: normal !important;
+  min-width: 160px;
+}
+
+.row-btn.ok {
+  color: #16a34a;
+}
+
+.row-btn.danger {
+  color: #dc2626;
+}
+
+.row-btn.danger:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.empty-row td {
+  padding: 18px 10px;
+  text-align: center;
+  color: #9ca3af;
+}
+
+.status-dd[data-status='Under Construction'] ::ng-deep .dd-label::before,
+.status-dd[data-status='Under Renovation'] ::ng-deep .dd-label::before {
+  background: #f59e0b;
+}
+
+.status-dd[data-status='Closed'] ::ng-deep .dd-label::before {
+  background: #9ca3af;
+}
+
+.spec-preview-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.spec-thumb {
+  width: 96px;
+  height: 66px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 55% 45%, #e5e7eb 0 14%, transparent 15%),
+    linear-gradient(170deg, #bfdbfe 0%, #93c5fd 30%, #64748b 70%, #334155 100%);
+}
+
+.spec-preview-head strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1e1b4b;
+}
+
+.spec-preview-head small {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.spec-list {
+  margin: 0;
+}
+
+.spec-list > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid #f1f0f7;
+  font-size: 12.5px;
+}
+
+.spec-list dt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6b7280;
+}
+
+.spec-list dt svg {
+  flex-shrink: 0;
+  color: #4c1d95;
+}
+
+.spec-list dd {
+  margin: 0;
+  font-weight: 500;
+  color: #1e1b4b;
+  overflow-wrap: anywhere;
+}
+
+.template-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.template-row app-dropdown {
+  flex: 1;
+  min-width: 0;
+}
+
 /* ---------- Motion ---------- */
 /* Uses the individual translate/scale properties so existing transforms are untouched */
 @keyframes fade-up {
@@ -1674,7 +1862,8 @@
 /* Step switch: content is recreated by ngSwitch, so these replay on every step change */
 .overview,
 .step-scroll,
-.hier-step {
+.hier-step,
+.spec-step {
   animation: fade-in 0.3s ease both;
 }
 
@@ -1685,7 +1874,9 @@
 .media-step > .block,
 .loc-col > .card,
 .hier-main > *,
-.hier-preview {
+.hier-preview,
+.spec-main > *,
+.spec-side > * {
   animation: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -1703,6 +1894,10 @@
 .form-scroll > :nth-child(n + 5) { animation-delay: 0.2s; }
 .loc-col + .loc-col > .card { animation-delay: 0.08s; }
 .hier-preview { animation-delay: 0.12s; }
+.spec-main > :nth-child(2),
+.spec-side > :nth-child(2) { animation-delay: 0.06s; }
+.spec-main > :nth-child(3),
+.spec-side > :nth-child(3) { animation-delay: 0.12s; }
 
 /* Step navigation */
 .nav-item {
@@ -1971,11 +2166,22 @@
   .location,
   .hierarchy,
   .hier-step,
+  .spec-step,
   .hier-parent {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .hier-preview {
+  .spec-step {
+    overflow-y: auto;
+  }
+
+  .spec-main,
+  .spec-side {
+    overflow: visible;
+  }
+
+  .hier-preview,
+  .spec-side {
     border-left: none;
     border-top: 1px solid #f1f0f7;
   }
@@ -2020,6 +2226,10 @@
   .mode-grid,
   .level-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .spec-head {
+    flex-direction: column;
   }
 
   .span-2 {

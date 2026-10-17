@@ -1,0 +1,412 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<div class="customize">
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <header class="page-header">
+    <div>
+      <h1>Customize View</h1>
+      <p>Personalize your monitoring dashboard by selecting widgets, parameters and layout.</p>
+    </div>
+    <div class="header-actions">
+      <span class="unsaved" *ngIf="dirty">Unsaved changes</span>
+      <button type="button" class="btn-outline" (click)="resetToDefault()">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'reset', size: 15 }"></ng-container>
+        Reset to Default
+      </button>
+      <button type="button" class="btn-outline" (click)="discard()">Discard</button>
+      <button type="button" class="btn-primary" [disabled]="!dirty" (click)="save()">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 15 }"></ng-container>
+        Save View
+      </button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <!-- Settings panel -->
+    <section class="card panel">
+      <nav class="panel-tabs" role="tablist">
+        <button type="button" role="tab" *ngFor="let t of panelTabs" [class.active]="t === panelTab" [attr.aria-selected]="t === panelTab" (click)="panelTab = t">{{ t }}</button>
+      </nav>
+
+      <div class="panel-body" [ngSwitch]="panelTab">
+        <!-- Widgets -->
+        <div *ngSwitchCase="'Widgets'" class="pane">
+          <h3>1. Select Widgets</h3>
+          <p class="hint">Choose the widgets to display on your dashboard. Drag to reorder.</p>
+          <label class="search">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 14 }"></ng-container>
+            <input type="text" placeholder="Search widgets..." [(ngModel)]="search" />
+          </label>
+          <div class="list-head">
+            <strong>Core Monitoring Widgets <span class="muted">({{ enabledCount }}/{{ config.widgets.length }})</span></strong>
+            <label class="select-all"><input type="checkbox" [checked]="allSelected" (change)="toggleAll()" />Select All</label>
+          </div>
+          <ul class="widget-list">
+            <li
+              *ngFor="let w of listedWidgets; let i = index"
+              [style.--i]="i"
+              [class.dragging]="dragKey === w.def.key"
+              [class.off]="!w.entry.enabled"
+              draggable="true"
+              (dragstart)="onDragStart($event, w.def.key)"
+              (dragover)="onDragOver($event, w.def.key)"
+              (drop)="onDragEnd()"
+              (dragend)="onDragEnd()"
+            >
+              <input type="checkbox" [(ngModel)]="w.entry.enabled" [attr.aria-label]="'Show ' + w.def.label" />
+              <span class="w-icon" [ngClass]="'tone-' + w.def.tone">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: w.def.icon, size: 17 }"></ng-container>
+              </span>
+              <span class="w-text">
+                <strong>{{ w.def.label }}</strong>
+                <small>{{ w.def.description }}</small>
+              </span>
+              <button
+                type="button"
+                class="handle"
+                [attr.aria-label]="'Reorder ' + w.def.label + ' (arrow keys)'"
+                (keydown.arrowup)="nudge(w.def.key, -1, $event)"
+                (keydown.arrowdown)="nudge(w.def.key, 1, $event)"
+              >
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'drag', size: 16 }"></ng-container>
+              </button>
+            </li>
+            <li class="empty" *ngIf="!listedWidgets.length">No widgets match "{{ search }}"</li>
+          </ul>
+        </div>
+
+        <!-- Layout -->
+        <div *ngSwitchCase="'Layout'" class="pane">
+          <h3>2. Layout</h3>
+          <p class="hint">Arrange how widgets fill the dashboard.</p>
+          <span class="group-label">Grid Columns</span>
+          <div class="choice-row">
+            <button type="button" class="choice" *ngFor="let c of [2, 3]" [class.active]="config.layout.columns === c" (click)="config.layout.columns = $any(c)">
+              <span class="cols-icon"><span *ngFor="let _ of (c === 2 ? [0, 1] : [0, 1, 2])"></span></span>
+              {{ c }} Columns
+            </button>
+          </div>
+          <span class="group-label">Density</span>
+          <div class="choice-row">
+            <button type="button" class="choice" [class.active]="config.layout.density === 'comfortable'" (click)="config.layout.density = 'comfortable'">Comfortable</button>
+            <button type="button" class="choice" [class.active]="config.layout.density === 'compact'" (click)="config.layout.density = 'compact'">Compact</button>
+          </div>
+          <label class="toggle-row">
+            <span><strong>Rounded cards</strong><small>Softer corners on every widget</small></span>
+            <button type="button" class="switch" [class.on]="config.layout.rounded" [attr.aria-pressed]="config.layout.rounded" (click)="config.layout.rounded = !config.layout.rounded"><span class="track"><span class="knob"></span></span></button>
+          </label>
+        </div>
+
+        <!-- Filters -->
+        <div *ngSwitchCase="'Filters'" class="pane">
+          <h3>3. Default Filters</h3>
+          <p class="hint">Applied when the dashboard opens.</p>
+          <label class="field"><span>Site</span><app-dropdown [options]="siteOptions" [(ngModel)]="config.filters.site"></app-dropdown></label>
+          <span class="group-label">Time Range</span>
+          <div class="seg">
+            <button type="button" *ngFor="let d of ranges" [class.active]="config.filters.range === d" (click)="setRange(d)">{{ d }}D</button>
+          </div>
+          <span class="group-label">Summary Card Parameters</span>
+          <ul class="check-list">
+            <li *ngFor="let p of summaryParams">
+              <label class="check"><input type="checkbox" [checked]="isSummaryParam(p.key)" (change)="toggleSummaryParam(p.key)" /><span class="dot" [style.background]="p.color"></span>{{ p.label }} <small>({{ p.unit }})</small></label>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Display -->
+        <div *ngSwitchCase="'Display'" class="pane">
+          <h3>4. Display</h3>
+          <p class="hint">How charts and values are shown.</p>
+          <span class="group-label">Default Chart Type</span>
+          <div class="choice-row">
+            <button type="button" class="choice" [class.active]="config.display.chartType === 'line'" (click)="config.display.chartType = 'line'">Line</button>
+            <button type="button" class="choice" [class.active]="config.display.chartType === 'area'" (click)="config.display.chartType = 'area'">Area</button>
+          </div>
+          <span class="group-label">Temperature Unit</span>
+          <div class="choice-row">
+            <button type="button" class="choice" [class.active]="config.display.unit === 'C'" (click)="setUnit('C')">Celsius (°C)</button>
+            <button type="button" class="choice" [class.active]="config.display.unit === 'F'" (click)="setUnit('F')">Fahrenheit (°F)</button>
+          </div>
+          <label class="toggle-row">
+            <span><strong>Show thresholds</strong><small>Limit lines and bands on charts</small></span>
+            <button type="button" class="switch" [class.on]="config.display.thresholds" [attr.aria-pressed]="config.display.thresholds" (click)="config.display.thresholds = !config.display.thresholds"><span class="track"><span class="knob"></span></span></button>
+          </label>
+          <label class="toggle-row">
+            <span><strong>Show sparklines</strong><small>Mini trends on summary cards and tables</small></span>
+            <button type="button" class="switch" [class.on]="config.display.sparklines" [attr.aria-pressed]="config.display.sparklines" (click)="config.display.sparklines = !config.display.sparklines"><span class="track"><span class="knob"></span></span></button>
+          </label>
+          <label class="field"><span>Auto Refresh</span><app-dropdown [options]="refreshOptions" [(ngModel)]="config.display.refresh"></app-dropdown></label>
+        </div>
+
+        <!-- Sharing -->
+        <div *ngSwitchCase="'Sharing'" class="pane">
+          <h3>5. Sharing</h3>
+          <p class="hint">Name the view and choose who can use it.</p>
+          <label class="field"><span>View Name</span><input class="text" type="text" [(ngModel)]="config.sharing.name" maxlength="60" /></label>
+          <span class="group-label">Visibility</span>
+          <div class="radio-list">
+            <label class="radio"><input type="radio" name="cv-vis" value="private" [(ngModel)]="config.sharing.visibility" /><span><strong>Only me</strong><small>Visible in your account only</small></span></label>
+            <label class="radio"><input type="radio" name="cv-vis" value="team" [(ngModel)]="config.sharing.visibility" /><span><strong>My team</strong><small>Members of your site team can use it</small></span></label>
+            <label class="radio"><input type="radio" name="cv-vis" value="everyone" [(ngModel)]="config.sharing.visibility" /><span><strong>Everyone</strong><small>All users in the organisation</small></span></label>
+          </div>
+          <label class="toggle-row">
+            <span><strong>Set as my default view</strong><small>Open Monitoring with this layout</small></span>
+            <button type="button" class="switch" [class.on]="config.sharing.makeDefault" [attr.aria-pressed]="config.sharing.makeDefault" (click)="config.sharing.makeDefault = !config.sharing.makeDefault"><span class="track"><span class="knob"></span></span></button>
+          </label>
+          <div class="share-link" *ngIf="config.sharing.visibility !== 'private'">
+            <input type="text" readonly [value]="shareLink" aria-label="Share link" />
+            <button type="button" class="btn-outline sm" (click)="copyLink()">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: copied ? 'check' : 'copy', size: 14 }"></ng-container>
+              {{ copied ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Live preview -->
+    <section class="card preview-card">
+      <div class="preview-head">
+        <div>
+          <h2>Live Preview</h2>
+          <p class="hint">This is a preview of your customized dashboard view.</p>
+        </div>
+        <div class="device-seg" role="group" aria-label="Preview size">
+          <button type="button" [class.active]="device === 'desktop'" (click)="device = 'desktop'"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'desktop', size: 15 }"></ng-container>Desktop</button>
+          <button type="button" [class.active]="device === 'tablet'" (click)="device = 'tablet'"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'tablet', size: 15 }"></ng-container>Tablet</button>
+          <button type="button" [class.active]="device === 'mobile'" (click)="device = 'mobile'"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'mobile', size: 15 }"></ng-container>Mobile</button>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div
+          class="frame"
+          [ngClass]="'device-' + device"
+          [class.cols-2]="config.layout.columns === 2"
+          [class.compact]="config.layout.density === 'compact'"
+          [class.square]="!config.layout.rounded"
+        >
+          <div class="preview-grid">
+            <ng-container *ngFor="let w of previewWidgets; let i = index">
+              <div class="pw" [ngClass]="'size-' + w.size + ' w-' + w.key" [style.--i]="i" [ngSwitch]="w.key">
+
+                <!-- Summary cards -->
+                <div *ngSwitchCase="'summary'" class="summary-row">
+                  <div class="pcard summary" *ngFor="let p of previewSummary; let si = index">
+                    <span class="s-icon" [ngClass]="'tone-' + p.tone"><ng-container *ngTemplateOutlet="icon; context: { $implicit: p.icon, size: 20 }"></ng-container></span>
+                    <div class="s-body">
+                      <span class="s-label">{{ p.label }}</span>
+                      <strong class="s-value">{{ p.display }}</strong>
+                      <span class="s-delta" [class.good]="p.good" [class.bad]="!p.good">
+                        <ng-container *ngTemplateOutlet="icon; context: { $implicit: p.up ? 'arrowUp' : 'arrowDown', size: 11 }"></ng-container>{{ p.delta }}
+                      </span>
+                      <span class="s-sub">vs previous period</span>
+                    </div>
+                    <svg *ngIf="config.display.sparklines" class="s-spark" viewBox="0 0 60 22" aria-hidden="true">
+                      <path class="draw" pathLength="1" [attr.d]="spark(si + 1)" fill="none" [attr.stroke]="p.color" stroke-width="1.6"/>
+                    </svg>
+                  </div>
+                  <div class="pcard empty" *ngIf="!previewSummary.length">Pick summary parameters on the Filters tab</div>
+                </div>
+
+                <!-- Trend chart -->
+                <div *ngSwitchCase="'trend'" class="pcard">
+                  <div class="p-head">
+                    <h4>Temperature &amp; Humidity Trend</h4>
+                    <div class="p-actions">
+                      <span class="mini-pill">{{ config.display.chartType === 'area' ? 'Area' : 'Line' }} Chart</span>
+                      <div class="seg mini"><button type="button" *ngFor="let d of ranges" [class.active]="config.filters.range === d" (click)="setRange(d)">{{ d }}D</button></div>
+                    </div>
+                  </div>
+                  <svg class="trend" [attr.viewBox]="'0 0 ' + plot.width + ' ' + plot.height" role="img" aria-label="Temperature and humidity preview chart">
+                    <g *ngIf="config.display.thresholds" class="fade-layer">
+                      <rect [attr.x]="plot.left" [attr.y]="plot.top" [attr.width]="plot.right - plot.left" [attr.height]="trend.bandHigh - plot.top" fill="rgba(239, 68, 68, 0.08)"/>
+                      <rect [attr.x]="plot.left" [attr.y]="trend.bandLow" [attr.width]="plot.right - plot.left" [attr.height]="plot.bottom - trend.bandLow" fill="rgba(37, 99, 235, 0.07)"/>
+                    </g>
+                    <g *ngFor="let t of trend.tempAxis">
+                      <line [attr.x1]="plot.left" [attr.x2]="plot.right" [attr.y1]="t.y" [attr.y2]="t.y" class="grid"/>
+                      <text [attr.x]="plot.left - 8" [attr.y]="t.y + 4" text-anchor="end" class="axis">{{ t.v }}</text>
+                    </g>
+                    <text *ngFor="let t of trend.humAxis" [attr.x]="plot.right + 8" [attr.y]="t.y + 4" class="axis">{{ t.v }}</text>
+                    <g *ngFor="let t of trend.ticks">
+                      <text [attr.x]="t.x" [attr.y]="plot.bottom + 16" text-anchor="middle" class="axis">{{ t.date }}</text>
+                      <text [attr.x]="t.x" [attr.y]="plot.bottom + 29" text-anchor="middle" class="axis">{{ t.time }}</text>
+                    </g>
+                    <text x="12" [attr.y]="(plot.top + plot.bottom) / 2" class="axis-title" text-anchor="middle" [attr.transform]="'rotate(-90 12 ' + (plot.top + plot.bottom) / 2 + ')'">Temperature ({{ trend.unit }})</text>
+                    <text [attr.x]="plot.width - 10" [attr.y]="(plot.top + plot.bottom) / 2" class="axis-title" text-anchor="middle" [attr.transform]="'rotate(90 ' + (plot.width - 10) + ' ' + (plot.top + plot.bottom) / 2 + ')'">Humidity (%RH)</text>
+                    <g *ngIf="config.display.thresholds" class="fade-layer">
+                      <line [attr.x1]="plot.left" [attr.x2]="plot.right" [attr.y1]="trend.high" [attr.y2]="trend.high" stroke="#ef4444" stroke-dasharray="5 4"/>
+                      <line [attr.x1]="plot.left" [attr.x2]="plot.right" [attr.y1]="trend.low" [attr.y2]="trend.low" stroke="#2563eb" stroke-dasharray="5 4"/>
+                    </g>
+                    <ng-container *ngIf="config.display.chartType === 'area'">
+                      <path class="fade-layer" [attr.d]="trend.tempArea" fill="#2563eb" fill-opacity="0.1"/>
+                      <path class="fade-layer" [attr.d]="trend.humArea" fill="#7c3aed" fill-opacity="0.08"/>
+                    </ng-container>
+                    <path class="draw" pathLength="1" [attr.d]="trend.tempPath" fill="none" stroke="#2563eb" stroke-width="1.8"/>
+                    <path class="draw" pathLength="1" [attr.d]="trend.humPath" fill="none" stroke="#7c3aed" stroke-width="1.8"/>
+                  </svg>
+                  <ul class="legend">
+                    <li><span class="lg-dot" style="--c: #2563eb"></span>Temperature ({{ trend.unit }})</li>
+                    <li><span class="lg-dot" style="--c: #7c3aed"></span>Humidity (%RH)</li>
+                    <ng-container *ngIf="config.display.thresholds">
+                      <li><span class="lg-dash" style="--c: #ef4444"></span>High Threshold (Temp)</li>
+                      <li><span class="lg-dash" style="--c: #2563eb"></span>Low Threshold (Temp)</li>
+                    </ng-container>
+                  </ul>
+                </div>
+
+                <!-- Monitoring points -->
+                <div *ngSwitchCase="'points'" class="pcard">
+                  <div class="p-head">
+                    <h4>Monitoring Points ({{ filteredPoints.length }})</h4>
+                    <label class="search mini">
+                      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 12 }"></ng-container>
+                      <input type="text" placeholder="Search monitoring points..." [(ngModel)]="pointSearch" (ngModelChange)="pointPage = 1" />
+                    </label>
+                  </div>
+                  <div class="table-scroll">
+                    <table>
+                      <thead>
+                        <tr><th>Monitoring Point</th><th>Space / Location</th><th>Parameter</th><th>Current Value</th><th>Status</th><th *ngIf="config.display.sparklines">Trend (24h)</th></tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let p of pagedPoints">
+                          <td class="strong">{{ p.name }}</td>
+                          <td>{{ p.space }}</td>
+                          <td>{{ p.parameter }}</td>
+                          <td class="value" [ngClass]="'v-' + p.valueTone">{{ p.value }}</td>
+                          <td><span class="status" [ngClass]="'st-' + p.status"><span class="dot"></span>{{ p.status | titlecase }}</span></td>
+                          <td *ngIf="config.display.sparklines"><svg viewBox="0 0 60 22" class="row-spark" aria-hidden="true"><path [attr.d]="pointSpark(p.trend)" fill="none" [attr.stroke]="p.trendColor" stroke-width="1.6"/></svg></td>
+                        </tr>
+                        <tr *ngIf="!pagedPoints.length"><td colspan="6" class="empty">No monitoring points found</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="table-foot">
+                    <span>Showing {{ (pointPage - 1) * 5 + (pagedPoints.length ? 1 : 0) }} to {{ (pointPage - 1) * 5 + pagedPoints.length }} of {{ filteredPoints.length }} records</span>
+                    <div class="pager">
+                      <button type="button" (click)="goToPointPage(pointPage - 1)" [disabled]="pointPage === 1" aria-label="previous page">‹</button>
+                      <ng-container *ngFor="let n of pointPageList">
+                        <button *ngIf="n !== null; else gap" type="button" [class.active]="n === pointPage" (click)="goToPointPage(n)">{{ n }}</button>
+                        <ng-template #gap><span class="gap">…</span></ng-template>
+                      </ng-container>
+                      <button type="button" (click)="goToPointPage(pointPage + 1)" [disabled]="pointPage === pointPages" aria-label="next page">›</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Alarm summary -->
+                <div *ngSwitchCase="'alarms'" class="pcard">
+                  <div class="p-head"><h4>Alarm Summary</h4></div>
+                  <ul class="rows">
+                    <li *ngFor="let a of alarms">
+                      <span class="r-icon" [ngClass]="'tone-' + a.tone"><ng-container *ngTemplateOutlet="icon; context: { $implicit: a.icon, size: 14 }"></ng-container></span>
+                      <span class="r-label">{{ a.label }}</span>
+                      <strong>{{ a.count }}</strong>
+                      <a class="r-link" routerLink="/alarms">View</a>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Insights -->
+                <div *ngSwitchCase="'insights'" class="pcard">
+                  <div class="p-head"><h4>Top Insights</h4></div>
+                  <ul class="rows insights">
+                    <li *ngFor="let n of insights">
+                      <span class="r-icon" [ngClass]="'tone-' + n.tone"><ng-container *ngTemplateOutlet="icon; context: { $implicit: n.icon, size: 14 }"></ng-container></span>
+                      <span class="r-text"><strong>{{ n.title }}</strong><small>{{ n.text }}</small></span>
+                      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevronRight', size: 13 }"></ng-container>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Parameter comparison -->
+                <div *ngSwitchCase="'comparison'" class="pcard">
+                  <div class="p-head"><h4>Parameter Comparison</h4></div>
+                  <svg class="mini-chart" viewBox="0 0 260 150" role="img" aria-label="Current versus previous period averages">
+                    <line x1="24" x2="252" [attr.y1]="barY(0)" [attr.y2]="barY(0)" class="grid zero"/>
+                    <g *ngFor="let c of comparison; let ci = index">
+                      <rect class="bar" [attr.x]="50 + ci * 110" [attr.y]="Math.min(barY(c.current), barY(0))" width="26" [attr.height]="Math.abs(barY(c.current) - barY(0))" rx="3" fill="#2563eb"/>
+                      <rect class="bar" [attr.x]="80 + ci * 110" [attr.y]="Math.min(barY(c.previous), barY(0))" width="26" [attr.height]="Math.abs(barY(c.previous) - barY(0))" rx="3" fill="#a78bfa"/>
+                      <text [attr.x]="78 + ci * 110" y="142" text-anchor="middle" class="axis">{{ c.label }}</text>
+                    </g>
+                  </svg>
+                  <ul class="legend"><li><span class="lg-dot" style="--c: #2563eb"></span>Current</li><li><span class="lg-dot" style="--c: #a78bfa"></span>Previous</li></ul>
+                </div>
+
+                <!-- Map -->
+                <div *ngSwitchCase="'map'" class="pcard">
+                  <div class="p-head"><h4>Map View</h4></div>
+                  <div class="map">
+                    <span class="room r1"></span><span class="room r2"></span><span class="room r3"></span><span class="room r4"></span>
+                    <span *ngFor="let pin of mapPins; let pi = index" class="pin" [style.left.%]="pin.x" [style.top.%]="pin.y" [style.background]="statusColors[pin.status]" [style.--i]="pi"></span>
+                  </div>
+                </div>
+
+                <!-- Correlation -->
+                <div *ngSwitchCase="'correlation'" class="pcard">
+                  <div class="p-head"><h4>Correlation Analysis</h4></div>
+                  <div class="matrix">
+                    <span></span><span class="m-head" *ngFor="let r of correlation">{{ r.label }}</span>
+                    <ng-container *ngFor="let r of correlation">
+                      <span class="m-label">{{ r.label }}</span>
+                      <span class="m-cell" *ngFor="let c of r.cells" [style.background]="cellColor(c)" [class.strong]="c > 0.6 || c < -0.6">{{ c.toFixed(2) }}</span>
+                    </ng-container>
+                  </div>
+                </div>
+
+                <!-- Device status -->
+                <div *ngSwitchCase="'devices'" class="pcard">
+                  <div class="p-head"><h4>Device Status</h4><span class="muted">{{ deviceTotal }} devices</span></div>
+                  <div class="stack-bar">
+                    <span *ngFor="let d of deviceHealth" [style.flex]="d.count" [style.background]="d.color"></span>
+                  </div>
+                  <ul class="rows">
+                    <li *ngFor="let d of deviceHealth"><span class="dot" [style.background]="d.color"></span><span class="r-label">{{ d.label }}</span><strong>{{ d.count }}</strong></li>
+                  </ul>
+                </div>
+
+                <!-- Environmental index -->
+                <div *ngSwitchCase="'environment'" class="pcard">
+                  <div class="p-head"><h4>Environmental Index</h4></div>
+                  <svg class="gauge" viewBox="0 0 120 72" role="img" [attr.aria-label]="'Environmental index ' + envIndex + ' of 100'">
+                    <path d="M14,60 A46,46 0 0 1 106,60" fill="none" stroke="#eef0f5" stroke-width="10" stroke-linecap="round"/>
+                    <path class="draw" pathLength="1" [attr.d]="envArc" fill="none" stroke="#16a34a" stroke-width="10" stroke-linecap="round"/>
+                    <text x="60" y="54" text-anchor="middle" class="gauge-value">{{ envIndex }}</text>
+                    <text x="60" y="68" text-anchor="middle" class="axis">Good comfort</text>
+                  </svg>
+                </div>
+
+                <!-- Energy -->
+                <div *ngSwitchCase="'energy'" class="pcard">
+                  <div class="p-head"><h4>Energy Analysis</h4><span class="muted">kWh / day</span></div>
+                  <div class="energy-bars">
+                    <div *ngFor="let e of energyBars; let ei = index" class="e-col">
+                      <span class="e-bar" [style.height.%]="(e / 330) * 100" [style.--i]="ei"></span>
+                      <small>{{ energyDays[ei] }}</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+
+            <div class="pw size-full nothing" *ngIf="!previewWidgets.length">
+              <div class="pcard empty">No widgets selected. Choose widgets on the left to build your view.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" *ngIf="toast" role="status">
+    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 15 }"></ng-container>
+    {{ toast }}
+  </div>
+</div>

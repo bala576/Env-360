@@ -246,24 +246,25 @@
             <p>Assign owners and managers responsible for this site/space.</p>
           </div>
         </div>
-        <div class="grid cols-4">
+        <div class="grid cols-4" *ngIf="primaryContact as c; else noContact">
           <label class="field">
-            <span class="lbl">Contact Name</span>
-            <input type="text" [(ngModel)]="form.contactName" />
+            <span class="lbl">Primary Contact</span>
+            <input type="text" [(ngModel)]="c.name" />
           </label>
           <div class="field">
             <span class="lbl">Role</span>
-            <app-dropdown [options]="roleOptions" [(ngModel)]="form.contactRole"></app-dropdown>
+            <app-dropdown [options]="roleOptions" [(ngModel)]="c.role"></app-dropdown>
           </div>
           <label class="field">
             <span class="lbl">Email</span>
-            <input type="email" [(ngModel)]="form.contactEmail" />
+            <input type="email" [(ngModel)]="c.email" />
           </label>
           <label class="field">
             <span class="lbl">Phone</span>
-            <input type="tel" [(ngModel)]="form.contactPhone" />
+            <input type="tel" [(ngModel)]="c.phone" />
           </label>
         </div>
+        <ng-template #noContact><p class="muted">No contacts added yet. Add them in the Contacts step.</p></ng-template>
       </section>
 
 </ng-template>
@@ -284,18 +285,18 @@
             <app-dropdown [options]="timezoneOptions" [(ngModel)]="form.timezone"></app-dropdown>
           </div>
           <label class="field">
-            <span class="lbl">Opening Time</span>
-            <input type="time" [(ngModel)]="form.openTime" />
+            <span class="lbl">Opening Time (Mon - Fri)</span>
+            <input type="time" [(ngModel)]="weekdayHours.from" />
           </label>
           <label class="field">
-            <span class="lbl">Closing Time</span>
-            <input type="time" [(ngModel)]="form.closeTime" />
+            <span class="lbl">Closing Time (Mon - Fri)</span>
+            <input type="time" [(ngModel)]="weekdayHours.to" />
           </label>
           <div class="field">
             <span class="lbl">Monitoring</span>
-            <button type="button" class="switch" [class.on]="form.monitoringEnabled" (click)="form.monitoringEnabled = !form.monitoringEnabled" [attr.aria-pressed]="form.monitoringEnabled">
+            <button type="button" class="switch" [class.on]="envMonitoring.enabled" (click)="envMonitoring.enabled = !envMonitoring.enabled" [attr.aria-pressed]="envMonitoring.enabled">
               <span class="knob"></span>
-              {{ form.monitoringEnabled ? 'Enabled' : 'Disabled' }}
+              {{ envMonitoring.enabled ? 'Enabled' : 'Disabled' }}
             </button>
           </div>
         </div>
@@ -385,7 +386,7 @@
           <span class="doc-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'pdf', size: 22 }"></ng-container></span>
           <div class="doc-meta">
             <strong>{{ doc.name }}</strong>
-            <small>{{ doc.size }}</small>
+            <small>{{ formatSize(doc.bytes) }}</small>
           </div>
           <button type="button" class="doc-remove" aria-label="Remove" (click)="removeAttachment(doc.id)">
             <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 16 }"></ng-container>
@@ -395,24 +396,37 @@
 </ng-template>
 
 
+<ng-template #dropTpl let-target let-input="input" let-noun="noun">
+      <div
+        class="drop-area"
+        [class.active]="dropTarget === target"
+        (dragover)="onDragOver($event, target)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event, target)"
+      >
+        <span class="drop-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'upload', size: 26 }"></ng-container></span>
+        <div>
+          <strong>Drag and drop {{ noun }} here, or <button type="button" class="link-btn" (click)="input.click()">click to browse</button></strong>
+          <small>Supported formats: {{ ruleLabel(target) }} (Max 10 MB per file)</small>
+        </div>
+      </div>
+      <p class="upload-error" *ngIf="uploadError(target) as error" role="alert">{{ error }}</p>
+</ng-template>
+
 <div class="add-site">
 
   <!-- Header -->
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
   <header class="page-header">
-    <button type="button" class="icon-btn" aria-label="Back" (click)="cancel()">
-      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'back', size: 20 }"></ng-container>
-    </button>
     <div class="titles">
       <h1>Add Site / Space</h1>
       <p>Create a new site or space to organize your assets, devices and data.</p>
     </div>
-    <button type="button" class="icon-btn" aria-label="Close" (click)="cancel()">
-      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 20 }"></ng-container>
-    </button>
   </header>
 
   <div class="panel">
-  <div class="body">
+  <div class="body" [attr.data-dir]="stepDir">
 
     <!-- Steps -->
     <nav class="section-nav">
@@ -1103,11 +1117,764 @@
           </section>
         </aside>
       </div>
-      <div class="step-scroll" *ngSwitchCase="'contacts'"><ng-container *ngTemplateOutlet="contactsTpl"></ng-container></div>
-      <div class="step-scroll" *ngSwitchCase="'settings'"><ng-container *ngTemplateOutlet="settingsTpl"></ng-container></div>
-      <div class="step-scroll media-step" *ngSwitchCase="'media'">
-        <ng-container *ngTemplateOutlet="floorplanTpl"></ng-container>
-        <ng-container *ngTemplateOutlet="mediaTpl"></ng-container>
+      <!-- Step: Contacts -->
+      <div class="spec-step contact-step" *ngSwitchCase="'contacts'">
+        <div class="spec-main">
+          <section class="card">
+            <div class="block-head">
+              <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'hierarchy', size: 22 }"></ng-container></span>
+              <div>
+                <h2>Contacts</h2>
+                <p>Add people who are responsible for this site/space.</p>
+              </div>
+            </div>
+
+            <div class="contact-banner" *ngIf="contactBannerOpen" role="note">
+              <span class="contact-banner-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'info', size: 16 }"></ng-container></span>
+              <p>You can add multiple contacts with different roles. These contacts will have access to the site/space based on their role and permissions.</p>
+              <button type="button" class="row-btn" aria-label="Dismiss" (click)="contactBannerOpen = false">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 14 }"></ng-container>
+              </button>
+            </div>
+
+            <div class="contact-tabs">
+              <div class="tabs" role="tablist">
+                <button type="button" role="tab" class="tab" [class.active]="!addingContact" [attr.aria-selected]="!addingContact" (click)="addingContact = false">Contacts List</button>
+                <button type="button" role="tab" class="tab" [class.active]="addingContact" [attr.aria-selected]="addingContact" (click)="startNewContact(nameInput)">Add Contact</button>
+              </div>
+              <button type="button" class="btn-primary sm" (click)="startNewContact(nameInput)">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 15 }"></ng-container>
+                Add Contact
+              </button>
+            </div>
+
+            <div class="sib-table-wrap">
+              <table class="sib-table spec-table contact-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Department</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th class="col-center">Is Primary</th>
+                    <th>Status</th>
+                    <th class="col-actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let c of contacts; trackBy: trackByRowId" [class.editing]="editingContactId === c.id">
+                    <td>
+                      <span class="person">
+                        <span class="avatar" [attr.data-tone]="roleTone(c.role)">{{ initials(c.name) }}</span>
+                        {{ c.name }}
+                      </span>
+                    </td>
+                    <td><span class="role-pill" [attr.data-tone]="roleTone(c.role)">{{ c.role }}</span></td>
+                    <td>{{ c.department || '-' }}</td>
+                    <td><a class="email-cell" [href]="'mailto:' + c.email" [title]="c.email">{{ c.email }}</a></td>
+                    <td>{{ c.phone ? c.dialCode + ' ' + c.phone : '-' }}</td>
+                    <td class="col-center">
+                      <input
+                        type="radio"
+                        class="primary-radio"
+                        name="primaryContact"
+                        [checked]="c.id === primaryContactId"
+                        [attr.aria-label]="'Set ' + c.name + ' as primary contact'"
+                        (change)="setPrimary(c.id)"
+                      />
+                    </td>
+                    <td>
+                      <button type="button" class="state-pill" [class.off]="c.status === 'Inactive'" [title]="'Click to mark ' + (c.status === 'Active' ? 'Inactive' : 'Active')" (click)="toggleContactStatus(c)">{{ c.status }}</button>
+                    </td>
+                    <td class="col-actions">
+                      <button type="button" class="row-btn" [attr.aria-label]="'Edit ' + c.name" (click)="editContact(c, nameInput)">
+                        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'edit', size: 15 }"></ng-container>
+                      </button>
+                      <button type="button" class="row-btn danger" [attr.aria-label]="'Delete ' + c.name" (click)="removeContact(c.id)">
+                        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'trash', size: 15 }"></ng-container>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="!contacts.length" class="empty-row">
+                    <td colspan="8">No contacts added yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Add / edit form -->
+          <section class="card" [class.form-active]="addingContact || editingContactId !== null">
+            <div class="spec-head">
+              <div class="block-head">
+                <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'contacts', size: 22 }"></ng-container></span>
+                <div>
+                  <h2>{{ editingContactId !== null ? 'Edit Contact' : 'Add / Edit Contact' }}</h2>
+                  <p>Enter contact details and assign role.</p>
+                </div>
+              </div>
+              <button type="button" class="btn-outline sm" (click)="resetContactForm()">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'refresh', size: 14 }"></ng-container>
+                Clear
+              </button>
+            </div>
+
+            <div class="contact-form">
+              <label class="field" [class.invalid]="contactSubmitted && contactErrors.name">
+                <span class="lbl"><span>Full Name <em>*</em></span></span>
+                <input #nameInput type="text" [(ngModel)]="contactDraft.name" placeholder="Enter full name" />
+                <small class="err" *ngIf="contactSubmitted && contactErrors.name">Full name is required.</small>
+              </label>
+              <div class="field" [class.invalid]="contactSubmitted && contactErrors.role">
+                <span class="lbl"><span>Role <em>*</em></span></span>
+                <app-dropdown [options]="roleOptions" [(ngModel)]="contactDraft.role" placeholder="Select role"></app-dropdown>
+                <small class="err" *ngIf="contactSubmitted && contactErrors.role">Select a role.</small>
+              </div>
+              <label class="field">
+                <span class="lbl">Department</span>
+                <input type="text" [(ngModel)]="contactDraft.department" placeholder="Enter department" />
+              </label>
+
+              <label class="field" [class.invalid]="contactSubmitted && contactErrors.email">
+                <span class="lbl"><span>Email Address <em>*</em></span></span>
+                <input type="email" [(ngModel)]="contactDraft.email" placeholder="name@company.com" />
+                <small class="err" *ngIf="contactSubmitted && contactErrors.email">Enter a valid email address.</small>
+              </label>
+              <div class="field span-2">
+                <span class="lbl">Phone Number</span>
+                <div class="phone-row">
+                  <app-dropdown class="dial-dd" [options]="dialCodeOptions" [(ngModel)]="contactDraft.dialCode"></app-dropdown>
+                  <input type="tel" [(ngModel)]="contactDraft.phone" placeholder="50 123 4567" aria-label="Phone number" />
+                </div>
+              </div>
+
+              <label class="field">
+                <span class="lbl">Designation</span>
+                <input type="text" [(ngModel)]="contactDraft.designation" placeholder="Enter designation" />
+              </label>
+              <label class="field span-2 notes-field">
+                <span class="lbl"><span>Notes <span class="muted">(Optional)</span></span></span>
+                <div class="textarea-wrap">
+                  <textarea rows="2" [(ngModel)]="contactDraft.notes" [maxlength]="contactNotesLimit" placeholder="Any additional information..."></textarea>
+                  <span class="counter">{{ contactDraft.notes.length }}/{{ contactNotesLimit }}</span>
+                </div>
+              </label>
+
+              <div class="primary-toggle">
+                <button type="button" class="switch" [class.on]="contactDraft.primary" [attr.aria-pressed]="contactDraft.primary" (click)="contactDraft.primary = !contactDraft.primary">
+                  <span class="knob"></span>
+                </button>
+                <div>
+                  <strong>Set as Primary Contact</strong>
+                  <small>This contact will be the main point of contact for this site/space.</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="contact-actions">
+              <button type="button" class="btn-outline sm" *ngIf="editingContactId !== null" (click)="resetContactForm()">Cancel Edit</button>
+              <button type="button" class="btn-primary sm" (click)="saveContact()">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: editingContactId !== null ? 'check' : 'plus', size: 15 }"></ng-container>
+                {{ editingContactId !== null ? 'Update Contact' : 'Save Contact' }}
+              </button>
+            </div>
+          </section>
+        </div>
+
+        <aside class="spec-side">
+          <!-- Roles -->
+          <section class="card">
+            <div class="block-head">
+              <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'contacts', size: 22 }"></ng-container></span>
+              <div>
+                <h2>Contact Roles</h2>
+                <p>Common roles for site/space contacts.</p>
+              </div>
+            </div>
+            <ul class="role-list">
+              <li *ngFor="let r of contactRoles">
+                <button type="button" class="role-item" [class.selected]="contactDraft.role === r.label" [title]="'Use ' + r.label + ' in the form'" (click)="pickRole(r)">
+                  <span class="role-pill" [attr.data-tone]="r.tone">{{ r.label }}</span>
+                  <small>{{ r.hint }}</small>
+                </button>
+              </li>
+            </ul>
+          </section>
+
+          <!-- Primary preview -->
+          <section class="card">
+            <div class="block-head">
+              <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'hierarchy', size: 22 }"></ng-container></span>
+              <div>
+                <h2>Primary Contact Preview</h2>
+                <p>This contact will be the main point of contact.</p>
+              </div>
+            </div>
+            <ng-container *ngIf="primaryContact as p; else noPrimary">
+              <div class="primary-head">
+                <span class="avatar lg" [attr.data-tone]="roleTone(p.role)">{{ initials(p.name) }}</span>
+                <div>
+                  <strong>{{ p.name }}</strong>
+                  <small>{{ p.role }}</small>
+                </div>
+              </div>
+              <ul class="primary-meta">
+                <li><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'mail', size: 15 }"></ng-container><a [href]="'mailto:' + p.email">{{ p.email }}</a></li>
+                <li *ngIf="p.phone"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'phone', size: 15 }"></ng-container>{{ p.dialCode }} {{ p.phone }}</li>
+                <li *ngIf="p.department"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'department', size: 15 }"></ng-container>{{ p.department }}</li>
+              </ul>
+            </ng-container>
+            <ng-template #noPrimary><p class="muted small">No primary contact selected.</p></ng-template>
+          </section>
+        </aside>
+      </div>
+      <!-- Step: Settings -->
+      <div class="spec-step settings-step" *ngSwitchCase="'settings'">
+        <div class="spec-main">
+          <div class="step-head">
+            <span class="step-head-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'settings', size: 24 }"></ng-container></span>
+            <div>
+              <h2>Settings</h2>
+              <p>Configure operational settings for this site/space.</p>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <!-- Time & locale -->
+            <section class="card">
+              <div class="block-head">
+                <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'clock', size: 22 }"></ng-container></span>
+                <div>
+                  <h2>Time &amp; Locale</h2>
+                  <p>Set the time zone, local date/time and regional settings.</p>
+                </div>
+              </div>
+              <div class="grid cols-2">
+                <div class="field span-2">
+                  <span class="lbl"><span>Time Zone <em>*</em></span></span>
+                  <app-dropdown [options]="timezoneOptions" [(ngModel)]="form.timezone"></app-dropdown>
+                </div>
+                <div class="field">
+                  <span class="lbl">Date Format</span>
+                  <app-dropdown [options]="dateFormatOptions" [(ngModel)]="form.dateFormat"></app-dropdown>
+                </div>
+                <div class="field">
+                  <span class="lbl">Time Format</span>
+                  <app-dropdown [options]="timeFormatOptions" [(ngModel)]="form.timeFormat"></app-dropdown>
+                </div>
+                <div class="field span-2">
+                  <span class="lbl">Language</span>
+                  <app-dropdown [options]="languageOptions" [(ngModel)]="form.language"></app-dropdown>
+                </div>
+              </div>
+            </section>
+
+            <!-- Operational hours -->
+            <section class="card">
+              <div class="block-head">
+                <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'calendar', size: 22 }"></ng-container></span>
+                <div>
+                  <h2>Operational Hours</h2>
+                  <p>Define the standard operating hours for this site/space.</p>
+                </div>
+              </div>
+              <div class="hours-row hours-master">
+                <span class="hours-day">Operating Hours</span>
+                <button type="button" class="switch" [class.on]="form.customHours" [attr.aria-pressed]="form.customHours" (click)="form.customHours = !form.customHours">
+                  <span class="knob"></span>
+                  {{ form.customHours ? 'Set custom hours' : 'Open 24 hours' }}
+                </button>
+              </div>
+              <ng-container *ngIf="form.customHours">
+                <div class="hours-row" *ngFor="let day of schedule">
+                  <span class="hours-day">{{ day.label }}</span>
+                  <div class="hours-body">
+                    <button type="button" class="switch sm" [class.on]="day.open" [attr.aria-pressed]="day.open" [attr.aria-label]="day.label + ' open'" (click)="day.open = !day.open">
+                      <span class="knob"></span>
+                      <span *ngIf="!day.open">Closed</span>
+                    </button>
+                    <ng-container *ngIf="day.open">
+                      <div class="hours-ranges">
+                        <div class="hours-range" *ngFor="let r of day.ranges; let ri = index; let first = first">
+                          <input type="time" [(ngModel)]="r.from" [attr.aria-label]="day.label + ' opening time'" />
+                          <span class="muted">-</span>
+                          <input type="time" [(ngModel)]="r.to" [attr.aria-label]="day.label + ' closing time'" />
+                          <button type="button" class="row-btn" *ngIf="first; else removeRange" [disabled]="day.ranges.length >= maxTimeRanges" [attr.aria-label]="'Add time range for ' + day.label" (click)="addTimeRange(day)">
+                            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 16 }"></ng-container>
+                          </button>
+                          <ng-template #removeRange>
+                            <button type="button" class="row-btn danger" [attr.aria-label]="'Remove time range for ' + day.label" (click)="removeTimeRange(day, ri)">
+                              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 15 }"></ng-container>
+                            </button>
+                          </ng-template>
+                        </div>
+                      </div>
+                    </ng-container>
+                  </div>
+                </div>
+              </ng-container>
+              <p class="muted small" *ngIf="!form.customHours">This site/space is treated as open 24 hours, every day.</p>
+            </section>
+
+            <!-- Preferences -->
+            <section class="card">
+              <div class="block-head">
+                <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'sliders', size: 22 }"></ng-container></span>
+                <div>
+                  <h2>Site Preferences</h2>
+                  <p>Configure general preferences and features.</p>
+                </div>
+              </div>
+              <ul class="pref-list">
+                <li *ngFor="let f of features">
+                  <button type="button" class="switch" [class.on]="f.enabled" [attr.aria-pressed]="f.enabled" (click)="f.enabled = !f.enabled">
+                    <span class="knob"></span>
+                    <span class="pref-label">{{ f.label }}</span>
+                  </button>
+                  <span class="info" [title]="f.hint"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'info', size: 15 }"></ng-container></span>
+                </li>
+              </ul>
+            </section>
+
+            <!-- Notifications -->
+            <section class="card">
+              <div class="block-head">
+                <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'bell', size: 22 }"></ng-container></span>
+                <div>
+                  <h2>Alert &amp; Notification Settings</h2>
+                  <p>Define default alert settings for this site/space.</p>
+                </div>
+              </div>
+              <div class="field">
+                <span class="lbl">Notification Recipients</span>
+                <div class="recipient-row">
+                  <div class="multi-select" [class.open]="recipientsOpen">
+                    <button type="button" class="ms-trigger" [attr.aria-expanded]="recipientsOpen" (click)="recipientsOpen = !recipientsOpen">
+                      <span [class.placeholder]="!notify.recipients.length">{{ recipientLabel || 'Select recipients' }}</span>
+                      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 14 }"></ng-container>
+                    </button>
+                    <ul class="ms-menu" *ngIf="recipientsOpen" role="listbox" aria-multiselectable="true">
+                      <li *ngFor="let r of recipientOptions">
+                        <label class="check">
+                          <input type="checkbox" [checked]="notify.recipients.includes(r)" (change)="toggleIn(notify.recipients, r)" />
+                          {{ r }}
+                        </label>
+                      </li>
+                    </ul>
+                  </div>
+                  <button type="button" class="btn-outline sm" (click)="addingRecipient = !addingRecipient">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 15 }"></ng-container>
+                    Add
+                  </button>
+                </div>
+                <div class="recipient-add" *ngIf="addingRecipient">
+                  <input type="text" [(ngModel)]="newRecipient" placeholder="Role or email, e.g. ops@company.com" (keydown.enter)="confirmRecipient()" (keydown.escape)="addingRecipient = false" aria-label="New recipient" autofocus />
+                  <button type="button" class="btn-primary sm" [disabled]="!newRecipient.trim()" (click)="confirmRecipient()">Add</button>
+                </div>
+              </div>
+              <div class="check-group">
+                <span class="lbl">Alert Severity Levels</span>
+                <div class="checks">
+                  <label class="check" *ngFor="let s of severityLevels">
+                    <input type="checkbox" [checked]="notify.severities.includes(s)" (change)="toggleIn(notify.severities, s)" />{{ s }}
+                  </label>
+                </div>
+              </div>
+              <div class="check-group">
+                <span class="lbl">Notification Channels</span>
+                <div class="checks">
+                  <label class="check" *ngFor="let c of notificationChannels">
+                    <input type="checkbox" [checked]="notify.channels.includes(c)" (change)="toggleIn(notify.channels, c)" />{{ c }}
+                  </label>
+                </div>
+              </div>
+              <div class="default-rules">
+                <button type="button" class="link-btn" [disabled]="usingDefaultNotifications" (click)="resetNotifications()">Use system default notification rules</button>
+                <span class="info" title="Restore the organisation's default recipients, severity levels and channels"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'info', size: 15 }"></ng-container></span>
+              </div>
+            </section>
+
+            <!-- Access -->
+            <section class="card">
+              <div class="block-head">
+                <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'shield', size: 22 }"></ng-container></span>
+                <div>
+                  <h2>Access &amp; Permissions</h2>
+                  <p>Define who can view and manage this site/space.</p>
+                </div>
+              </div>
+              <div class="field">
+                <span class="lbl">Visibility</span>
+                <app-dropdown [options]="visibilityOptions" [(ngModel)]="form.visibility"></app-dropdown>
+              </div>
+              <div class="field roles-field" *ngIf="restrictedVisibility">
+                <span class="lbl">Allowed Roles</span>
+                <div class="chips">
+                  <span class="chip" *ngFor="let r of allowedRoles">
+                    {{ r }}
+                    <button type="button" [attr.aria-label]="'Remove ' + r" (click)="removeRole(r)">
+                      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 12 }"></ng-container>
+                    </button>
+                  </span>
+                  <button type="button" class="link-btn chip-add" *ngIf="!addingRole && roleChoices.length" (click)="addingRole = true">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 14 }"></ng-container>
+                    Add Role
+                  </button>
+                </div>
+                <div class="role-add" *ngIf="addingRole">
+                  <app-dropdown [options]="roleChoices" [ngModel]="null" (ngModelChange)="addRole($event)" placeholder="Select role to add"></app-dropdown>
+                  <button type="button" class="btn-outline sm" (click)="addingRole = false">Cancel</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- Advanced -->
+            <section class="card">
+              <div class="block-head">
+                <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'sliders', size: 22 }"></ng-container></span>
+                <div>
+                  <h2>Advanced Settings</h2>
+                  <p>Additional configuration options.</p>
+                </div>
+              </div>
+              <div class="grid cols-2">
+                <label class="field">
+                  <span class="lbl">
+                    <span>Site Code Prefix <span class="muted">(Optional)</span></span>
+                    <span class="info" title="Prefix applied to codes of child spaces, devices and assets"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'info', size: 15 }"></ng-container></span>
+                  </span>
+                  <input type="text" [(ngModel)]="form.siteCodePrefix" placeholder="e.g. DM-MB-" />
+                </label>
+                <div class="field">
+                  <span class="lbl">Default Map View</span>
+                  <app-dropdown [options]="mapViewOptions" [(ngModel)]="form.defaultMapView"></app-dropdown>
+                </div>
+              </div>
+              <div class="checks stacked">
+                <label class="check"><input type="checkbox" [(ngModel)]="form.geofencing" />Enable Geofencing for this site</label>
+                <label class="check"><input type="checkbox" [(ngModel)]="form.includeInReports" />Include in system reports and analytics</label>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <!-- Summary -->
+        <aside class="spec-side settings-summary">
+          <div class="block-head">
+            <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'template', size: 22 }"></ng-container></span>
+            <div>
+              <h2>Settings Summary</h2>
+              <p>Review the configured settings.</p>
+            </div>
+          </div>
+          <dl class="summary">
+            <div><dt>Time Zone</dt><dd>{{ form.timezone }}</dd></div>
+            <div><dt>Date &amp; Time Format</dt><dd>{{ form.dateFormat }} <span class="sep">|</span> {{ form.timeFormat }}</dd></div>
+            <div><dt>Language</dt><dd>{{ form.language }}</dd></div>
+            <div>
+              <dt>Operational Hours</dt>
+              <dd>
+                <span class="hours-line" *ngFor="let day of schedule">
+                  <span>{{ day.label === 'Monday - Friday' ? 'Mon - Fri' : day.label }}</span>{{ dayHoursLabel(day) }}
+                </span>
+              </dd>
+            </div>
+            <div>
+              <dt>Enabled Features</dt>
+              <dd>
+                <span class="feature-line" *ngFor="let f of enabledFeatures">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'checkCircle', size: 15 }"></ng-container>{{ f }}
+                </span>
+                <span *ngIf="!enabledFeatures.length">None</span>
+              </dd>
+            </div>
+            <div><dt>Notification Channels</dt><dd>{{ notify.channels.join(', ') || 'None' }}</dd></div>
+            <div><dt>Visibility</dt><dd>{{ form.visibility }}</dd></div>
+            <div><dt>Default Map View</dt><dd>{{ form.defaultMapView }}</dd></div>
+            <div><dt>Geofencing</dt><dd>{{ form.geofencing ? 'Enabled' : 'Disabled' }}</dd></div>
+          </dl>
+        </aside>
+      </div>
+      <!-- Step: Images & Documents -->
+      <div class="spec-step media-step-v2" *ngSwitchCase="'media'">
+        <div class="spec-main">
+          <div class="step-head">
+            <span class="step-head-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'image', size: 24 }"></ng-container></span>
+            <div>
+              <h2>Images &amp; Documents</h2>
+              <p>Upload photos, floor plans, documents and other relevant files for this site/space.</p>
+            </div>
+          </div>
+
+          <div class="tabs media-tabs" role="tablist">
+            <button
+              *ngFor="let t of mediaTabs"
+              type="button"
+              role="tab"
+              class="tab"
+              [class.active]="mediaTab === t.id"
+              [attr.aria-selected]="mediaTab === t.id"
+              (click)="mediaTab = t.id"
+            >{{ t.label }}</button>
+          </div>
+
+          <!-- Site images -->
+          <section class="card" *ngIf="mediaTab === 'images'">
+            <div class="spec-head">
+              <div class="block-head">
+                <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'camera', size: 22 }"></ng-container></span>
+                <div>
+                  <h2>Site Images</h2>
+                  <p>Upload photos of the site/space. You can add multiple images and set a cover image.</p>
+                </div>
+              </div>
+              <button type="button" class="btn-outline sm" (click)="imageInput.click()">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 15 }"></ng-container>
+                Upload Images
+              </button>
+              <input #imageInput type="file" multiple [accept]="uploadRules.images.accept" hidden (change)="onFilesPicked(imageInput, 'images')" />
+            </div>
+
+            <ng-container *ngTemplateOutlet="dropTpl; context: { $implicit: 'images', input: imageInput, noun: 'images' }"></ng-container>
+
+            <div class="img-strip-wrap" *ngIf="images.length">
+              <div class="img-strip" #strip>
+                <article
+                  class="img-card"
+                  *ngFor="let img of images; trackBy: trackByRowId"
+                  [class.selected]="img.id === previewImage?.id"
+                >
+                  <button type="button" class="img-thumb" [style.background-image]="imageBackground(img)" [attr.aria-label]="'Preview ' + img.caption" (click)="previewId = img.id">
+                    <span class="cover-badge" *ngIf="img.id === coverId">
+                      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'star', size: 11 }"></ng-container>Cover
+                    </span>
+                  </button>
+                  <button type="button" class="thumb-remove" [attr.aria-label]="'Remove ' + img.caption" (click)="removeAttachment(img.id)">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 12 }"></ng-container>
+                  </button>
+                  <div class="img-meta">
+                    <div class="img-text">
+                      <input
+                        *ngIf="renamingId === img.id; else imgTitle"
+                        class="sib-input img-rename"
+                        [(ngModel)]="img.caption"
+                        (blur)="finishRename(img)"
+                        (keydown.enter)="finishRename(img)"
+                        aria-label="Image title"
+                        autofocus
+                      />
+                      <ng-template #imgTitle><strong [title]="img.caption">{{ img.caption }}</strong></ng-template>
+                      <small [title]="img.name">{{ img.name }}</small>
+                      <small>{{ img.uploadedOn }}</small>
+                    </div>
+                    <div class="img-menu">
+                      <button type="button" class="row-btn" [attr.aria-expanded]="menuId === img.id" [attr.aria-label]="'More actions for ' + img.caption" (click)="menuId = menuId === img.id ? null : img.id">
+                        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 16 }"></ng-container>
+                      </button>
+                      <ul class="menu" *ngIf="menuId === img.id" role="menu">
+                        <li><button type="button" role="menuitem" [disabled]="img.id === coverId" (click)="setCover(img.id)">Set as cover</button></li>
+                        <li><button type="button" role="menuitem" (click)="startRename(img.id)">Rename</button></li>
+                        <li><button type="button" role="menuitem" (click)="view(img)">View full size</button></li>
+                        <li><button type="button" role="menuitem" [disabled]="!img.url" (click)="download(img)">Download</button></li>
+                        <li><button type="button" role="menuitem" class="danger" (click)="removeAttachment(img.id)">Delete</button></li>
+                      </ul>
+                    </div>
+                  </div>
+                </article>
+              </div>
+              <button type="button" class="strip-nav" aria-label="Scroll images" (click)="scrollStrip(strip, 1)">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 16 }"></ng-container>
+              </button>
+            </div>
+            <p class="muted small empty-note" *ngIf="!images.length">No images uploaded yet.</p>
+          </section>
+
+          <!-- Documents -->
+          <section class="card" *ngIf="mediaTab !== 'plans'">
+            <div class="spec-head">
+              <div class="block-head">
+                <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'media', size: 22 }"></ng-container></span>
+                <div>
+                  <h2>Documents</h2>
+                  <p>Upload relevant documents such as permits, reports, manuals, etc.</p>
+                </div>
+              </div>
+              <div class="doc-upload">
+                <app-dropdown class="cat-dd" [options]="categoryOptions" [(ngModel)]="uploadCategory" aria-label="Category for new uploads"></app-dropdown>
+                <button type="button" class="btn-outline sm" (click)="docInput.click()">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 15 }"></ng-container>
+                  Upload Documents
+                </button>
+              </div>
+              <input #docInput type="file" multiple [accept]="uploadRules.documents.accept" hidden (change)="onFilesPicked(docInput, 'documents')" />
+            </div>
+
+            <ng-container *ngIf="mediaTab === 'documents'">
+              <ng-container *ngTemplateOutlet="dropTpl; context: { $implicit: 'documents', input: docInput, noun: 'documents' }"></ng-container>
+              <div class="filter-chips" role="group" aria-label="Filter by category">
+                <button type="button" class="filter-chip" [class.active]="docFilter === 'all'" (click)="docFilter = 'all'">All <span>{{ documents.length }}</span></button>
+                <button type="button" class="filter-chip" *ngFor="let c of docCategories" [class.active]="docFilter === c.id" (click)="docFilter = c.id">
+                  {{ c.label }} <span>{{ categoryCount(c.id) }}</span>
+                </button>
+              </div>
+            </ng-container>
+            <p class="upload-error" *ngIf="mediaTab === 'images' && uploadErrors.documents" role="alert">{{ uploadErrors.documents }}</p>
+
+            <div class="sib-table-wrap" (dragover)="onDragOver($event, 'documents')" (dragleave)="onDragLeave($event)" (drop)="onDrop($event, 'documents')" [class.drop-active]="dropTarget === 'documents' && mediaTab === 'images'">
+              <table class="sib-table spec-table doc-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>File Type</th>
+                    <th>Size</th>
+                    <th>Uploaded On</th>
+                    <th class="col-actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let d of filteredDocuments; trackBy: trackByRowId">
+                    <td>
+                      <span class="doc-name">
+                        <span class="doc-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'pdf', size: 18 }"></ng-container></span>
+                        <span [title]="d.name">{{ d.name }}</span>
+                      </span>
+                    </td>
+                    <td><span class="role-pill" [attr.data-tone]="category(d).tone">{{ category(d).label }}</span></td>
+                    <td>{{ d.fileType }}</td>
+                    <td>{{ formatSize(d.bytes) }}</td>
+                    <td>{{ d.uploadedOn }}</td>
+                    <td class="col-actions doc-actions">
+                      <button type="button" class="row-btn" [attr.aria-label]="'View ' + d.name" (click)="view(d)">
+                        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'eye', size: 16 }"></ng-container>
+                      </button>
+                      <button type="button" class="row-btn" [disabled]="!d.url" [title]="d.url ? 'Download' : 'Sample file, nothing to download'" [attr.aria-label]="'Download ' + d.name" (click)="download(d)">
+                        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'download', size: 16 }"></ng-container>
+                      </button>
+                      <button type="button" class="row-btn danger" [attr.aria-label]="'Delete ' + d.name" (click)="removeAttachment(d.id)">
+                        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'trash', size: 15 }"></ng-container>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="!filteredDocuments.length" class="empty-row">
+                    <td colspan="6">{{ documents.length ? 'No documents in this category.' : 'No documents uploaded yet.' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Floor plans & drawings -->
+          <ng-container *ngIf="mediaTab === 'plans'">
+            <section class="card">
+              <div class="spec-head">
+                <div class="block-head">
+                  <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'floorplan', size: 22 }"></ng-container></span>
+                  <div>
+                    <h2>Floor Plans &amp; Drawings</h2>
+                    <p>Upload architectural drawings, layouts and CAD files for each level.</p>
+                  </div>
+                </div>
+                <button type="button" class="btn-outline sm" (click)="planFileInput.click()">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 15 }"></ng-container>
+                  Upload Drawings
+                </button>
+                <input #planFileInput type="file" multiple [accept]="uploadRules.plans.accept" hidden (change)="onFilesPicked(planFileInput, 'plans')" />
+              </div>
+
+              <ng-container *ngTemplateOutlet="dropTpl; context: { $implicit: 'plans', input: planFileInput, noun: 'drawings' }"></ng-container>
+
+              <div class="plan-grid">
+                <article class="plan-card" *ngFor="let p of floorPlanDocs; trackBy: trackByRowId">
+                  <span class="plan-card-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: p.fileType === 'PDF' ? 'pdf' : 'floorplan', size: 22 }"></ng-container></span>
+                  <div class="doc-meta">
+                    <strong [title]="p.name">{{ p.name }}</strong>
+                    <small>{{ p.fileType }} · {{ formatSize(p.bytes) }} · {{ p.uploadedOn }}</small>
+                  </div>
+                  <button type="button" class="row-btn" [attr.aria-label]="'View ' + p.name" (click)="view(p)">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'eye', size: 16 }"></ng-container>
+                  </button>
+                  <button type="button" class="row-btn danger" [attr.aria-label]="'Delete ' + p.name" (click)="removeAttachment(p.id)">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'trash', size: 15 }"></ng-container>
+                  </button>
+                </article>
+                <p class="muted small empty-note" *ngIf="!floorPlanDocs.length">No floor plans or drawings uploaded yet.</p>
+              </div>
+            </section>
+            <ng-container *ngTemplateOutlet="floorplanTpl"></ng-container>
+          </ng-container>
+        </div>
+
+        <aside class="spec-side">
+          <!-- Images preview -->
+          <section class="card">
+            <div class="block-head">
+              <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'image', size: 22 }"></ng-container></span>
+              <div>
+                <h2>Images Preview</h2>
+                <p>Preview of uploaded images.</p>
+              </div>
+            </div>
+            <ng-container *ngIf="previewImage as p; else noImages">
+              <div class="preview-stage">
+                <button type="button" class="preview-img" [style.background-image]="imageBackground(p)" [attr.aria-label]="'Open ' + p.caption" (click)="view(p)"></button>
+                <ng-container *ngIf="images.length > 1">
+                  <button type="button" class="preview-nav prev" aria-label="Previous image" (click)="stepPreview(-1)">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevronLeft', size: 16 }"></ng-container>
+                  </button>
+                  <button type="button" class="preview-nav next" aria-label="Next image" (click)="stepPreview(1)">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 16 }"></ng-container>
+                  </button>
+                </ng-container>
+                <span class="preview-count">{{ previewIndex + 1 }} / {{ images.length }}</span>
+              </div>
+              <div class="preview-thumbs">
+                <button
+                  type="button"
+                  *ngFor="let img of images; trackBy: trackByRowId"
+                  class="preview-thumb"
+                  [class.active]="img.id === p.id"
+                  [style.background-image]="imageBackground(img)"
+                  [attr.aria-label]="'Show ' + img.caption"
+                  (click)="previewId = img.id"
+                ></button>
+              </div>
+              <strong class="preview-title">{{ p.caption }}</strong>
+              <small class="muted preview-sub">{{ p.name }} ({{ p.uploadedOn }})</small>
+            </ng-container>
+            <ng-template #noImages><p class="muted small">Upload images to see a preview.</p></ng-template>
+          </section>
+
+          <!-- Documents summary -->
+          <section class="card">
+            <div class="block-head">
+              <span class="block-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'media', size: 22 }"></ng-container></span>
+              <div>
+                <h2>Documents Summary</h2>
+                <p>List of uploaded documents.</p>
+              </div>
+            </div>
+            <ul class="doc-summary">
+              <li *ngFor="let c of docCategories">
+                <button type="button" [attr.data-tone]="c.tone" [class.active]="mediaTab === 'documents' && docFilter === c.id" (click)="mediaTab = 'documents'; docFilter = c.id">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'media', size: 16 }"></ng-container>
+                  <span>{{ c.summary }}</span>
+                  <strong>{{ categoryCount(c.id) }}</strong>
+                </button>
+              </li>
+            </ul>
+          </section>
+
+          <!-- Totals -->
+          <section class="card">
+            <dl class="media-totals">
+              <div><dt><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'image', size: 16 }"></ng-container>Total Images</dt><dd>{{ images.length }}</dd></div>
+              <div><dt><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'media', size: 16 }"></ng-container>Total Documents</dt><dd>{{ documents.length }}</dd></div>
+              <div><dt><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'layers', size: 16 }"></ng-container>Total Size</dt><dd>{{ totalSize }}</dd></div>
+            </dl>
+          </section>
+        </aside>
       </div>
     </ng-container>
     </ng-container>
@@ -1151,5 +1918,38 @@
       </ng-template>
     </div>
   </footer>
+  </div>
+
+  <!-- File viewer -->
+  <div class="viewer-backdrop" *ngIf="viewing as v" (click)="viewing = null">
+    <div class="viewer" role="dialog" aria-modal="true" [attr.aria-label]="v.caption || v.name" (click)="$event.stopPropagation()">
+      <header class="viewer-head">
+        <div>
+          <strong>{{ v.caption || v.name }}</strong>
+          <small class="muted">{{ v.name }} · {{ formatSize(v.bytes) }} · {{ v.uploadedOn }}</small>
+        </div>
+        <button type="button" class="row-btn" *ngIf="v.url" aria-label="Download" (click)="download(v)">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'download', size: 17 }"></ng-container>
+        </button>
+        <button type="button" class="row-btn" aria-label="Close preview" (click)="viewing = null">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 17 }"></ng-container>
+        </button>
+      </header>
+      <div class="viewer-body">
+        <img *ngIf="v.url && v.fileType !== 'PDF'; else nonImage" [src]="v.url" [alt]="v.caption || v.name" />
+        <ng-template #nonImage>
+          <iframe *ngIf="viewerUrl; else noPreview" [src]="viewerUrl" [title]="v.name"></iframe>
+        </ng-template>
+        <ng-template #noPreview>
+          <div class="viewer-art" *ngIf="v.kind === 'image'; else docArt" [style.background-image]="imageBackground(v)"></div>
+          <ng-template #docArt>
+            <div class="viewer-empty">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'pdf', size: 44 }"></ng-container>
+              <p>Preview isn't available for this file.</p>
+            </div>
+          </ng-template>
+        </ng-template>
+      </div>
+    </div>
   </div>
 </div>

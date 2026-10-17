@@ -1,14 +1,21 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DragScroll } from '../../shared/drag-scroll/drag-scroll';
 import { Dropdown, DropdownOption } from '../../shared/dropdown/dropdown';
+import { DataExplorer } from './data-explorer/data-explorer';
+import { HistoricalData } from './historical-data/historical-data';
+import { MultiParameter } from './multi-parameter/multi-parameter';
+import { TrendAnalysis } from './trend-analysis/trend-analysis';
 import {
   CURRENT_READINGS,
   DETAIL_TABS,
   MONITORING_ICONS,
   MONITORING_POINTS,
-  MONITORING_TABS,
+  MONITORING_SECTIONS,
+  MonitoringSection,
   MonitoringPoint,
   PARAMETER_SUMMARY,
   PointStatus,
@@ -32,7 +39,7 @@ function toOptions(all: string, values: string[]): DropdownOption[] {
 
 @Component({
   selector: 'app-monitoring',
-  imports: [CommonModule, FormsModule, Dropdown, DragScroll],
+  imports: [CommonModule, FormsModule, RouterLink, Dropdown, DragScroll, HistoricalData, TrendAnalysis, MultiParameter, DataExplorer],
   templateUrl: './monitoring.html',
   styleUrl: './monitoring.css',
 })
@@ -42,8 +49,11 @@ export class Monitoring {
   statusColors = STATUS_COLORS;
   statuses: PointStatus[] = ['normal', 'warning', 'critical', 'offline'];
 
-  tabs = MONITORING_TABS;
-  activeTab = MONITORING_TABS[0];
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  tabs = MONITORING_SECTIONS.filter(s => s.tab);
+  activeSection: MonitoringSection = MONITORING_SECTIONS[0];
 
   summary = PARAMETER_SUMMARY;
 
@@ -98,6 +108,18 @@ export class Monitoring {
     x: this.chartX(TREND_EVENT.from, 24),
     width: this.chartX(TREND_EVENT.to, 24) - this.chartX(TREND_EVENT.from, 24),
   };
+
+  constructor() {
+    // The active sub-module lives in the URL so sidebar links and the back button work
+    this.route.queryParamMap.pipe(takeUntilDestroyed(inject(DestroyRef))).subscribe(params => {
+      this.activeSection = MONITORING_SECTIONS.find(s => s.slug === params.get('tab')) ?? MONITORING_SECTIONS[0];
+    });
+  }
+
+  openSection(section: MonitoringSection): void {
+    if (section === this.activeSection) return;
+    this.router.navigate([], { relativeTo: this.route, queryParams: { tab: section.slug }, queryParamsHandling: 'merge' });
+  }
 
   // ---------- Filtering & paging ----------
   get filteredPoints(): MonitoringPoint[] {

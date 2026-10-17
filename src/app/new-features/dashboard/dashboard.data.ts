@@ -12,7 +12,14 @@ export interface Kpi {
   good: boolean;
   icon: string;
   tone: Tone;
+  // Widget detail shown below the KPI summary in its popup
+  related?: WidgetKey;
 }
+
+// Dashboard widgets that open a detail popup when clicked
+export type WidgetKey =
+  | 'kpi' | 'siteOverview' | 'alarmsCategory' | 'health' | 'deviceStatus' | 'sensors'
+  | 'trend' | 'topSites' | 'recentAlarms' | 'space' | 'energy';
 
 export interface SiteMarker {
   name: string;
@@ -108,13 +115,26 @@ export const DASHBOARD_ICONS: Record<string, string[]> = {
 };
 
 export const KPIS: Kpi[] = [
-  { label: 'Total Sites', value: '50', change: '3', direction: 'up', good: true, icon: 'building', tone: 'purple' },
-  { label: 'Total Devices', value: '3,120', change: '8%', direction: 'up', good: true, icon: 'device', tone: 'green' },
-  { label: 'Active Sensors', value: '2,856', change: '6%', direction: 'up', good: true, icon: 'wifi', tone: 'blue' },
-  { label: 'Active Alarms', value: '12', change: '4', direction: 'up', good: false, icon: 'bell', tone: 'red' },
+  { label: 'Total Sites', value: '50', change: '3', direction: 'up', good: true, icon: 'building', tone: 'purple', related: 'siteOverview' },
+  { label: 'Total Devices', value: '3,120', change: '8%', direction: 'up', good: true, icon: 'device', tone: 'green', related: 'deviceStatus' },
+  { label: 'Active Sensors', value: '2,856', change: '6%', direction: 'up', good: true, icon: 'wifi', tone: 'blue', related: 'sensors' },
+  { label: 'Active Alarms', value: '12', change: '4', direction: 'up', good: false, icon: 'bell', tone: 'red', related: 'alarmsCategory' },
   { label: 'Automation Rules', value: '86', change: '2', direction: 'up', good: true, icon: 'automation', tone: 'orange' },
-  { label: 'Compliance Score', value: '92.4%', change: '3.2%', direction: 'up', good: true, icon: 'shield', tone: 'green' },
+  { label: 'Compliance Score', value: '92.4%', change: '3.2%', direction: 'up', good: true, icon: 'shield', tone: 'green', related: 'health' },
 ];
+
+export const WIDGET_TITLES: Record<Exclude<WidgetKey, 'kpi'>, string> = {
+  siteOverview: 'Site Overview',
+  alarmsCategory: 'Alarms by Category',
+  health: 'Environmental Health Score',
+  deviceStatus: 'Device Status',
+  sensors: 'Sensor Readings (Live)',
+  trend: 'Key Parameters Trend',
+  topSites: 'Top Sites by Active Alarms',
+  recentAlarms: 'Recent Alarms',
+  space: 'Space & Occupancy Overview',
+  energy: 'Energy Consumption',
+};
 
 export const SITE_MARKERS: SiteMarker[] = [
   { name: 'Dubai Downtown', lat: 25.2048, lng: 55.2708, count: 12, status: 'normal' },

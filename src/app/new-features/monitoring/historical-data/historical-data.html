@@ -1,0 +1,242 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<div class="historical">
+
+  <!-- Filters -->
+  <section class="card filters">
+    <label class="field"><span>Site</span><app-dropdown [options]="siteOptions" [ngModel]="draft.site" (ngModelChange)="onSiteChange($event)"></app-dropdown></label>
+    <label class="field"><span>Building</span><app-dropdown [options]="buildingOptions" [ngModel]="draft.building" (ngModelChange)="onBuildingChange($event)"></app-dropdown></label>
+    <label class="field"><span>Floor</span><app-dropdown [options]="floorOptions" [ngModel]="draft.floor" (ngModelChange)="onFloorChange($event)"></app-dropdown></label>
+    <label class="field"><span>Space / Monitoring Point</span><app-dropdown [options]="pointOptions" [ngModel]="draft.pointId" (ngModelChange)="onPointChange($event)"></app-dropdown></label>
+
+    <div class="field param-field">
+      <span id="param-label">Parameter</span>
+      <div class="param-select" [class.open]="paramMenuOpen">
+        <div class="ms-trigger" role="combobox" tabindex="0" aria-labelledby="param-label" aria-haspopup="listbox" [attr.aria-expanded]="paramMenuOpen" (click)="paramMenuOpen = !paramMenuOpen" (keydown.enter)="paramMenuOpen = !paramMenuOpen" (keydown.space)="paramMenuOpen = !paramMenuOpen; $event.preventDefault()">
+          <span class="chips">
+            <span class="chip" *ngFor="let p of selectedParamLabels">
+              {{ p.label }}
+              <button type="button" class="chip-x" [attr.aria-label]="'Remove ' + p.label" (click)="removeParam(p.key, $event)" (keydown.enter)="$event.stopPropagation()">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 11 }"></ng-container>
+              </button>
+            </span>
+            <span class="placeholder" *ngIf="!selectedParamLabels.length">Select parameters</span>
+          </span>
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 14 }"></ng-container>
+        </div>
+        <ul class="menu" *ngIf="paramMenuOpen" role="listbox" aria-multiselectable="true">
+          <li *ngFor="let p of draftParams">
+            <label class="check" [class.disabled]="!draft.params.includes(p.key) && draft.params.length >= maxCompare">
+              <input
+                type="checkbox"
+                [checked]="draft.params.includes(p.key)"
+                [disabled]="!draft.params.includes(p.key) && draft.params.length >= maxCompare"
+                (change)="toggleParam(p.key)"
+              />
+              <span class="dot" [style.background]="p.color"></span>{{ p.label }} <small>({{ p.unit }})</small>
+            </label>
+          </li>
+          <li class="menu-note">Select up to {{ maxCompare }} parameters.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="field date-field">
+      <span id="date-label">Date Range</span>
+      <button type="button" class="date-trigger" aria-labelledby="date-label" [attr.aria-expanded]="dateOpen" (click)="dateOpen = !dateOpen">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'calendar', size: 15 }"></ng-container>
+        <span>{{ dateLabel }}</span>
+      </button>
+      <div class="date-pop" *ngIf="dateOpen">
+        <label><span>From</span><input type="date" [(ngModel)]="draft.from" [max]="draft.to" /></label>
+        <label><span>To</span><input type="date" [(ngModel)]="draft.to" [min]="draft.from" /></label>
+        <p class="error" *ngIf="dateError as e">{{ e }}</p>
+      </div>
+    </div>
+
+    <label class="field"><span>Interval</span><app-dropdown [options]="intervalOptions" [(ngModel)]="draft.interval"></app-dropdown></label>
+
+    <button type="button" class="btn-primary apply" [disabled]="!canApply" [class.pulse]="dirty && canApply" (click)="apply()">Apply Filters</button>
+  </section>
+
+  <!-- KPIs -->
+  <section class="kpi-row">
+    <div class="card kpi" *ngFor="let k of kpis">
+      <span class="kpi-icon" [ngClass]="'tone-' + k.tone">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: k.icon, size: 24 }"></ng-container>
+      </span>
+      <div class="kpi-body">
+        <span class="kpi-label">{{ k.label }}</span>
+        <strong class="kpi-value">{{ k.value }}</strong>
+        <span class="kpi-delta" *ngIf="k.delta" [class.good]="k.delta.good" [class.bad]="!k.delta.good">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: k.delta.up ? 'arrowUp' : 'arrowDown', size: 13 }"></ng-container>
+          {{ k.delta.text }}
+        </span>
+        <span class="kpi-sub" *ngIf="k.sub">{{ k.sub }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Chart -->
+  <div class="chart-backdrop" *ngIf="expanded" (click)="expanded = false"></div>
+  <section class="card chart-card" [class.expanded]="expanded">
+    <div class="card-head">
+      <h2>Historical Sensor Readings <small>{{ appliedPoint.name }}</small></h2>
+      <div class="head-actions">
+        <app-dropdown class="type-dd" [options]="chartTypeOptions" [ngModel]="chartType" (ngModelChange)="setChartType($event)"></app-dropdown>
+        <div class="seg" role="group" aria-label="Quick range">
+          <button type="button" *ngFor="let d of quickRanges" [class.active]="appliedDays === d" (click)="setQuickRange(d)">{{ d }}D</button>
+        </div>
+        <button type="button" class="btn-ghost" aria-label="Choose date range" (click)="dateOpen = true; $event.stopPropagation()">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'calendar', size: 16 }"></ng-container>
+        </button>
+        <button type="button" class="switch" [class.on]="compare" [disabled]="series.length < 2" [attr.aria-pressed]="compare" (click)="toggleCompare()">
+          Compare Parameters <span class="track"><span class="knob"></span></span>
+        </button>
+        <button type="button" class="btn-ghost plain" [attr.aria-label]="expanded ? 'Exit full screen' : 'Full screen'" (click)="expanded = !expanded">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: expanded ? 'collapse' : 'expand', size: 17 }"></ng-container>
+        </button>
+        <button type="button" class="btn-outline sm" (click)="exportChart(chartSvg)">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'download', size: 15 }"></ng-container>
+          Export
+        </button>
+      </div>
+    </div>
+
+    <div class="chart-wrap" (mouseleave)="hover = null">
+      <svg #chartSvg class="chart" [attr.viewBox]="'0 0 ' + plot.width + ' ' + plot.height" role="img" [attr.aria-label]="'Historical readings chart for ' + appliedPoint.name" (mousemove)="onChartMove($event, chartSvg)">
+        <rect *ngFor="let b of thresholdBands" [attr.x]="plot.left" [attr.y]="b.y" [attr.width]="plot.right - plot.left" [attr.height]="b.height" [attr.fill]="b.color"/>
+
+        <g *ngIf="leftAxis as a">
+          <line *ngFor="let t of a.ticks" [attr.x1]="plot.left" [attr.x2]="plot.right" [attr.y1]="t.y" [attr.y2]="t.y" class="grid"/>
+          <text *ngFor="let t of a.ticks" [attr.x]="plot.left - 10" [attr.y]="t.y + 4" text-anchor="end" class="axis">{{ t.value }}</text>
+          <text [attr.x]="14" [attr.y]="(plot.top + plot.bottom) / 2" class="axis-title" text-anchor="middle" [attr.transform]="'rotate(-90 14 ' + (plot.top + plot.bottom) / 2 + ')'">{{ lines[0]?.param?.label }} ({{ lines[0]?.param?.unit }})</text>
+        </g>
+        <g *ngIf="rightAxis as a">
+          <text *ngFor="let t of a.ticks" [attr.x]="plot.right + 10" [attr.y]="t.y + 4" class="axis">{{ t.value }}</text>
+          <text [attr.x]="plot.width - 12" [attr.y]="(plot.top + plot.bottom) / 2" class="axis-title" text-anchor="middle" [attr.transform]="'rotate(90 ' + (plot.width - 12) + ' ' + (plot.top + plot.bottom) / 2 + ')'">{{ lines[1]?.param?.label }} ({{ lines[1]?.param?.unit }})</text>
+        </g>
+
+        <g *ngFor="let t of timeTicks">
+          <line [attr.x1]="t.x" [attr.x2]="t.x" [attr.y1]="plot.top" [attr.y2]="plot.bottom" class="grid v"/>
+          <text [attr.x]="t.x" [attr.y]="plot.bottom + 18" text-anchor="middle" class="axis">{{ t.date }}</text>
+          <text [attr.x]="t.x" [attr.y]="plot.bottom + 32" text-anchor="middle" class="axis">{{ t.time }}</text>
+        </g>
+
+        <line *ngFor="let l of thresholdLines" [attr.x1]="plot.left" [attr.x2]="plot.right" [attr.y1]="l.y" [attr.y2]="l.y" [attr.stroke]="l.color" stroke-width="1.4" stroke-dasharray="6 5"/>
+
+        <g *ngFor="let line of lines" class="series">
+          <path *ngIf="chartType === 'area'" [attr.d]="line.area" [attr.fill]="line.param.color" fill-opacity="0.1"/>
+          <path [attr.d]="line.path" fill="none" [attr.stroke]="line.param.color" stroke-width="2" stroke-linejoin="round"/>
+          <circle *ngFor="let d of line.dots" [attr.cx]="d.x" [attr.cy]="d.y" r="2.6" [attr.fill]="line.param.color"/>
+        </g>
+
+        <line *ngIf="hover" [attr.x1]="hover.x" [attr.x2]="hover.x" [attr.y1]="plot.top" [attr.y2]="plot.bottom" class="crosshair"/>
+        <text *ngIf="!lines.length" [attr.x]="plot.width / 2" [attr.y]="plot.height / 2" text-anchor="middle" class="axis">No data for the selected filters</text>
+      </svg>
+
+      <div class="tooltip" *ngIf="hover" [style.left.%]="hover.left" [class.flip]="hover.left > 70">
+        <strong>{{ hover.time }}</strong>
+        <span *ngFor="let v of hover.values"><span class="dot" [style.background]="v.color"></span>{{ v.label }}: <b>{{ v.value }}</b></span>
+      </div>
+    </div>
+
+    <ul class="legend">
+      <li *ngFor="let l of legend">
+        <span class="lg" [ngClass]="'lg-' + l.kind" [style.--c]="l.color"></span>{{ l.label }}
+      </li>
+    </ul>
+  </section>
+
+  <div class="bottom">
+    <!-- Statistics -->
+    <section class="card stats-card">
+      <div class="card-head">
+        <h2>Parameter Statistics</h2>
+        <span class="muted">{{ appliedRangeLabel }}</span>
+      </div>
+      <div class="table-scroll" appDragScroll>
+        <table>
+          <thead>
+            <tr><th>Parameter</th><th>Minimum</th><th>Maximum</th><th>Average</th><th>Std Deviation</th><th>Time in Range</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of stats">
+              <td>
+                <span class="param-cell">
+                  <span class="param-icon" [ngClass]="'tone-' + s.param.tone"><ng-container *ngTemplateOutlet="icon; context: { $implicit: s.param.icon, size: 16 }"></ng-container></span>
+                  {{ s.param.label }} ({{ s.param.unit }})
+                </span>
+              </td>
+              <td>{{ s.min ? s.min.v.toFixed(s.param.decimals) : '-' }}</td>
+              <td>{{ s.max ? s.max.v.toFixed(s.param.decimals) : '-' }}</td>
+              <td>{{ s.avg.toFixed(s.param.decimals) }}</td>
+              <td>{{ s.std.toFixed(1) }}</td>
+              <td class="in-range" [class.low]="s.inRange < 95">{{ s.inRange.toFixed(1) }} %</td>
+            </tr>
+            <tr *ngIf="!stats.length"><td colspan="6" class="empty">No parameters selected</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Records -->
+    <section class="card records-card">
+      <div class="card-head">
+        <h2>Historical Records <span class="muted">({{ filteredRecords.length | number }})</span></h2>
+        <div class="head-actions">
+          <label class="search">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 14 }"></ng-container>
+            <input type="text" placeholder="Search records..." [(ngModel)]="search" (ngModelChange)="onSearchChange()" />
+          </label>
+          <button type="button" class="btn-outline sm" [disabled]="!filteredRecords.length" (click)="exportRecords()">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'download', size: 15 }"></ng-container>
+            Export CSV
+          </button>
+        </div>
+      </div>
+      <div class="table-scroll" appDragScroll>
+        <table class="records">
+          <thead>
+            <tr>
+              <th>
+                <button type="button" class="sort-btn" [attr.aria-label]="'Sort by timestamp ' + (sortDesc ? 'ascending' : 'descending')" (click)="toggleSort()">
+                  Timestamp <ng-container *ngTemplateOutlet="icon; context: { $implicit: sortDesc ? 'arrowDown' : 'arrowUp', size: 12 }"></ng-container>
+                </button>
+              </th>
+              <th>Monitoring Point</th><th>Parameter</th><th>Value</th><th>Unit</th><th>Status</th><th>Data Quality</th><th>Device ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of pagedRecords">
+              <td>{{ r.time }}</td>
+              <td>{{ r.point }}</td>
+              <td>{{ r.param.label }}</td>
+              <td class="strong">{{ r.value }}</td>
+              <td>{{ r.param.unit }}</td>
+              <td><span class="status-pill" [ngClass]="'pill-' + (r.status | lowercase)"><span class="dot"></span>{{ r.status }}</span></td>
+              <td><span class="quality" [class.est]="r.quality === 'Estimated'">{{ r.quality }}</span></td>
+              <td class="muted">{{ r.device }}</td>
+            </tr>
+            <tr *ngIf="!pagedRecords.length"><td colspan="8" class="empty">No records found</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-foot">
+        <span>Showing {{ rangeStart }} to {{ rangeEnd }} of {{ filteredRecords.length | number }} records</span>
+        <div class="pager">
+          <button type="button" (click)="goToPage(page - 1)" [disabled]="page === 1" aria-label="previous page">‹</button>
+          <ng-container *ngFor="let p of pageList">
+            <button *ngIf="p !== null; else gap" type="button" [class.active]="p === page" (click)="goToPage(p)">{{ p }}</button>
+            <ng-template #gap><span class="gap">…</span></ng-template>
+          </ng-container>
+          <button type="button" (click)="goToPage(page + 1)" [disabled]="page === totalPages" aria-label="next page">›</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

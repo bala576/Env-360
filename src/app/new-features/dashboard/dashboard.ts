@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { Dropdown, DropdownOption } from '../../shared/dropdown/dropdown';
+import { GenericPopup } from '../../shared/generic-popup/generic-popup';
 import * as L from 'leaflet';
 import {
   ALARM_CATEGORIES,
@@ -13,6 +14,7 @@ import {
   HEALTH_METRICS,
   HEALTH_SCORE,
   KPIS,
+  Kpi,
   RECENT_ALARMS,
   SENSOR_READINGS,
   SITE_ALARMS,
@@ -22,6 +24,8 @@ import {
   SiteStatus,
   TREND_SERIES,
   TrendSeries,
+  WIDGET_TITLES,
+  WidgetKey,
 } from './dashboard.data';
 
 type MapView = 'map' | 'list' | 'satellite';
@@ -30,6 +34,16 @@ interface DonutSegment {
   color: string;
   dash: string;
   offset: number;
+}
+
+interface SeriesStats {
+  label: string;
+  unit: string;
+  color: string;
+  current: number;
+  min: number;
+  max: number;
+  avg: number;
 }
 
 interface ChartLine {
@@ -63,7 +77,7 @@ const SPARK = { width: 100, height: 32 };
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, FormsModule, RouterModule, Dropdown],
+  imports: [CommonModule, FormsModule, RouterModule, Dropdown, GenericPopup],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
@@ -149,6 +163,56 @@ export class Dashboard implements AfterViewInit, OnDestroy {
 
   openCustomize(): void {
     this.router.navigate(['/customize-dashboard']);
+  }
+
+  // ---------- Widget detail popup ----------
+
+  activeWidget: WidgetKey | null = null;
+  activeKpi: Kpi | null = null;
+  widgetTitles = WIDGET_TITLES;
+  siteMarkers = SITE_MARKERS;
+
+  sensorStats: SeriesStats[] = SENSOR_READINGS.map(s => this.seriesStats(s.label, s.unit, s.color, s.history));
+  trendStats: SeriesStats[] = TREND_SERIES.map(s => this.seriesStats(s.label, s.unit, s.color, s.data));
+  energyAvg = ENERGY_WEEK.reduce((sum, d) => sum + d.value, 0) / ENERGY_WEEK.length;
+  energyPeak = ENERGY_WEEK.reduce((peak, d) => (d.value > peak.value ? d : peak));
+
+  // Clicks on a widget's own controls (dropdowns, map, tabs) stay in the widget
+  openWidget(key: WidgetKey, event: MouseEvent, kpi: Kpi | null = null): void {
+    const target = event.target as HTMLElement;
+    if (target.closest('button, a, input, select, app-dropdown, .map-wrap')) return;
+    this.activeWidget = key;
+    this.activeKpi = kpi;
+  }
+
+  @HostListener('document:keydown.escape')
+  closeWidget(): void {
+    this.activeWidget = null;
+    this.activeKpi = null;
+  }
+
+  get popupTitle(): string {
+    if (!this.activeWidget) return '';
+    return this.activeWidget === 'kpi' ? this.activeKpi?.label ?? '' : this.widgetTitles[this.activeWidget];
+  }
+
+  // Widget whose detail fills the popup body; a KPI borrows the detail of its related widget
+  get popupDetail(): WidgetKey | null {
+    return this.activeWidget === 'kpi' ? this.activeKpi?.related ?? null : this.activeWidget;
+  }
+
+  private seriesStats(label: string, unit: string, color: string, values: number[]): SeriesStats {
+    return {
+      label, unit, color,
+      current: values[values.length - 1],
+      min: Math.min(...values),
+      max: Math.max(...values),
+      avg: values.reduce((sum, v) => sum + v, 0) / values.length,
+    };
+  }
+
+  get sortedSiteAlarms() {
+    return [...this.siteAlarms].sort((a, b) => this.siteTotal(b) - this.siteTotal(a));
   }
 
   ngAfterViewInit(): void {

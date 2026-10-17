@@ -1,0 +1,244 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<div class="trend">
+
+  <!-- Filters -->
+  <section class="card filters">
+    <label class="field"><span>Site</span><app-dropdown [options]="siteOptions" [ngModel]="draft.site" (ngModelChange)="onSiteChange($event)"></app-dropdown></label>
+    <label class="field"><span>Building / Area</span><app-dropdown [options]="buildingOptions" [ngModel]="draft.building" (ngModelChange)="onBuildingChange($event)"></app-dropdown></label>
+    <label class="field"><span>Space / Monitoring Point</span><app-dropdown [options]="pointOptions" [ngModel]="draft.pointId" (ngModelChange)="onPointChange($event)"></app-dropdown></label>
+
+    <div class="field param-field">
+      <span id="trend-param-label">Parameters</span>
+      <div class="param-select" [class.open]="paramMenuOpen">
+        <div class="ms-trigger" role="combobox" tabindex="0" aria-labelledby="trend-param-label" aria-haspopup="listbox" [attr.aria-expanded]="paramMenuOpen" (click)="paramMenuOpen = !paramMenuOpen" (keydown.enter)="paramMenuOpen = !paramMenuOpen" (keydown.space)="paramMenuOpen = !paramMenuOpen; $event.preventDefault()">
+          <span class="chips">
+            <span class="chip" *ngFor="let p of selectedParamLabels">
+              {{ p.label }}
+              <button type="button" class="chip-x" [attr.aria-label]="'Remove ' + p.label" (click)="removeParam(p.key, $event)" (keydown.enter)="$event.stopPropagation()">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 11 }"></ng-container>
+              </button>
+            </span>
+            <span class="placeholder" *ngIf="!selectedParamLabels.length">Select parameters</span>
+          </span>
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 14 }"></ng-container>
+        </div>
+        <ul class="menu" *ngIf="paramMenuOpen" role="listbox" aria-multiselectable="true">
+          <li *ngFor="let p of draftParams">
+            <label class="check" [class.disabled]="!draft.params.includes(p.key) && draft.params.length >= maxCompare">
+              <input
+                type="checkbox"
+                [checked]="draft.params.includes(p.key)"
+                [disabled]="!draft.params.includes(p.key) && draft.params.length >= maxCompare"
+                (change)="toggleParam(p.key)"
+              />
+              <span class="dot" [style.background]="p.color"></span>{{ p.label }} <small>({{ p.unit }})</small>
+            </label>
+          </li>
+          <li class="menu-note">Select up to {{ maxCompare }} parameters.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="field date-field">
+      <span id="trend-date-label">Date Range</span>
+      <button type="button" class="date-trigger" aria-labelledby="trend-date-label" [attr.aria-expanded]="dateOpen" (click)="dateOpen = !dateOpen">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'calendar', size: 15 }"></ng-container>
+        <span>{{ dateLabel }}</span>
+      </button>
+      <div class="date-pop" *ngIf="dateOpen">
+        <label><span>From</span><input type="date" [(ngModel)]="draft.from" [max]="draft.to" /></label>
+        <label><span>To</span><input type="date" [(ngModel)]="draft.to" [min]="draft.from" /></label>
+        <p class="error" *ngIf="dateError as e">{{ e }}</p>
+      </div>
+    </div>
+
+    <label class="field"><span>Aggregation</span><app-dropdown [options]="aggregationOptions" [(ngModel)]="draft.interval"></app-dropdown></label>
+
+    <button type="button" class="btn-primary apply" [disabled]="!canApply" [class.pulse]="dirty && canApply" (click)="apply()">Apply</button>
+  </section>
+
+  <!-- KPIs -->
+  <section class="kpi-row" [style.--n]="kpis.length">
+    <div class="card kpi" *ngFor="let k of kpis">
+      <span class="kpi-icon" [ngClass]="'tone-' + k.tone">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: k.icon, size: 24 }"></ng-container>
+      </span>
+      <div class="kpi-body">
+        <span class="kpi-label">{{ k.label }}</span>
+        <strong class="kpi-value">{{ k.value }}</strong>
+        <span class="kpi-delta" [class.good]="k.delta.good" [class.bad]="!k.delta.good">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: k.delta.up ? 'arrowUp' : 'arrowDown', size: 13 }"></ng-container>
+          {{ k.delta.text }}
+        </span>
+        <span class="kpi-sub">vs previous period</span>
+      </div>
+      <svg class="kpi-spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
+        <path [attr.d]="k.spark.area" [attr.fill]="k.spark.color" fill-opacity="0.12"/>
+        <path class="draw" pathLength="1" [attr.d]="k.spark.line" fill="none" [attr.stroke]="k.spark.color" stroke-width="1.8" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Trend chart -->
+  <div class="chart-backdrop" *ngIf="expanded" (click)="expanded = false"></div>
+  <section class="card chart-card" [class.expanded]="expanded">
+    <div class="card-head">
+      <h2>Trend Analysis <small>{{ appliedPoint.name }}</small></h2>
+      <div class="head-actions">
+        <app-dropdown class="type-dd" [options]="chartTypeOptions" [(ngModel)]="chartType"></app-dropdown>
+        <div class="seg" role="group" aria-label="Quick range">
+          <button type="button" *ngFor="let d of quickRanges" [class.active]="appliedDays === d" (click)="setQuickRange(d)">{{ d }}D</button>
+        </div>
+        <button type="button" class="btn-ghost" aria-label="Choose date range" (click)="dateOpen = true; $event.stopPropagation()">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'calendar', size: 16 }"></ng-container>
+        </button>
+        <button type="button" class="switch" [class.on]="showThresholds" [attr.aria-pressed]="showThresholds" (click)="toggleThresholds()">
+          Show Thresholds <span class="track"><span class="knob"></span></span>
+        </button>
+        <button type="button" class="switch" [class.on]="showEvents" [attr.aria-pressed]="showEvents" (click)="toggleEvents()">
+          Show Events <span class="track"><span class="knob"></span></span>
+        </button>
+        <button type="button" class="btn-ghost plain" [attr.aria-label]="expanded ? 'Exit full screen' : 'Full screen'" (click)="expanded = !expanded">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: expanded ? 'collapse' : 'expand', size: 17 }"></ng-container>
+        </button>
+      </div>
+    </div>
+
+    <div class="chart-wrap" (mouseleave)="hover = null">
+      <svg #chartSvg class="chart" [attr.viewBox]="'0 0 ' + plot.width + ' ' + plot.height" role="img" [attr.aria-label]="'Trend chart for ' + appliedPoint.name" (mousemove)="onChartMove($event, chartSvg)">
+        <g class="fade-layer" *ngIf="showThresholds">
+          <rect *ngFor="let b of thresholdBands" [attr.x]="plot.left" [attr.y]="b.y" [attr.width]="plot.right - plot.left" [attr.height]="b.height" [attr.fill]="b.color"/>
+        </g>
+
+        <g *ngIf="leftAxis as a">
+          <line *ngFor="let t of a.ticks" [attr.x1]="plot.left" [attr.x2]="plot.right" [attr.y1]="axisY(t, a)" [attr.y2]="axisY(t, a)" class="grid"/>
+          <text *ngFor="let t of a.ticks" [attr.x]="plot.left - 10" [attr.y]="axisY(t, a) + 4" text-anchor="end" class="axis">{{ t }}</text>
+          <text [attr.x]="14" [attr.y]="(plot.top + plot.bottom) / 2" class="axis-title" text-anchor="middle" [attr.transform]="'rotate(-90 14 ' + (plot.top + plot.bottom) / 2 + ')'">{{ lines[0]?.param?.label }} ({{ lines[0]?.param?.unit }})</text>
+        </g>
+        <g *ngIf="rightAxis as a">
+          <text *ngFor="let t of a.ticks" [attr.x]="plot.right + 10" [attr.y]="axisY(t, a) + 4" class="axis">{{ t }}</text>
+          <text [attr.x]="plot.width - 12" [attr.y]="(plot.top + plot.bottom) / 2" class="axis-title" text-anchor="middle" [attr.transform]="'rotate(90 ' + (plot.width - 12) + ' ' + (plot.top + plot.bottom) / 2 + ')'">{{ lines[1]?.param?.label }} ({{ lines[1]?.param?.unit }})</text>
+        </g>
+
+        <g *ngFor="let t of timeTicks">
+          <line [attr.x1]="t.x" [attr.x2]="t.x" [attr.y1]="plot.top" [attr.y2]="plot.bottom" class="grid v"/>
+          <text [attr.x]="t.x" [attr.y]="plot.bottom + 18" text-anchor="middle" class="axis">{{ t.date }}</text>
+          <text [attr.x]="t.x" [attr.y]="plot.bottom + 32" text-anchor="middle" class="axis">{{ t.time }}</text>
+        </g>
+
+        <g class="fade-layer" *ngIf="showThresholds">
+          <line *ngFor="let l of thresholdLines" [attr.x1]="plot.left" [attr.x2]="plot.right" [attr.y1]="l.y" [attr.y2]="l.y" [attr.stroke]="l.color" stroke-width="1.4" stroke-dasharray="6 5"/>
+        </g>
+
+        <g *ngFor="let line of lines" class="series">
+          <path *ngIf="chartType === 'area'" class="area-fill" [attr.d]="line.area" [attr.fill]="line.param.color" fill-opacity="0.12"/>
+          <path class="draw" pathLength="1" [attr.d]="line.path" fill="none" [attr.stroke]="line.param.color" stroke-width="2.2" stroke-linejoin="round"/>
+        </g>
+
+        <g class="fade-layer" *ngIf="showEvents">
+          <g *ngFor="let e of events; let i = index" class="event" [style.--i]="i">
+            <title>{{ e.label }} · {{ e.time }}</title>
+            <line [attr.x1]="e.x" [attr.x2]="e.x" [attr.y1]="plot.top + 8" [attr.y2]="plot.bottom" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="4 4"/>
+            <path [attr.d]="'M' + e.x + ',' + (plot.top - 8) + 'l9,15h-18z'" fill="#ef4444"/>
+            <text [attr.x]="e.x" [attr.y]="plot.top + 5" text-anchor="middle" class="event-mark">!</text>
+          </g>
+        </g>
+
+        <line *ngIf="hover" [attr.x1]="hover.x" [attr.x2]="hover.x" [attr.y1]="plot.top" [attr.y2]="plot.bottom" class="crosshair"/>
+        <text *ngIf="!lines.length" [attr.x]="plot.width / 2" [attr.y]="plot.height / 2" text-anchor="middle" class="axis">No data for the selected filters</text>
+      </svg>
+
+      <div class="tooltip" *ngIf="hover" [style.left.%]="hover.left" [class.flip]="hover.left > 70">
+        <strong>{{ hover.time }}</strong>
+        <span *ngFor="let v of hover.values"><span class="dot" [style.background]="v.color"></span>{{ v.label }}: <b>{{ v.value }}</b></span>
+      </div>
+    </div>
+
+    <ul class="legend">
+      <li *ngFor="let l of legend">
+        <span class="lg" [ngClass]="'lg-' + l.kind" [style.--c]="l.color"></span>{{ l.label }}
+      </li>
+    </ul>
+  </section>
+
+  <div class="bottom">
+    <!-- Parameter comparison -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Parameter Trend Comparison</h2>
+        <label class="inline-field">
+          <span>Compare with</span>
+          <app-dropdown class="compare-dd" [options]="compareOptions" [ngModel]="compareWith" (ngModelChange)="setCompare($event)"></app-dropdown>
+        </label>
+      </div>
+      <svg class="mini-chart" [attr.viewBox]="'0 0 ' + bar.width + ' ' + bar.height" role="img" aria-label="Average value per parameter, current versus comparison period">
+        <g *ngFor="let t of barAxis.ticks">
+          <line [attr.x1]="bar.left" [attr.x2]="bar.right" [attr.y1]="barY(t)" [attr.y2]="barY(t)" class="grid" [class.zero]="t === 0"/>
+          <text [attr.x]="bar.left - 8" [attr.y]="barY(t) + 4" text-anchor="end" class="axis">{{ t }}</text>
+        </g>
+        <text x="12" [attr.y]="(bar.top + bar.bottom) / 2" class="axis-title" text-anchor="middle" [attr.transform]="'rotate(-90 12 ' + (bar.top + bar.bottom) / 2 + ')'">Average Value</text>
+        <g *ngFor="let g of barGroups; let gi = index">
+          <g *ngFor="let b of g.bars; let bi = index" class="bar" [style.--i]="gi * 2 + bi">
+            <rect [attr.x]="b.x" [attr.y]="b.y" [attr.width]="barWidth" [attr.height]="b.height" rx="3" [attr.fill]="b.current ? '#2563eb' : '#a78bfa'"/>
+            <text [attr.x]="b.x + barWidth / 2" [attr.y]="b.labelY" text-anchor="middle" class="bar-value">{{ b.value }}</text>
+          </g>
+          <text [attr.x]="g.x" [attr.y]="bar.bottom + 30" text-anchor="middle" class="axis">{{ g.label }}</text>
+        </g>
+        <text *ngIf="!barGroups.length" [attr.x]="bar.width / 2" [attr.y]="bar.height / 2" text-anchor="middle" class="axis">No parameters selected</text>
+      </svg>
+      <ul class="legend">
+        <li><span class="lg lg-dot" style="--c: #2563eb"></span>Current Period</li>
+        <li><span class="lg lg-dot" style="--c: #a78bfa"></span>{{ compareWith === 'previous' ? 'Previous Period' : 'Last Month' }}</li>
+      </ul>
+    </section>
+
+    <!-- Correlation -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Correlation Analysis</h2>
+        <span class="badge" *ngIf="correlation !== null">Correlation: {{ correlationText }}</span>
+      </div>
+      <svg *ngIf="correlation !== null; else noCorrelation" class="mini-chart" [attr.viewBox]="'0 0 ' + scatter.width + ' ' + scatter.height" role="img" [attr.aria-label]="'Scatter of ' + series[1].param.label + ' against ' + series[0].param.label">
+        <g *ngFor="let t of scatterY.ticks">
+          <line [attr.x1]="scatter.left" [attr.x2]="scatter.right" [attr.y1]="scatterYPos(t)" [attr.y2]="scatterYPos(t)" class="grid"/>
+          <text [attr.x]="scatter.left - 8" [attr.y]="scatterYPos(t) + 4" text-anchor="end" class="axis">{{ t }}</text>
+        </g>
+        <g *ngFor="let t of scatterX.ticks">
+          <line [attr.x1]="scatterXPos(t)" [attr.x2]="scatterXPos(t)" [attr.y1]="scatter.top" [attr.y2]="scatter.bottom" class="grid v"/>
+          <text [attr.x]="scatterXPos(t)" [attr.y]="scatter.bottom + 16" text-anchor="middle" class="axis">{{ t }}</text>
+        </g>
+        <text x="12" [attr.y]="(scatter.top + scatter.bottom) / 2" class="axis-title" text-anchor="middle" [attr.transform]="'rotate(-90 12 ' + (scatter.top + scatter.bottom) / 2 + ')'">{{ series[1].param.label }} ({{ series[1].param.unit }})</text>
+        <text [attr.x]="(scatter.left + scatter.right) / 2" [attr.y]="scatter.height - 4" class="axis-title" text-anchor="middle">{{ series[0].param.label }} ({{ series[0].param.unit }})</text>
+        <circle *ngFor="let d of scatterDots; let i = index" class="scatter-dot" [style.--i]="i" [attr.cx]="d.x" [attr.cy]="d.y" r="3" fill="#7c3aed" fill-opacity="0.7"/>
+        <line *ngIf="regression as r" class="regression" pathLength="1" [attr.x1]="r.x1" [attr.y1]="r.y1" [attr.x2]="r.x2" [attr.y2]="r.y2" stroke="#6d28d9" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+      <ng-template #noCorrelation>
+        <div class="empty">Select two parameters to see how they relate.</div>
+      </ng-template>
+    </section>
+
+    <!-- Insights -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Top Insights</h2>
+      </div>
+      <ul class="insights">
+        <li *ngFor="let i of insights; let n = index" [style.--i]="n">
+          <span class="insight-icon" [ngClass]="'tone-' + i.tone">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: i.icon, size: 18 }"></ng-container>
+          </span>
+          <div>
+            <strong>{{ i.title }}</strong>
+            <p>{{ i.text }}</p>
+          </div>
+        </li>
+        <li *ngIf="!insights.length" class="empty">No insights for the selected filters</li>
+      </ul>
+    </section>
+  </div>
+</div>

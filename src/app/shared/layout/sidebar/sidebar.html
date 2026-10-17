@@ -54,14 +54,33 @@
           <span class="nav-label" *ngIf="!isCollapsed">{{ item.label }}</span>
           <span class="nav-badge" *ngIf="item.badge && !isCollapsed">{{ item.badge }}</span>
           <span class="nav-dot" *ngIf="item.badge && isCollapsed"></span>
+          <svg *ngIf="!isCollapsed && item.children" class="chevron" [class.open]="expandedItem === item.label" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            role="button" [attr.aria-label]="(expandedItem === item.label ? 'hide ' : 'show ') + item.label + ' menu'" [attr.aria-expanded]="expandedItem === item.label" (click)="toggleSubmenu(item, $event)">
+            <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           <svg *ngIf="!isCollapsed && item.hasFlyout" class="chevron" [class.open]="adminPanelOpen" width="14" height="14" viewBox="0 0 24 24" fill="none"
             role="button" aria-label="show administration menu" (click)="toggleAdminPanel($event)">
             <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </ng-template>
 
+        <div
+          *ngIf="item.children"
+          class="nav-link"
+          role="button"
+          tabindex="0"
+          [class.active]="isNavItemActive(item)"
+          [title]="isCollapsed ? item.label : ''"
+          [attr.aria-expanded]="expandedItem === item.label"
+          (click)="onParentClick(item)"
+          (keydown.enter)="onParentClick(item)"
+          (keydown.space)="onParentClick(item); $event.preventDefault()"
+        >
+          <ng-container *ngTemplateOutlet="navContent"></ng-container>
+        </div>
+
         <a
-          *ngIf="!item.hasFlyout && item.route"
+          *ngIf="!item.hasFlyout && item.route && !item.children"
           [routerLink]="item.route"
           [class.active]="isNavItemActive(item)"
           [title]="isCollapsed ? item.label : ''"
@@ -70,6 +89,18 @@
         >
           <ng-container *ngTemplateOutlet="navContent"></ng-container>
         </a>
+
+        <ul class="nav-submenu" *ngIf="item.children && !isCollapsed && expandedItem === item.label">
+          <li *ngFor="let child of item.children; let i = index" [style.--i]="i">
+            <a
+              [routerLink]="child.route"
+              [queryParams]="child.tab ? { tab: child.tab } : null"
+              [class.active]="isChildActive(item, child)"
+              [attr.aria-current]="isChildActive(item, child) ? 'page' : null"
+              (click)="closeAdminPanel()"
+            >{{ child.label }}</a>
+          </li>
+        </ul>
 
         <div
           *ngIf="!item.hasFlyout && !item.route"

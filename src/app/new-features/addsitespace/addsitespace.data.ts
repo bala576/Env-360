@@ -9,11 +9,16 @@ export interface FormSection {
   icon: string;
 }
 
+export type AttachmentKind = 'image' | 'document';
+
 export interface Attachment {
   id: number;
   name: string;
-  size: string;
-  kind: 'image' | 'pdf';
+  bytes: number;
+  kind: AttachmentKind;
+  fileType: string;
+  uploadedOn: string;
+  category?: DocCategoryId;
   url?: string;
   caption?: string;
   gradient?: string;
@@ -66,6 +71,17 @@ export const ADD_ICONS: Record<string, string[]> = {
   construction: ['M3 21h18', 'M5 21V11l7-5 7 5v10', 'M9 21v-6h6v6'],
   people: ['M9 4a3 3 0 100 6 3 3 0 000-6z', 'M3 20v-1a6 6 0 0112 0v1', 'M16 4a3 3 0 010 6', 'M18 14a5 5 0 013 4.6V20'],
   status: ['M4 4h16v16H4z', 'M8 15l3-3 2 2 3-4'],
+  department: ['M4 21V5h10v16', 'M14 9h6v12', 'M7 9h4M7 13h4M7 17h4', 'M3 21h18'],
+  calendar: ['M4 6h16v15H4z', 'M4 10h16', 'M8 3v4M16 3v4', 'M8 14h2M12 14h2M16 14h.01M8 17h2M12 17h2'],
+  sliders: ['M4 6h9M17 6h3', 'M4 12h3M11 12h9', 'M4 18h11M19 18h1', 'M15 4v4M9 10v4M17 16v4'],
+  bell: ['M6 16V11a6 6 0 0112 0v5l2 2H4z', 'M10 20a2 2 0 004 0'],
+  shield: ['M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z', 'M9 12l2 2 4-4'],
+  download: ['M12 4v11', 'M7 10l5 5 5-5', 'M5 20h14'],
+  more: ['M12 5h.01M12 12h.01M12 19h.01'],
+  image: ['M4 5h16v14H4z', 'M8.5 8a1.5 1.5 0 100 3 1.5 1.5 0 000-3z', 'M20 15l-5-5-9 9'],
+  star: ['M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z'],
+  chevronLeft: ['M15 6l-6 6 6 6'],
+  checkCircle: ['M12 3a9 9 0 100 18 9 9 0 000-18z', 'M8 12l3 3 5-6'],
 };
 
 export const FORM_SECTIONS: FormSection[] = [
@@ -95,14 +111,72 @@ export const USAGE_OPTIONS = opts('Retail & Entertainment', 'Office', 'Hospitali
 export const OPERATING_STATUS_OPTIONS = opts('Operational', 'Under Construction', 'Under Renovation', 'Closed');
 export const FLOOR_USAGE_OPTIONS = opts('Retail', 'F&B', 'Parking', 'Office', 'Entertainment', 'Services', 'Storage', 'Plant Room');
 export const FLOOR_STATUS_OPTIONS = opts('Active', 'Inactive', 'Under Maintenance');
-export const TIMEZONE_OPTIONS = opts('(GMT+04:00) Dubai', '(GMT+03:00) Riyadh', '(GMT+05:30) India', '(GMT+00:00) UTC');
-export const ROLE_OPTIONS = opts('Site Owner', 'Facility Manager', 'Security Lead', 'Maintenance Lead');
+export const TIMEZONE_OPTIONS = opts(
+  '(UTC+04:00) Dubai, Abu Dhabi',
+  '(UTC+03:00) Riyadh, Kuwait',
+  '(UTC+03:00) Doha',
+  '(UTC+04:00) Muscat',
+  '(UTC+05:30) Chennai, Mumbai, New Delhi',
+  '(UTC+00:00) UTC',
+);
 export const MAP_OPTIONS = opts('Dubai Mall - Level 1', 'Dubai Mall - Level 2', 'Dubai Mall - Ground Floor', 'Dubai Mall - Basement 1');
 
+// ---------- Images & Documents ----------
+export type MediaTab = 'images' | 'documents' | 'plans';
+export type DocCategoryId = 'general' | 'floorplan' | 'compliance' | 'technical' | 'manual';
+
+export interface DocCategory {
+  id: DocCategoryId;
+  label: string;
+  summary: string;
+  tone: RoleTone;
+}
+
+export const DOC_CATEGORIES: DocCategory[] = [
+  { id: 'general', label: 'General', summary: 'General Documents', tone: 'blue' },
+  { id: 'floorplan', label: 'Floor Plan', summary: 'Floor Plans', tone: 'purple' },
+  { id: 'compliance', label: 'Compliance', summary: 'Compliance Documents', tone: 'green' },
+  { id: 'technical', label: 'Technical', summary: 'Technical Documents', tone: 'red' },
+  { id: 'manual', label: 'Manual', summary: 'Manuals', tone: 'yellow' },
+];
+
+export const MEDIA_TABS: { id: MediaTab; label: string }[] = [
+  { id: 'images', label: 'Images' },
+  { id: 'documents', label: 'Documents' },
+  { id: 'plans', label: 'Floor Plans & Drawings' },
+];
+
+export interface UploadRule {
+  extensions: string[];
+  accept: string;
+  label: string;
+}
+
+const rule = (...extensions: string[]): UploadRule => ({
+  extensions,
+  accept: extensions.map(e => `.${e}`).join(','),
+  label: [...new Set(extensions.map(e => (e === 'jpeg' ? 'jpg' : e).toUpperCase()))].join(', '),
+});
+
+export const UPLOAD_RULES: Record<MediaTab, UploadRule> = {
+  images: rule('jpg', 'jpeg', 'png', 'webp'),
+  documents: rule('pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv'),
+  plans: rule('pdf', 'png', 'jpg', 'jpeg', 'dwg', 'dxf'),
+};
+
+const MB = 1024 * 1024;
+
+// Sample files have no binary; images render from a gradient placeholder
 export const DEFAULT_ATTACHMENTS: Attachment[] = [
-  { id: 1, name: 'cover.jpg', size: '1.1 MB', kind: 'image', caption: 'Cover Image', gradient: 'linear-gradient(160deg, #93c5fd 0%, #64748b 55%, #334155 100%)' },
-  { id: 2, name: 'entrance.jpg', size: '0.9 MB', kind: 'image', caption: 'Site Entrance', gradient: 'linear-gradient(160deg, #fcd34d 0%, #a16207 55%, #44403c 100%)' },
-  { id: 3, name: 'Dubai Mall Site Plan.pdf', size: '2.4 MB', kind: 'pdf' },
+  { id: 1, name: 'dubaimal_front.jpg', bytes: 2.4 * MB, kind: 'image', fileType: 'JPG', uploadedOn: '21 May 2025', caption: 'Front View', gradient: 'linear-gradient(180deg, #7dd3fc 0%, #bae6fd 48%, #94a3b8 49%, #475569 78%, #1e3a5f 100%)' },
+  { id: 2, name: 'main_entrance.jpg', bytes: 1.9 * MB, kind: 'image', fileType: 'JPG', uploadedOn: '21 May 2025', caption: 'Main Entrance', gradient: 'linear-gradient(180deg, #93c5fd 0%, #e0f2fe 40%, #d6d3d1 41%, #a8a29e 70%, #57534e 100%)' },
+  { id: 3, name: 'interior.jpg', bytes: 2.1 * MB, kind: 'image', fileType: 'JPG', uploadedOn: '21 May 2025', caption: 'Interior View', gradient: 'radial-gradient(circle at 50% 10%, #e0f2fe 0%, #bfdbfe 25%, transparent 45%), linear-gradient(180deg, #cbd5e1 0%, #fde68a 55%, #a16207 100%)' },
+  { id: 4, name: 'parking_area.jpg', bytes: 1.6 * MB, kind: 'image', fileType: 'JPG', uploadedOn: '21 May 2025', caption: 'Parking Area', gradient: 'linear-gradient(180deg, #bae6fd 0%, #f0f9ff 38%, #e7e5e4 39%, #a8a29e 72%, #78716c 100%)' },
+  { id: 5, name: 'Site Information Sheet.pdf', bytes: 1.2 * MB, kind: 'document', fileType: 'PDF', uploadedOn: '21 May 2025', category: 'general' },
+  { id: 6, name: 'Building Layout Plan.pdf', bytes: 3.5 * MB, kind: 'document', fileType: 'PDF', uploadedOn: '21 May 2025', category: 'floorplan' },
+  { id: 7, name: 'Fire Safety Certificate.pdf', bytes: 800 * 1024, kind: 'document', fileType: 'PDF', uploadedOn: '21 May 2025', category: 'compliance' },
+  { id: 8, name: 'Electrical Drawings.pdf', bytes: 2.1 * MB, kind: 'document', fileType: 'PDF', uploadedOn: '21 May 2025', category: 'technical' },
+  { id: 9, name: 'Maintenance Manual.pdf', bytes: 4.3 * MB, kind: 'document', fileType: 'PDF', uploadedOn: '21 May 2025', category: 'manual' },
 ];
 
 // Simplified indoor map, coordinates in a 300x170 viewBox
@@ -279,3 +353,108 @@ export const SPEC_TEMPLATES: SpecTemplate[] = [
     ],
   },
 ];
+
+// ---------- Contacts ----------
+export type RoleTone = 'blue' | 'purple' | 'orange' | 'cyan' | 'red' | 'gray' | 'green' | 'yellow';
+
+export interface ContactRole {
+  label: string;
+  hint: string;
+  tone: RoleTone;
+}
+
+export const CONTACT_ROLES: ContactRole[] = [
+  { label: 'Site Manager', hint: 'Overall responsibility for the site/space', tone: 'blue' },
+  { label: 'Facility Engineer', hint: 'Technical and maintenance contact', tone: 'purple' },
+  { label: 'Security Contact', hint: 'Security and safety related matters', tone: 'orange' },
+  { label: 'IT Contact', hint: 'IT infrastructure and network contact', tone: 'cyan' },
+  { label: 'Operations', hint: 'Day-to-day operations contact', tone: 'red' },
+  { label: 'Other', hint: 'Other relevant contacts', tone: 'gray' },
+];
+
+export const ROLE_OPTIONS = opts(...CONTACT_ROLES.map(r => r.label));
+
+export const DIAL_CODE_OPTIONS: DropdownOption[] = [
+  { label: '🇦🇪 +971', value: '+971' },
+  { label: '🇸🇦 +966', value: '+966' },
+  { label: '🇶🇦 +974', value: '+974' },
+  { label: '🇴🇲 +968', value: '+968' },
+  { label: '🇮🇳 +91', value: '+91' },
+];
+
+export interface SiteContact {
+  id: number;
+  name: string;
+  role: string;
+  department: string;
+  email: string;
+  dialCode: string;
+  phone: string;
+  designation: string;
+  notes: string;
+  status: 'Active' | 'Inactive';
+}
+
+export const DEFAULT_CONTACTS: SiteContact[] = [
+  { id: 1, name: 'Fahad Al Mansoori', role: 'Site Manager', department: 'Facilities', email: 'fahad@dubaimall.com', dialCode: '+971', phone: '50 123 4567', designation: 'Senior Site Manager', notes: '', status: 'Active' },
+  { id: 2, name: 'Sara Ahmed', role: 'Facility Engineer', department: 'Facilities', email: 'sara@dubaimall.com', dialCode: '+971', phone: '50 234 5678', designation: 'MEP Engineer', notes: '', status: 'Active' },
+  { id: 3, name: 'Mohammed Khan', role: 'Security Contact', department: 'Security', email: 'm.khan@dubaimall.com', dialCode: '+971', phone: '50 345 6789', designation: 'Security Supervisor', notes: '', status: 'Active' },
+  { id: 4, name: 'Ravi Lal', role: 'IT Contact', department: 'IT', email: 'ravi.lal@dubaimall.com', dialCode: '+971', phone: '50 456 7890', designation: 'Network Administrator', notes: '', status: 'Active' },
+  { id: 5, name: 'Noor Khaled', role: 'Operations', department: 'Operations', email: 'noor@dubaimall.com', dialCode: '+971', phone: '50 567 8901', designation: 'Operations Coordinator', notes: '', status: 'Inactive' },
+];
+
+// ---------- Settings ----------
+export const DATE_FORMAT_OPTIONS = opts('DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD', 'DD MMM YYYY');
+export const TIME_FORMAT_OPTIONS: DropdownOption[] = [
+  { label: '24 Hour (HH:mm)', value: '24 Hour' },
+  { label: '12 Hour (hh:mm AM/PM)', value: '12 Hour' },
+];
+export const LANGUAGE_OPTIONS = opts('English', 'Arabic', 'Hindi', 'French');
+export const VISIBILITY_OPTIONS = opts('Visible to all users', 'Visible to selected users and roles', 'Private (owners only)');
+export const ACCESS_ROLE_OPTIONS = opts('Site Manager', 'Facility Engineer', 'Security Team', 'IT Team', 'Operations', 'Administrators', 'Viewers');
+export const MAP_VIEW_OPTIONS = opts('Satellite', 'Map', 'Hybrid');
+export const SEVERITY_LEVELS = ['Critical', 'High', 'Medium', 'Low'];
+export const NOTIFICATION_CHANNELS = ['Email', 'SMS', 'In-App', 'Push Notification'];
+export const MAX_TIME_RANGES = 3;
+
+export interface TimeRange {
+  from: string;
+  to: string;
+}
+
+export interface DaySchedule {
+  id: string;
+  label: string;
+  open: boolean;
+  ranges: TimeRange[];
+}
+
+export const DEFAULT_SCHEDULE: DaySchedule[] = [
+  { id: 'weekdays', label: 'Monday - Friday', open: true, ranges: [{ from: '09:00', to: '22:00' }] },
+  { id: 'saturday', label: 'Saturday', open: true, ranges: [{ from: '10:00', to: '22:00' }] },
+  { id: 'sunday', label: 'Sunday', open: false, ranges: [{ from: '10:00', to: '22:00' }] },
+];
+
+export interface SiteFeature {
+  key: string;
+  label: string;
+  summary: string;
+  hint: string;
+  enabled: boolean;
+}
+
+export const DEFAULT_FEATURES: SiteFeature[] = [
+  { key: 'asset', label: 'Enable for Asset Tracking', summary: 'Asset Tracking', hint: 'Track tagged assets and equipment within this site/space', enabled: true },
+  { key: 'people', label: 'Enable for People Tracking', summary: 'People Tracking', hint: 'Count and track occupancy and footfall', enabled: true },
+  { key: 'env', label: 'Enable for Environmental Monitoring', summary: 'Environmental Monitoring', hint: 'Monitor temperature, humidity, air quality and energy', enabled: true },
+  { key: 'access', label: 'Enable for Access Control', summary: 'Access Control', hint: 'Manage doors, readers and access events', enabled: true },
+  { key: 'visitor', label: 'Enable for Visitor Management', summary: 'Visitor Management', hint: 'Register and manage visitors and passes', enabled: false },
+  { key: 'emergency', label: 'Enable for Emergency & Evacuation', summary: 'Emergency & Evacuation', hint: 'Emergency alerts, mustering and evacuation workflows', enabled: true },
+  { key: 'integrations', label: 'Enable for Integrations (API/Webhooks)', summary: 'Integrations (API/Webhooks)', hint: 'Expose data to external systems through APIs and webhooks', enabled: true },
+];
+
+export const DEFAULT_NOTIFICATIONS = {
+  recipients: ['Site Manager', 'Facility Engineer'],
+  severities: ['Critical', 'High', 'Medium', 'Low'],
+  channels: ['Email', 'SMS', 'In-App'],
+};

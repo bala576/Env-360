@@ -5,6 +5,13 @@ import { filter } from 'rxjs/operators';
 import { ADMIN_SECTIONS, AdminSection, AdminSubItem } from './admin-nav.data';
 
 
+interface NavChild {
+  label: string;
+  route: string;
+  // Sub-module key, sent as ?tab=<tab>; the first child is the default when none is given
+  tab?: string;
+}
+
 interface NavItem {
   label: string;
   icon: string;
@@ -12,6 +19,7 @@ interface NavItem {
   matchRoutes?: string[];
   hasFlyout?: boolean;
   badge?: number;
+  children?: NavChild[];
 }
 
 // Stroke-only icon paths (24x24 viewBox), rendered with currentColor
@@ -54,7 +62,22 @@ export class Sidebar {
       matchRoutes: ['/dashboard', '/new-dashboard', '/customize-dashboard', '/manhole-dashboard', '/equipment-dashboard']
     },
     { label: 'Sites & Spaces', icon: 'sites', route: '/sites' },
-    { label: 'Monitoring', icon: 'monitoring', route: '/monitoring' },
+    {
+      label: 'Monitoring',
+      icon: 'monitoring',
+      route: '/monitoring',
+      children: [
+        { label: 'Live Monitoring', route: '/monitoring', tab: 'live-monitoring' },
+        { label: 'Historical Data', route: '/monitoring', tab: 'historical-data' },
+        { label: 'Trend Analysis', route: '/monitoring', tab: 'trend-analysis' },
+        { label: 'Multi-Parameter', route: '/monitoring', tab: 'multi-parameter' },
+        { label: 'Data Explorer', route: '/monitoring', tab: 'data-explorer' },
+        { label: 'Monitoring Points', route: '/monitoring', tab: 'monitoring-points' },
+        { label: 'Calculated Parameters', route: '/monitoring', tab: 'calculated-parameters' },
+        { label: 'Data Quality', route: '/monitoring', tab: 'data-quality' },
+        { label: 'Monitoring Templates', route: '/monitoring', tab: 'monitoring-templates' },
+      ],
+    },
     { label: 'Devices & Sensors', icon: 'devices', route: '/devices', matchRoutes: ['/devices'] },
     { label: 'Automation & Control', icon: 'automation', route: '/automation', matchRoutes: ['/automation', '/process-automation'] },
     { label: 'Alarms & Events', icon: 'alarms', route: '/alarms', matchRoutes: ['/alarms', '/events'] },
@@ -80,6 +103,10 @@ export class Sidebar {
   expandedConfigGroup: string | null = null;
   isAdminActive = false;
   currentUrl = '';
+  currentTab: string | null = null;
+  // Label of the nav item whose sub-menu is open
+  expandedItem: string | null = null;
+  private activeParent: string | null = null;
 
   private adminRoutes: string[] = this.adminSections.flatMap(section => this.collectRoutes(section));
 
@@ -100,6 +127,32 @@ export class Sidebar {
     this.currentUrl = url;
     const path = url.split(/[?#]/)[0];
     this.isAdminActive = path === '/administration' || this.adminRoutes.some(route => url.startsWith(route));
+    this.currentTab = this.router.parseUrl(url).queryParams['tab'] ?? null;
+    // Entering a module with sub-modules opens its sub-menu once; moving between its pages keeps the user's choice
+    const parent = this.navItems.find(item => item.children && this.isNavItemActive(item))?.label ?? null;
+    if (parent && parent !== this.activeParent) this.expandedItem = parent;
+    this.activeParent = parent;
+  }
+
+  // Outside the module the item opens it; inside, the item just opens or closes the sub-menu
+  onParentClick(item: NavItem): void {
+    this.closeAdminPanel();
+    if (this.isNavItemActive(item)) {
+      this.expandedItem = this.expandedItem === item.label ? null : item.label;
+    } else if (item.route) {
+      this.router.navigateByUrl(item.route);
+    }
+  }
+
+  toggleSubmenu(item: NavItem, event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    this.expandedItem = this.expandedItem === item.label ? null : item.label;
+  }
+
+  isChildActive(item: NavItem, child: NavChild): boolean {
+    if (this.currentUrl.split(/[?#]/)[0] !== child.route) return false;
+    return (this.currentTab ?? item.children![0].tab) === child.tab;
   }
 
   isNavItemActive(item: NavItem): boolean {

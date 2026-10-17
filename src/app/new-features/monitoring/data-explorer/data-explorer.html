@@ -1,0 +1,404 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<div class="explorer">
+
+  <!-- Query actions -->
+  <div class="toolbar">
+    <div class="saved-wrap">
+      <button type="button" class="btn-outline" [attr.aria-expanded]="savedOpen" (click)="savedOpen = !savedOpen">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'bookmark', size: 15 }"></ng-container>
+        Saved Queries{{ savedQueries.length ? ' (' + savedQueries.length + ')' : '' }}
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 13 }"></ng-container>
+      </button>
+      <ul class="menu right" *ngIf="savedOpen">
+        <li *ngFor="let s of savedQueries">
+          <button type="button" class="menu-item saved-item" (click)="loadSaved(s)">
+            <span><strong>{{ s.name }}</strong><small>{{ s.query.params.length }} parameters · saved {{ savedDate(s) }}</small></span>
+            <span class="icon-btn" role="button" tabindex="0" [attr.aria-label]="'Delete ' + s.name" (click)="deleteSaved(s, $event)" (keydown.enter)="deleteSaved(s, $event)">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'trash', size: 14 }"></ng-container>
+            </span>
+          </button>
+        </li>
+        <li class="menu-note" *ngIf="!savedQueries.length">No saved queries yet. Use Save Query to keep the current setup.</li>
+      </ul>
+    </div>
+    <div class="save-wrap">
+      <button type="button" class="btn-outline" [attr.aria-expanded]="saveOpen" (click)="saveOpen = !saveOpen">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'save', size: 15 }"></ng-container>
+        Save Query
+      </button>
+      <form class="menu right save-pop" *ngIf="saveOpen" (ngSubmit)="saveQuery()">
+        <label><span>Query name</span><input type="text" name="saveName" [(ngModel)]="saveName" [placeholder]="'Query ' + (savedQueries.length + 1)" autofocus /></label>
+        <button type="submit" class="btn-primary sm">Save</button>
+      </form>
+    </div>
+    <button type="button" class="btn-primary" [disabled]="!canRun" [class.pulse]="dirty && canRun" (click)="run()">
+      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'play', size: 14 }"></ng-container>
+      Run Query
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <section class="card filters">
+    <label class="field"><span>Site</span><app-dropdown [options]="siteOptions" [ngModel]="draft.site" (ngModelChange)="onSiteChange($event)"></app-dropdown></label>
+    <label class="field"><span>Building / Area</span><app-dropdown [options]="buildingOptions" [ngModel]="draft.building" (ngModelChange)="onBuildingChange($event)"></app-dropdown></label>
+    <label class="field"><span>Space / Monitoring Point</span><app-dropdown [options]="pointOptions" [ngModel]="draft.pointId" (ngModelChange)="onPointChange($event)"></app-dropdown></label>
+
+    <div class="field param-field">
+      <span id="de-param-label">Parameters (Select up to {{ maxParams }})</span>
+      <div class="param-select" [class.open]="paramMenuOpen">
+        <div class="ms-trigger" role="combobox" tabindex="0" aria-labelledby="de-param-label" aria-haspopup="listbox" [attr.aria-expanded]="paramMenuOpen" (click)="paramMenuOpen = !paramMenuOpen" (keydown.enter)="paramMenuOpen = !paramMenuOpen" (keydown.space)="paramMenuOpen = !paramMenuOpen; $event.preventDefault()">
+          <span class="chips">
+            <span class="chip" *ngFor="let p of selectedParamLabels">
+              {{ p.label }}
+              <button type="button" class="chip-x" [attr.aria-label]="'Remove ' + p.label" (click)="removeParam(p.key, $event)" (keydown.enter)="$event.stopPropagation()">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 11 }"></ng-container>
+              </button>
+            </span>
+            <span class="placeholder" *ngIf="!selectedParamLabels.length">Select parameters</span>
+          </span>
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'chevron', size: 14 }"></ng-container>
+        </div>
+        <ul class="menu" *ngIf="paramMenuOpen" role="listbox" aria-multiselectable="true">
+          <li *ngFor="let p of draftParams">
+            <label class="check" [class.disabled]="!canToggle(p.key)">
+              <input type="checkbox" [checked]="isSelected(p.key)" [disabled]="!canToggle(p.key)" (change)="toggleParam(p.key)" />
+              <span class="dot" [style.background]="p.color"></span>{{ p.label }} <small>({{ p.kind === 'state' ? p.states?.join('/') : p.unit }})</small>
+            </label>
+          </li>
+          <li class="menu-note">Select up to {{ maxParams }} parameters.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="field date-field">
+      <span id="de-date-label">Date Range</span>
+      <button type="button" class="date-trigger" aria-labelledby="de-date-label" [attr.aria-expanded]="dateOpen" (click)="dateOpen = !dateOpen">
+        <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'calendar', size: 15 }"></ng-container>
+        <span>{{ dateLabel }}</span>
+      </button>
+      <div class="date-pop" *ngIf="dateOpen">
+        <label><span>From</span><input type="date" [(ngModel)]="draft.from" [max]="draft.to" /></label>
+        <label><span>To</span><input type="date" [(ngModel)]="draft.to" [min]="draft.from" /></label>
+        <p class="error" *ngIf="dateError as e">{{ e }}</p>
+      </div>
+    </div>
+
+    <label class="field"><span>Aggregation</span><app-dropdown [options]="intervalOptions" [(ngModel)]="draft.interval"></app-dropdown></label>
+    <label class="field"><span>Visualization</span><app-dropdown [options]="visualizationOptions" [ngModel]="visualization" (ngModelChange)="setVisualization($event)"></app-dropdown></label>
+
+    <div class="toggles">
+      <button type="button" class="switch" [class.on]="showThresholds" [attr.aria-pressed]="showThresholds" (click)="showThresholds = !showThresholds">
+        Show Thresholds <span class="track"><span class="knob"></span></span>
+      </button>
+      <button type="button" class="switch" [class.on]="showEvents" [attr.aria-pressed]="showEvents" (click)="showEvents = !showEvents">
+        Show Events <span class="track"><span class="knob"></span></span>
+      </button>
+    </div>
+
+    <button type="button" class="btn-outline adv" (click)="openAdvanced()">
+      <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'filter', size: 15 }"></ng-container>
+      Advanced Filters
+      <span class="count" *ngIf="activeFilterCount">{{ activeFilterCount }}</span>
+    </button>
+  </section>
+
+  <!-- Time series -->
+  <div class="chart-backdrop" *ngIf="expanded" (click)="expanded = false"></div>
+  <section class="card chart-card" [class.expanded]="expanded">
+    <div class="card-head">
+      <h2>Data Explorer - Time Series
+        <span class="info" title="Drag across the chart to zoom in. Click a point to find that reading in the table.">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'info', size: 15 }"></ng-container>
+        </span>
+        <small>{{ appliedPoint.name }}</small>
+      </h2>
+      <div class="head-actions">
+        <div class="add-wrap">
+          <button type="button" class="btn-outline sm" [disabled]="!addableParams.length || applied.params.length >= maxParams" [attr.aria-expanded]="addMenuOpen" (click)="addMenuOpen = !addMenuOpen">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 14 }"></ng-container>
+            Add Parameter
+          </button>
+          <ul class="menu right" *ngIf="addMenuOpen">
+            <li *ngFor="let p of addableParams">
+              <button type="button" class="menu-item" (click)="addParameter(p.key)"><span class="dot" [style.background]="p.color"></span>{{ p.label }}</button>
+            </li>
+          </ul>
+        </div>
+        <button type="button" class="btn-outline sm" [disabled]="!zoomed" (click)="resetZoom()">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'reset', size: 14 }"></ng-container>
+          Reset Zoom
+        </button>
+        <button type="button" class="btn-ghost plain" [attr.aria-label]="expanded ? 'Exit full screen' : 'Full screen'" (click)="expanded = !expanded">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: expanded ? 'collapse' : 'expand', size: 17 }"></ng-container>
+        </button>
+        <div class="more-wrap">
+          <button type="button" class="btn-ghost plain" aria-label="More chart options" [attr.aria-expanded]="moreMenuOpen" (click)="moreMenuOpen = !moreMenuOpen">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 17 }"></ng-container>
+          </button>
+          <ul class="menu right" *ngIf="moreMenuOpen">
+            <li><button type="button" class="menu-item" (click)="exportChart(chartSvg)">Export chart (SVG)</button></li>
+            <li><button type="button" class="menu-item" (click)="exportRows()">Export data (CSV)</button></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-wrap" (mouseleave)="hover = null">
+      <svg
+        #chartSvg
+        class="chart"
+        [class.dragging]="brush"
+        [attr.viewBox]="'0 0 ' + plot.width + ' ' + plot.height"
+        role="img"
+        [attr.aria-label]="'Time series for ' + appliedPoint.name"
+        (mousedown)="startDrag($event, chartSvg)"
+        (mousemove)="onChartMove($event, chartSvg)"
+      >
+        <g class="fade-layer" *ngIf="showThresholds">
+          <rect *ngFor="let b of thresholdBands" [attr.x]="plot.left" [attr.y]="b.y" [attr.width]="plot.right - plot.left" [attr.height]="b.height" [attr.fill]="b.color"/>
+        </g>
+
+        <g *ngFor="let lane of lanes" class="lane">
+          <rect [attr.x]="plot.left" [attr.y]="lane.y" [attr.width]="plot.right - plot.left" height="16" rx="3" class="lane-bg"/>
+          <path class="lane-fill" [attr.d]="lane.area" [attr.fill]="lane.param.color" fill-opacity="0.18"/>
+          <path class="draw" pathLength="1" [attr.d]="lane.path" fill="none" [attr.stroke]="lane.param.color" stroke-width="1.6"/>
+          <text [attr.x]="plot.left - 10" [attr.y]="lane.y + 12" text-anchor="end" class="axis lane-label">{{ lane.param.label.split(' ')[0] }}</text>
+        </g>
+
+        <g *ngFor="let a of axes; let ai = index">
+          <ng-container *ngIf="ai === 0">
+            <line *ngFor="let t of a.ticks" [attr.x1]="plot.left" [attr.x2]="plot.right" [attr.y1]="axisY(t, a)" [attr.y2]="axisY(t, a)" class="grid"/>
+          </ng-container>
+          <text *ngFor="let t of a.ticks" [attr.x]="a.side === 'left' ? a.x - 10 : a.x + 10" [attr.y]="axisY(t, a) + 4" [attr.text-anchor]="a.side === 'left' ? 'end' : 'start'" class="axis" [style.fill]="ai ? a.param.color : null">{{ t }}</text>
+          <text
+            [attr.x]="a.side === 'left' ? 14 : a.x + 44"
+            [attr.y]="(plot.top + plot.bottom) / 2"
+            class="axis-title"
+            text-anchor="middle"
+            [style.fill]="ai ? a.param.color : null"
+            [attr.transform]="'rotate(' + (a.side === 'left' ? -90 : 90) + ' ' + (a.side === 'left' ? 14 : a.x + 44) + ' ' + (plot.top + plot.bottom) / 2 + ')'"
+          >{{ a.param.label }} ({{ a.param.unit }})</text>
+        </g>
+
+        <g *ngFor="let t of timeTicks">
+          <line [attr.x1]="t.x" [attr.x2]="t.x" [attr.y1]="plot.top" [attr.y2]="plot.bottom" class="grid v"/>
+          <text [attr.x]="t.x" [attr.y]="plot.bottom + 18" text-anchor="middle" class="axis">{{ t.date }}</text>
+          <text [attr.x]="t.x" [attr.y]="plot.bottom + 32" text-anchor="middle" class="axis">{{ t.time }}</text>
+        </g>
+
+        <g *ngFor="let set of barSets">
+          <rect *ngFor="let b of set.bars; let i = index" class="bar" [style.--i]="i" [attr.x]="b.x" [attr.y]="b.y" [attr.width]="set.width" [attr.height]="b.height" rx="1" [attr.fill]="set.param.color" fill-opacity="0.75"/>
+        </g>
+
+        <g class="fade-layer" *ngIf="showThresholds">
+          <line *ngFor="let l of thresholdLines" [attr.x1]="plot.left" [attr.x2]="plot.right" [attr.y1]="l.y" [attr.y2]="l.y" [attr.stroke]="l.color" stroke-width="1.4" stroke-dasharray="6 5"/>
+        </g>
+
+        <g *ngFor="let line of lines" class="series">
+          <path *ngIf="visualization === 'area'" class="area-fill" [attr.d]="line.area" [attr.fill]="line.param.color" fill-opacity="0.1"/>
+          <path class="draw" pathLength="1" [attr.d]="line.path" fill="none" [attr.stroke]="line.param.color" stroke-width="2.2" stroke-linejoin="round"/>
+        </g>
+
+        <g class="fade-layer">
+          <rect *ngFor="let m of matchMarks" [attr.x]="m.x" [attr.y]="plot.bottom - 4" [attr.width]="m.width" height="4" fill="#a78bfa"/>
+        </g>
+
+        <g class="fade-layer" *ngIf="showEvents">
+          <g *ngFor="let e of events; let i = index" class="event" [style.--i]="i">
+            <title>{{ e.label }} · {{ e.time }}</title>
+            <line [attr.x1]="e.x" [attr.x2]="e.x" [attr.y1]="plot.top + 8" [attr.y2]="plot.bottom" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="4 4"/>
+            <path [attr.d]="'M' + e.x + ',' + (plot.top - 6) + 'l8,13h-16z'" fill="#ef4444"/>
+            <text [attr.x]="e.x" [attr.y]="plot.top + 5" text-anchor="middle" class="event-mark">!</text>
+          </g>
+        </g>
+
+        <line *ngIf="selectedX !== null" class="selected-line" [attr.x1]="selectedX" [attr.x2]="selectedX" [attr.y1]="plot.top" [attr.y2]="plot.bottom"/>
+
+        <g *ngIf="hover as h">
+          <line [attr.x1]="h.x" [attr.x2]="h.x" [attr.y1]="lanes.length ? lanes[0].y : plot.top" [attr.y2]="plot.bottom" class="crosshair"/>
+          <circle *ngFor="let d of h.dots" [attr.cx]="h.x" [attr.cy]="d.y" r="4.5" [attr.fill]="d.color" class="hover-dot"/>
+        </g>
+
+        <rect *ngIf="brush as b" class="brush" [attr.x]="b.x" [attr.y]="plot.top" [attr.width]="b.width" [attr.height]="plot.bottom - plot.top"/>
+        <text *ngIf="!series.length" [attr.x]="plot.width / 2" [attr.y]="plot.height / 2" text-anchor="middle" class="axis">No data for the selected query</text>
+      </svg>
+
+      <div class="tooltip" *ngIf="hover" [style.left.%]="hover.left" [class.flip]="hover.left > 70">
+        <strong>{{ hover.time }}</strong>
+        <span *ngFor="let v of hover.values"><span class="dot" [style.background]="v.color"></span>{{ v.label }}: <b>{{ v.value }}</b></span>
+      </div>
+    </div>
+
+    <ul class="legend">
+      <li *ngFor="let l of legend">
+        <span class="lg" [ngClass]="'lg-' + l.kind" [style.--c]="l.color"></span>{{ l.label }}
+      </li>
+    </ul>
+  </section>
+
+  <div class="bottom">
+    <!-- Data table -->
+    <section class="card table-card">
+      <div class="card-head">
+        <h2>Data Table
+          <span class="info" title="One row per aggregation interval. Click a row to mark it on the chart.">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'info', size: 15 }"></ng-container>
+          </span>
+          <span class="filter-chip" *ngIf="activeFilterCount">{{ activeFilterCount }} filter{{ activeFilterCount > 1 ? 's' : '' }} applied</span>
+        </h2>
+        <div class="head-actions">
+          <button type="button" class="btn-outline sm" [disabled]="!filteredRows.length" (click)="exportRows()">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'download', size: 15 }"></ng-container>
+            Export
+          </button>
+          <div class="columns-wrap">
+            <button type="button" class="btn-ghost" aria-label="Choose columns" [attr.aria-expanded]="columnsOpen" (click)="columnsOpen = !columnsOpen">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'settings', size: 16 }"></ng-container>
+            </button>
+            <ul class="menu right" *ngIf="columnsOpen">
+              <li *ngFor="let s of series">
+                <label class="check"><input type="checkbox" [checked]="!hiddenColumns.has(s.param.key)" (change)="toggleColumn(s.param.key)" />{{ s.param.label }}</label>
+              </li>
+              <li *ngIf="hasDoor"><label class="check"><input type="checkbox" [checked]="!hiddenColumns.has('door-col')" (change)="toggleColumn('door-col')" />Door Status</label></li>
+              <li><label class="check"><input type="checkbox" [checked]="!hiddenColumns.has('quality')" (change)="toggleColumn('quality')" />Data Quality</label></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <ng-container *ngFor="let s of series">
+                <th *ngIf="!hiddenColumns.has(s.param.key)">{{ s.param.kind === 'state' ? s.param.label : s.param.label + ' (' + s.param.unit + ')' }}</th>
+              </ng-container>
+              <th *ngIf="hasDoor && !hiddenColumns.has('door-col')">Door Status</th>
+              <th *ngIf="!hiddenColumns.has('quality')">Data Quality</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of pagedRows; let i = index" [style.--i]="i" [class.selected]="r.t === selectedT" (click)="selectRow(r)">
+              <td>{{ r.time }}</td>
+              <ng-container *ngFor="let s of series; let si = index">
+                <td *ngIf="!hiddenColumns.has(s.param.key)" [class.out]="s.param.kind === 'line' && r.values[si] !== null && (r.values[si]! > s.param.high! || r.values[si]! < s.param.low!)">{{ formatCell(s.param, r.values[si]) }}</td>
+              </ng-container>
+              <td *ngIf="hasDoor && !hiddenColumns.has('door-col')">
+                <span class="pill" [ngClass]="r.door === null ? 'pill-none' : r.door ? 'pill-open' : 'pill-closed'">{{ r.door === null ? '-' : r.door ? 'Open' : 'Closed' }}</span>
+              </td>
+              <td *ngIf="!hiddenColumns.has('quality')"><span class="pill" [ngClass]="'q-' + (r.quality | lowercase)">{{ r.quality }}</span></td>
+            </tr>
+            <tr *ngIf="!pagedRows.length"><td [attr.colspan]="series.length + 3" class="empty">No records match the query</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-foot">
+        <span>Showing {{ rangeStart }} to {{ rangeEnd }} of {{ filteredRows.length | number }} records</span>
+        <div class="pager">
+          <button type="button" (click)="goToPage(page - 1)" [disabled]="page === 1" aria-label="previous page">‹</button>
+          <ng-container *ngFor="let p of pageList">
+            <button *ngIf="p !== null; else gap" type="button" [class.active]="p === page" (click)="goToPage(p)">{{ p }}</button>
+            <ng-template #gap><span class="gap">…</span></ng-template>
+          </ng-container>
+          <button type="button" (click)="goToPage(page + 1)" [disabled]="page === totalPages" aria-label="next page">›</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Query builder -->
+    <section #builder class="card builder" [class.flash]="builderFlash">
+      <div class="card-head">
+        <h2>Query Builder
+          <span class="info" title="Build the query visually, or view it as SQL">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'info', size: 15 }"></ng-container>
+          </span>
+        </h2>
+        <nav class="builder-tabs">
+          <button type="button" [class.active]="builderTab === 'visual'" (click)="builderTab = 'visual'">Visual Builder</button>
+          <button type="button" [class.active]="builderTab === 'raw'" (click)="builderTab = 'raw'">Raw Query</button>
+        </nav>
+        <app-dropdown class="template-dd" [options]="templateOptions" [ngModel]="template" (ngModelChange)="loadTemplate($event)" placeholder="Load Template"></app-dropdown>
+      </div>
+
+      <div class="visual" *ngIf="builderTab === 'visual'; else raw">
+        <fieldset class="col">
+          <legend>Select Data Source</legend>
+          <label class="radio" *ngFor="let s of sources">
+            <input type="radio" name="de-source" [value]="s.key" [(ngModel)]="draft.source" />{{ s.label }}
+          </label>
+        </fieldset>
+
+        <div class="col">
+          <span class="col-title">Select Parameters</span>
+          <label class="search">
+            <input type="text" placeholder="Search parameters..." [(ngModel)]="paramSearch" />
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 14 }"></ng-container>
+          </label>
+          <ul class="param-list">
+            <li *ngFor="let p of builderParams">
+              <label class="check" [class.disabled]="!canToggle(p.key)">
+                <input type="checkbox" [checked]="isSelected(p.key)" [disabled]="!canToggle(p.key)" (change)="toggleParam(p.key)" />
+                {{ p.label }} <small>({{ p.kind === 'state' ? p.states?.join('/') : p.unit }})</small>
+              </label>
+            </li>
+            <li class="menu-note" *ngIf="!builderParams.length">No parameters for this source.</li>
+          </ul>
+        </div>
+
+        <div class="col">
+          <div class="col-head">
+            <span class="col-title">Filters</span>
+            <button type="button" class="link-btn" [disabled]="!filterableParams.length" (click)="addFilter()">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plus', size: 14 }"></ng-container>
+              Add Filter
+            </button>
+          </div>
+          <div class="filter-list">
+            <div class="filter-row" *ngFor="let f of draft.ranges">
+              <span class="filter-label">Value Range ({{ param(f.key).label }})</span>
+              <div class="range">
+                <input type="number" [(ngModel)]="f.min" [attr.aria-label]="param(f.key).label + ' minimum'" />
+                <span>to</span>
+                <input type="number" [(ngModel)]="f.max" [attr.aria-label]="param(f.key).label + ' maximum'" />
+                <small>{{ param(f.key).unit }}</small>
+                <button type="button" class="icon-btn" [attr.aria-label]="'Remove ' + param(f.key).label + ' filter'" (click)="removeFilter(f)">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'trash', size: 15 }"></ng-container>
+                </button>
+              </div>
+            </div>
+            <div class="filter-row" *ngIf="hasDoor">
+              <span class="filter-label">Door Status</span>
+              <app-dropdown [options]="doorOptions" [(ngModel)]="draft.door"></app-dropdown>
+            </div>
+          </div>
+          <button type="button" class="btn-primary run" [disabled]="!canRun" [class.pulse]="dirty && canRun" (click)="run()">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'play', size: 14 }"></ng-container>
+            Run Query
+          </button>
+        </div>
+      </div>
+
+      <ng-template #raw>
+        <div class="raw">
+          <pre>{{ rawQuery }}</pre>
+          <div class="raw-actions">
+            <span class="muted">Generated from the visual builder</span>
+            <button type="button" class="btn-outline sm" (click)="copyRaw()">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: copied ? 'check' : 'copy', size: 14 }"></ng-container>
+              {{ copied ? 'Copied' : 'Copy' }}
+            </button>
+            <button type="button" class="btn-primary sm" [disabled]="!canRun" (click)="run()">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'play', size: 13 }"></ng-container>
+              Run Query
+            </button>
+          </div>
+        </div>
+      </ng-template>
+    </section>
+  </div>
+</div>

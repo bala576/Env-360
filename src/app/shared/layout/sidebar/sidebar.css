@@ -114,8 +114,13 @@
   flex: 1;
   overflow-y: auto;
   padding: 4px 12px 8px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  /* Scrolls by wheel/touch with no visible scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .sidebar-nav ul {
@@ -216,6 +221,63 @@
 
 .sidebar-nav .nav-link .chevron.open {
   transform: rotate(90deg);
+}
+
+/* ---------- Module sub-menu (e.g. Monitoring) ---------- */
+.sidebar-nav .nav-submenu {
+  position: relative;
+  margin: 4px 0 6px 21px;
+  padding: 2px 0 2px 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.18);
+  animation: submenu-open 0.25s ease both;
+}
+
+.sidebar-nav .nav-submenu li {
+  animation: submenu-item 0.3s ease backwards;
+  animation-delay: calc(var(--i, 0) * 25ms);
+}
+
+.sidebar-nav .nav-submenu a {
+  display: block;
+  margin: 1px 0;
+  padding: 6px 12px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.78);
+  text-decoration: none;
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-nav .nav-submenu a:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.sidebar-nav .nav-submenu a.active {
+  background: linear-gradient(90deg, #7c3aed, #8b5cf6);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+}
+
+@keyframes submenu-open {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes submenu-item {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-nav .nav-submenu,
+  .sidebar-nav .nav-submenu li {
+    animation: none;
+  }
 }
 
 .sidebar-wave {

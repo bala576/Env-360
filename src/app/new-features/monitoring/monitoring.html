@@ -10,13 +10,14 @@
   <header class="page-header">
     <div>
       <h1>Monitoring</h1>
-      <p>Real-time and historical monitoring of all environmental parameters</p>
+      <h2 class="section-title" *ngIf="activeSection.slug !== 'live-monitoring'">{{ activeSection.label }}</h2>
+      <p>{{ activeSection.description }}</p>
     </div>
     <div class="header-actions">
-      <button type="button" class="btn-primary">
+      <a class="btn-primary" routerLink="/monitoring/customize">
         <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'settings', size: 16 }"></ng-container>
         Customize View
-      </button>
+      </a>
       <button type="button" class="btn-outline">
         <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'export', size: 16 }"></ng-container>
         Export
@@ -28,10 +29,11 @@
   </header>
 
   <nav class="page-tabs">
-    <button type="button" *ngFor="let tab of tabs" [class.active]="tab === activeTab" (click)="activeTab = tab">{{ tab }}</button>
+    <button type="button" *ngFor="let tab of tabs" [class.active]="tab === activeSection" [attr.aria-current]="tab === activeSection ? 'page' : null" (click)="openSection(tab)">{{ tab.label }}</button>
   </nav>
 
-  <ng-container *ngIf="activeTab === tabs[0]; else comingSoon">
+  <ng-container [ngSwitch]="activeSection.slug">
+  <ng-container *ngSwitchCase="'live-monitoring'">
 
     <!-- Parameter summary -->
     <section class="summary-row">
@@ -252,7 +254,10 @@
     </div>
   </ng-container>
 
-  <ng-template #comingSoon>
-    <section class="card empty tab-empty">{{ activeTab }} view coming soon</section>
-  </ng-template>
+  <app-historical-data *ngSwitchCase="'historical-data'"></app-historical-data>
+  <app-trend-analysis *ngSwitchCase="'trend-analysis'"></app-trend-analysis>
+  <app-multi-parameter *ngSwitchCase="'multi-parameter'"></app-multi-parameter>
+  <app-data-explorer *ngSwitchCase="'data-explorer'"></app-data-explorer>
+  <section *ngSwitchDefault class="card empty tab-empty">{{ activeSection.label }} view coming soon</section>
+  </ng-container>
 </div>

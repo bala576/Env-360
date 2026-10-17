@@ -78,7 +78,26 @@ export const PARAMETER_SUMMARY: ParameterSummary[] = [
   { key: 'others', label: 'Others', total: 236, icon: 'others', tone: 'cyan', breakdown: { normal: 210, warning: 20, critical: 4, offline: 2 } },
 ];
 
-export const MONITORING_TABS = ['Live Monitoring', 'Historical Data', 'Trend Analysis', 'Multi-Parameter', 'Data Explorer'];
+export interface MonitoringSection {
+  slug: string;
+  label: string;
+  description: string;
+  // Shown in the page tab strip; the rest are reached from the sidebar only
+  tab: boolean;
+}
+
+// Sub-modules of Monitoring, addressed as /monitoring?tab=<slug> (the sidebar links to these)
+export const MONITORING_SECTIONS: MonitoringSection[] = [
+  { slug: 'live-monitoring', label: 'Live Monitoring', tab: true, description: 'Real-time and historical monitoring of all environmental parameters' },
+  { slug: 'historical-data', label: 'Historical Data', tab: true, description: 'Review past sensor readings, statistics and excursions for any monitoring point' },
+  { slug: 'trend-analysis', label: 'Trend Analysis', tab: true, description: 'Analyse trends, patterns and correlations across parameters and monitoring points' },
+  { slug: 'multi-parameter', label: 'Multi-Parameter', tab: true, description: 'Compare multiple parameters from the same or different monitoring points to identify patterns and correlations' },
+  { slug: 'data-explorer', label: 'Data Explorer', tab: true, description: 'Explore, query and analyze raw and processed environmental data with advanced filtering, comparison and visualization tools' },
+  { slug: 'monitoring-points', label: 'Monitoring Points', tab: false, description: 'Manage the monitoring points assigned to sites, spaces and devices' },
+  { slug: 'calculated-parameters', label: 'Calculated Parameters', tab: false, description: 'Define parameters derived from formulas over raw sensor readings' },
+  { slug: 'data-quality', label: 'Data Quality', tab: false, description: 'Track completeness, gaps and estimated readings across monitoring points' },
+  { slug: 'monitoring-templates', label: 'Monitoring Templates', tab: false, description: 'Reusable monitoring setups for common space and equipment types' },
+];
 export const DETAIL_TABS = ['Overview', 'Live Readings', 'Trends', 'Alarms', 'Device Info', 'Maintenance'];
 
 type SeedPoint = Pick<MonitoringPoint, 'name' | 'space' | 'parameter' | 'value' | 'valueTone' | 'status' | 'trendColor' | 'building' | 'floor' | 'spaceType'>;

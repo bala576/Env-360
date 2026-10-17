@@ -35,6 +35,13 @@
   font-weight: 800;
 }
 
+.page-header .section-title {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  animation: fade-in 0.3s ease both;
+}
+
 .page-header p {
   margin: 4px 0 0;
   font-size: 13.5px;
@@ -59,6 +66,7 @@
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+  text-decoration: none;
 }
 
 .btn-primary {

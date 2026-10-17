@@ -20,7 +20,7 @@
 
   <!-- KPI cards -->
   <section class="kpi-row">
-    <div class="card kpi" *ngFor="let kpi of kpis">
+    <div class="card kpi clickable" *ngFor="let kpi of kpis" (click)="openWidget('kpi', $event, kpi)">
       <span class="kpi-icon" [ngClass]="'tone-' + kpi.tone">
         <ng-container *ngTemplateOutlet="icon; context: { $implicit: kpi.icon, size: 26 }"></ng-container>
       </span>
@@ -40,7 +40,7 @@
   <!-- Map + alarms/health + device/sensors -->
   <section class="grid-overview">
 
-    <div class="card site-overview">
+    <div class="card site-overview clickable" (click)="openWidget('siteOverview', $event)">
       <div class="card-head">
         <h2>Site Overview</h2>
         <app-dropdown [options]="siteFilterOptions" [(ngModel)]="siteFilter" (ngModelChange)="renderMarkers()"></app-dropdown>
@@ -82,7 +82,7 @@
       </div>
     </div>
 
-    <div class="card alarms-category">
+    <div class="card alarms-category clickable" (click)="openWidget('alarmsCategory', $event)">
       <div class="card-head"><h2>Alarms by Category</h2></div>
       <div class="donut-row">
         <div class="donut">
@@ -113,7 +113,7 @@
       </div>
     </div>
 
-    <div class="card health">
+    <div class="card health clickable" (click)="openWidget('health', $event)">
       <div class="card-head"><h2>Environmental Health Score</h2></div>
       <div class="health-body">
         <div class="gauge">
@@ -146,7 +146,7 @@
       </div>
     </div>
 
-    <div class="card device-status">
+    <div class="card device-status clickable" (click)="openWidget('deviceStatus', $event)">
       <div class="card-head"><h2>Device Status</h2></div>
       <div class="donut-row">
         <div class="donut small">
@@ -185,7 +185,7 @@
       </div>
     </div>
 
-    <div class="card sensors">
+    <div class="card sensors clickable" (click)="openWidget('sensors', $event)">
       <div class="card-head">
         <h2>Sensor Readings (Live)</h2>
         <app-dropdown [options]="sensorOptions" placeholder="Select Parameter" [(ngModel)]="selectedSensor" (ngModelChange)="onSensorSelect()"></app-dropdown>
@@ -217,7 +217,7 @@
   <!-- Trend + top sites + recent alarms -->
   <section class="grid-middle">
 
-    <div class="card trend">
+    <div class="card trend clickable" (click)="openWidget('trend', $event)">
       <div class="card-head">
         <h2>Key Parameters Trend</h2>
         <app-dropdown [options]="trendRangeOptions" [(ngModel)]="trendRange"></app-dropdown>
@@ -257,7 +257,7 @@
       </div>
     </div>
 
-    <div class="card top-sites">
+    <div class="card top-sites clickable" (click)="openWidget('topSites', $event)">
       <div class="card-head">
         <h2>Top Sites by Active Alarms</h2>
         <app-dropdown [options]="topCountOptions" [(ngModel)]="topCount"></app-dropdown>
@@ -290,7 +290,7 @@
       </table>
     </div>
 
-    <div class="card recent-alarms">
+    <div class="card recent-alarms clickable" (click)="openWidget('recentAlarms', $event)">
       <div class="card-head">
         <h2>Recent Alarms</h2>
         <a class="link" routerLink="/events">View All</a>
@@ -315,7 +315,7 @@
   <!-- Space + energy -->
   <section class="grid-bottom">
 
-    <div class="card space">
+    <div class="card space clickable" (click)="openWidget('space', $event)">
       <div class="card-head"><h2>Space &amp; Occupancy Overview</h2></div>
       <div class="space-row">
         <div class="space-item" *ngFor="let s of spaceUsage">
@@ -334,7 +334,7 @@
       </div>
     </div>
 
-    <div class="card energy">
+    <div class="card energy clickable" (click)="openWidget('energy', $event)">
       <div class="card-head">
         <h2>Energy Consumption</h2>
         <app-dropdown [options]="energyRangeOptions" [(ngModel)]="energyRange"></app-dropdown>
@@ -369,4 +369,219 @@
     </div>
 
   </section>
+
+  <!-- Widget detail popup -->
+  <app-generic-popup class="widget-popup" [isOpen]="!!activeWidget" [title]="popupTitle" (closed)="closeWidget()">
+    <div class="widget-detail">
+
+      <div class="detail-kpi" *ngIf="activeWidget === 'kpi' && activeKpi as kpi">
+        <span class="kpi-icon" [ngClass]="'tone-' + kpi.tone">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: kpi.icon, size: 26 }"></ng-container>
+        </span>
+        <div>
+          <span class="kpi-value">{{ kpi.value }}</span>
+          <span class="kpi-change">
+            <span class="trend" [class.good]="kpi.good" [class.bad]="!kpi.good">
+              {{ kpi.direction === 'up' ? '▲' : '▼' }} {{ kpi.change }}
+            </span>
+            vs yesterday
+          </span>
+        </div>
+      </div>
+
+      <ng-container [ngSwitch]="popupDetail">
+
+        <ng-container *ngSwitchCase="'siteOverview'">
+          <div class="detail-stats">
+            <div class="detail-stat" *ngFor="let s of siteSummary">
+              <span class="detail-stat-label"><span class="status-dot" [style.background]="statusColors[s.status]"></span>{{ s.label }}</span>
+              <strong>{{ s.count }}</strong>
+            </div>
+          </div>
+          <table class="detail-table">
+            <thead><tr><th>Location</th><th>Status</th><th class="num">Sites</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let site of siteMarkers">
+                <td>{{ site.name }}</td>
+                <td><span class="status-pill" [ngClass]="'status-' + site.status">{{ site.status | titlecase }}</span></td>
+                <td class="num">{{ site.count }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'alarmsCategory'">
+          <div class="detail-stats">
+            <div class="detail-stat"><span class="detail-stat-label">Active Alarms</span><strong>{{ alarmTotal }}</strong></div>
+            <div class="detail-stat"><span class="detail-stat-label">Categories</span><strong>{{ alarmCategories.length }}</strong></div>
+          </div>
+          <table class="detail-table">
+            <thead><tr><th>Category</th><th class="num">Alarms</th><th>Share</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let c of alarmCategories">
+                <td><span class="swatch" [style.background]="c.color"></span> {{ c.label }}</td>
+                <td class="num">{{ c.value }}</td>
+                <td><div class="bar-cell">
+                  <div class="detail-bar"><span [style.width.%]="c.value / alarmTotal * 100" [style.background]="c.color"></span></div>
+                  <small>{{ c.value / alarmTotal * 100 | number:'1.0-1' }}%</small>
+                </div></td>
+              </tr>
+            </tbody>
+          </table>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'health'">
+          <div class="detail-stats">
+            <div class="detail-stat"><span class="detail-stat-label">Overall Score</span><strong>{{ healthScore.value }}%</strong></div>
+            <div class="detail-stat"><span class="detail-stat-label">Rating</span><strong>{{ healthScore.label }}</strong></div>
+            <div class="detail-stat"><span class="detail-stat-label">vs Yesterday</span><strong class="trend good">▲ {{ healthScore.change }}%</strong></div>
+          </div>
+          <table class="detail-table">
+            <thead><tr><th>Parameter</th><th>Score</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let m of healthMetrics">
+                <td>
+                  <span class="mini-icon" [ngClass]="'tone-' + m.tone">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: m.icon, size: 15 }"></ng-container>
+                  </span>
+                  {{ m.label }}
+                </td>
+                <td><div class="bar-cell">
+                  <div class="detail-bar"><span class="bar-green" [style.width.%]="m.value"></span></div>
+                  <small>{{ m.value }}%</small>
+                </div></td>
+              </tr>
+            </tbody>
+          </table>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'deviceStatus'">
+          <div class="detail-stats">
+            <div class="detail-stat"><span class="detail-stat-label">Total Devices</span><strong>{{ deviceTotal | number }}</strong></div>
+            <div class="detail-stat"><span class="detail-stat-label"><span class="status-dot" style="background:#16a34a"></span>Online</span><strong>{{ deviceStatus.online | number }}</strong></div>
+            <div class="detail-stat"><span class="detail-stat-label"><span class="status-dot" style="background:#d1d5db"></span>Offline</span><strong>{{ deviceStatus.offline | number }}</strong></div>
+          </div>
+          <div class="detail-bar lg">
+            <span style="background:#16a34a" [style.width.%]="onlinePct"></span>
+          </div>
+          <div class="detail-bar-legend">
+            <span>{{ onlinePct | number:'1.1-1' }}% online</span>
+            <span>{{ 100 - onlinePct | number:'1.1-1' }}% offline</span>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'sensors'">
+          <table class="detail-table">
+            <thead><tr><th>Parameter</th><th class="num">Current</th><th class="num">Min</th><th class="num">Max</th><th class="num">Avg</th><th>Trend</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let s of sensorStats; let i = index">
+                <td>{{ s.label }}</td>
+                <td class="num"><strong>{{ s.current }}</strong> <small>{{ s.unit }}</small></td>
+                <td class="num">{{ s.min }}</td>
+                <td class="num">{{ s.max }}</td>
+                <td class="num">{{ s.avg | number:'1.0-2' }}</td>
+                <td>
+                  <svg class="detail-spark" viewBox="0 0 100 32" preserveAspectRatio="none">
+                    <polyline [attr.points]="sparkPoints(sensors[i].history)" fill="none" [attr.stroke]="s.color" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
+                  </svg>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'trend'">
+          <p class="detail-caption">{{ trendRange }}</p>
+          <table class="detail-table">
+            <thead><tr><th>Parameter</th><th class="num">Current</th><th class="num">Min</th><th class="num">Max</th><th class="num">Avg</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let s of trendStats">
+                <td><span class="legend-line" [style.background]="s.color"></span> {{ s.label }} <small>({{ s.unit }})</small></td>
+                <td class="num"><strong>{{ s.current }}</strong></td>
+                <td class="num">{{ s.min }}</td>
+                <td class="num">{{ s.max }}</td>
+                <td class="num">{{ s.avg | number:'1.0-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'topSites'">
+          <table class="detail-table">
+            <thead><tr><th>#</th><th>Site Name</th><th class="num">Critical</th><th class="num">Warning</th><th class="num">Minor</th><th class="num">Total</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let site of sortedSiteAlarms; let i = index">
+                <td>{{ i + 1 }}</td>
+                <td>{{ site.name }}</td>
+                <td class="num sev-text-critical">{{ site.critical }}</td>
+                <td class="num sev-text-warning">{{ site.warning }}</td>
+                <td class="num sev-text-minor">{{ site.minor }}</td>
+                <td class="num"><strong>{{ siteTotal(site) }}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'recentAlarms'">
+          <table class="detail-table">
+            <thead><tr><th>Time</th><th>Alarm</th><th>Location</th><th>Severity</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let a of recentAlarms">
+                <td>{{ a.time }}</td>
+                <td>{{ a.title }}</td>
+                <td>{{ a.location }}</td>
+                <td><span class="severity" [ngClass]="'sev-' + a.severity">{{ a.severity | titlecase }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'space'">
+          <table class="detail-table">
+            <thead><tr><th>Space</th><th>Utilisation</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let s of spaceUsage">
+                <td>
+                  <span class="mini-icon" [ngClass]="'tone-' + s.tone">
+                    <ng-container *ngTemplateOutlet="icon; context: { $implicit: s.icon, size: 15 }"></ng-container>
+                  </span>
+                  {{ s.label }}
+                </td>
+                <td><div class="bar-cell">
+                  <div class="detail-bar" [ngClass]="'tone-' + s.tone"><span [ngClass]="'bar-' + s.tone" [style.width.%]="s.value"></span></div>
+                  <small>{{ s.value }}%</small>
+                </div></td>
+                <td>{{ s.caption }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'energy'">
+          <div class="detail-stats">
+            <div class="detail-stat"><span class="detail-stat-label">Total</span><strong>{{ energyTotal.value }} {{ energyTotal.unit }}</strong></div>
+            <div class="detail-stat"><span class="detail-stat-label">Daily Average</span><strong>{{ energyAvg | number:'1.0-0' }} kWh</strong></div>
+            <div class="detail-stat"><span class="detail-stat-label">Peak Day</span><strong>{{ energyPeak.label }}</strong></div>
+            <div class="detail-stat"><span class="detail-stat-label">vs Previous Week</span><strong class="trend good">{{ energyTotal.direction === 'up' ? '▲' : '▼' }} {{ energyTotal.change }}</strong></div>
+          </div>
+          <table class="detail-table">
+            <thead><tr><th>Day</th><th class="num">Consumption (kWh)</th><th class="num">vs Previous Day</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let d of energyWeek; let i = index">
+                <td>{{ d.label }}</td>
+                <td class="num">{{ d.value }}</td>
+                <td class="num">
+                  <span *ngIf="i > 0; else noPrev" class="trend" [class.good]="d.value <= energyWeek[i - 1].value" [class.bad]="d.value > energyWeek[i - 1].value">
+                    {{ d.value > energyWeek[i - 1].value ? '▲' : '▼' }} {{ (d.value - energyWeek[i - 1].value) / energyWeek[i - 1].value * 100 | number:'1.0-1' }}%
+                  </span>
+                  <ng-template #noPrev>—</ng-template>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </ng-container>
+
+      </ng-container>
+    </div>
+  </app-generic-popup>
 </div>

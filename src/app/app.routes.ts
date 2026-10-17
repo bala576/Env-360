@@ -76,6 +76,7 @@ export const routes: Routes = [
       { path: 'sites', component: Sites },
       { path: 'sites/add', loadComponent: () => import('./new-features/addsitespace/addsitespace').then(m => m.Addsitespace) },
       { path: 'monitoring', component: Monitoring },
+      { path: 'monitoring/customize', loadComponent: () => import('./new-features/monitoring/customize-view/customize-view').then(m => m.CustomizeView) },
       { path: 'devices', component: Devicesandsensor },
       { path: 'automation', component: Automationandcontrol },
       { path: 'alarms', loadComponent: () => import('./new-features/alermsandevents/alermsandevents').then(m => m.Alermsandevents) },

@@ -67,7 +67,7 @@
       <div class="menu" *ngIf="addMenuOpen">
         <button type="button" (click)="addMenuOpen = false">Add Sensor</button>
         <button type="button" (click)="addMenuOpen = false">Add Gateway</button>
-        <button type="button" (click)="addMenuOpen = false">Bulk Import (CSV)</button>
+        <button type="button" routerLink="/devices/bulk-upload" (click)="addMenuOpen = false">Bulk Import (CSV)</button>
       </div>
     </div>
   </header>

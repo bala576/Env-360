@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { Customizeview } from './customizeview';
+import { Deviceuplaod } from './deviceuplaod';
 
-describe('Customizeview', () => {
-  let component: Customizeview;
-  let fixture: ComponentFixture<Customizeview>;
+describe('Deviceuplaod', () => {
+  let component: Deviceuplaod;
+  let fixture: ComponentFixture<Deviceuplaod>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Customizeview]
+      imports: [Deviceuplaod]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(Customizeview);
+    fixture = TestBed.createComponent(Deviceuplaod);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

@@ -72,10 +72,7 @@ export class Sidebar {
         { label: 'Trend Analysis', route: '/monitoring', tab: 'trend-analysis' },
         { label: 'Multi-Parameter', route: '/monitoring', tab: 'multi-parameter' },
         { label: 'Data Explorer', route: '/monitoring', tab: 'data-explorer' },
-        { label: 'Monitoring Points', route: '/monitoring', tab: 'monitoring-points' },
-        { label: 'Calculated Parameters', route: '/monitoring', tab: 'calculated-parameters' },
-        { label: 'Data Quality', route: '/monitoring', tab: 'data-quality' },
-        { label: 'Monitoring Templates', route: '/monitoring', tab: 'monitoring-templates' },
+            
       ],
     },
     { label: 'Devices & Sensors', icon: 'devices', route: '/devices', matchRoutes: ['/devices'] },

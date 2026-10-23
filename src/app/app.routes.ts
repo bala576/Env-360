@@ -78,6 +78,7 @@ export const routes: Routes = [
       { path: 'monitoring', component: Monitoring },
       { path: 'monitoring/customize', loadComponent: () => import('./new-features/monitoring/customize-view/customize-view').then(m => m.CustomizeView) },
       { path: 'devices', component: Devicesandsensor },
+      { path: 'devices/bulk-upload', loadComponent: () => import('./new-features/devicebulkupload/deviceuplaod/deviceuplaod').then(m => m.Deviceuplaod) },
       { path: 'automation', component: Automationandcontrol },
       { path: 'alarms', loadComponent: () => import('./new-features/alermsandevents/alermsandevents').then(m => m.Alermsandevents) },
       { path: 'analytics', loadComponent: () => import('./new-features/analytics/analytics').then(m => m.Analytics) },

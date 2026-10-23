@@ -1,0 +1,634 @@
+<ng-template #icon let-name let-size="size">
+  <svg [attr.width]="size || 18" [attr.height]="size || 18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path *ngFor="let d of icons[name]" [attr.d]="d" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</ng-template>
+
+<ng-template #excel let-size="size">
+  <svg class="excel" [attr.width]="size || 34" [attr.height]="size || 34" viewBox="0 0 32 32" aria-hidden="true">
+    <path d="M9 3h14l6 6v18a2 2 0 01-2 2H9a2 2 0 01-2-2V5a2 2 0 012-2z" fill="#e8f5ec"/>
+    <path d="M23 3v6h6" fill="#bfe5cb"/>
+    <rect x="2" y="9" width="16" height="16" rx="2.5" fill="#1d7a45"/>
+    <path d="M6.5 13l7 8M13.5 13l-7 8" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M21 14h5M21 18h5M21 22h5" stroke="#1d7a45" stroke-width="1.6" stroke-linecap="round"/>
+  </svg>
+</ng-template>
+
+<div class="upload-page">
+
+  <!-- Header -->
+  <app-breadcrumb [items]="breadcrumb"></app-breadcrumb>
+
+  <header class="page-header">
+    <div class="titles">
+      <h1>Add Device</h1>
+      <p>Bulk upload multiple devices or sensors using a spreadsheet.</p>
+    </div>
+  </header>
+
+  <!-- Stepper -->
+  <nav class="card stepper" aria-label="upload steps">
+    <ng-container *ngFor="let s of steps; let last = last">
+      <button
+        type="button"
+        class="step"
+        [class.done]="s.id < step || (s.id === 4 && importDone)"
+        [class.current]="s.id === step && !(s.id === 4 && importDone)"
+        [disabled]="!canJump(s.id)"
+        (click)="goToStep(s.id)"
+        [attr.aria-current]="s.id === step ? 'step' : null"
+      >
+        <span class="step-dot">
+          <span class="step-num">{{ s.id }}</span>
+          <span class="step-check"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 20 }"></ng-container></span>
+        </span>
+        <span class="step-text">
+          <strong>{{ s.title }}</strong>
+          <small>{{ stepSubtitle(s.id, s.subtitle) }}</small>
+        </span>
+      </button>
+      <span class="step-line" *ngIf="!last" [class.filled]="s.id < step"></span>
+    </ng-container>
+  </nav>
+
+  <!-- Body -->
+  <section class="card panel">
+
+    <!-- Loading skeleton -->
+    <div class="skeleton" *ngIf="loading; else content" aria-busy="true">
+      <div class="sk-file">
+        <span class="sk sk-square"></span>
+        <div class="sk-stack"><span class="sk" style="width: 180px"></span><span class="sk sk-sm" style="width: 90px"></span></div>
+        <span class="sk sk-btn"></span>
+      </div>
+      <div class="sk-row sk-head-row"><span class="sk" *ngFor="let w of [120, 220, 160, 70, 60, 150]" [style.width.px]="w"></span></div>
+      <div class="sk-row" *ngFor="let r of [0, 1, 2, 3, 4, 5, 6, 7]; let i = index" [style.--i]="i">
+        <span class="sk" *ngFor="let w of [100, 240, 150, 60, 20, 160]" [style.width.px]="w"></span>
+      </div>
+    </div>
+
+    <ng-template #content>
+      <div class="body" [attr.data-dir]="direction" [ngSwitch]="step">
+
+        <!-- Step 1: Upload -->
+        <div class="step-body overview" *ngSwitchCase="1">
+          <div class="upload-grid">
+            <section class="ov-card upload-card">
+              <h3 class="ov-title"><span class="section-num sm">1</span> Upload File</h3>
+              <label
+                class="dropzone"
+                [class.over]="dragOver"
+                (dragover)="onDragOver($event)"
+                (dragleave)="dragOver = false"
+                (drop)="onDrop($event)"
+              >
+                <input type="file" [accept]="accept" (change)="onFilePicked($event)" hidden />
+                <span class="drop-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'cloud', size: 28 }"></ng-container></span>
+                <strong>Drag and drop your file here</strong>
+                <span>or <em>click to browse</em></span>
+                <small>Supported formats: XLSX, XLS, CSV <i></i> Max size: 10 MB</small>
+              </label>
+              <p class="file-error" *ngIf="fileError">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'alert', size: 15 }"></ng-container>
+                {{ fileError }}
+              </p>
+              <div class="file-strip" *ngIf="file">
+                <ng-container *ngTemplateOutlet="excel; context: { size: 30 }"></ng-container>
+                <div class="file-meta">
+                  <strong>{{ file.name }}</strong>
+                  <span>{{ file.sizeKb }} KB <i></i> {{ file.rows }} rows</span>
+                </div>
+                <button type="button" class="icon-btn sm" (click)="removeFile()" aria-label="remove file">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 15 }"></ng-container>
+                </button>
+              </div>
+              <button type="button" class="link-btn" (click)="downloadTemplate()">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'download', size: 14 }"></ng-container>
+                Download Template
+              </button>
+            </section>
+
+            <section class="ov-card req-card">
+              <h3 class="ov-title">
+                <span class="req-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'file', size: 18 }"></ng-container></span>
+                File Requirements
+              </h3>
+              <ul class="req-list">
+                <li *ngFor="let r of requirements; let i = index" [style.--i]="i">
+                  <span class="req-check"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 11 }"></ng-container></span>
+                  {{ r }}
+                </li>
+              </ul>
+              <button type="button" class="outline-btn" (click)="downloadTemplate()">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'download', size: 15 }"></ng-container>
+                Download Template
+              </button>
+            </section>
+
+            <section class="ov-card template-card">
+              <h3 class="ov-title">
+                <span class="tips-icon sm"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'info', size: 15 }"></ng-container></span>
+                <span>Template Columns<small>The template includes the following columns</small></span>
+              </h3>
+              <div class="template-scroll">
+                <table class="template-table">
+                  <thead><tr><th>Column Name</th><th>Description</th></tr></thead>
+                  <tbody>
+                    <tr *ngFor="let c of templateColumns">
+                      <td>{{ c.name }}<em *ngIf="c.required" title="required">*</em></td>
+                      <td>{{ c.description }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+
+          <div class="overview-grid">
+            <section class="ov-card">
+              <div class="ov-head">
+                <h3 class="ov-title"><span class="section-num sm">2</span> Map Columns<small>Map the columns from your file to Environment360 fields.</small></h3>
+                <button type="button" class="link-btn" (click)="goToStep(2)" [disabled]="!file">View all {{ mappings.length }}</button>
+              </div>
+              <table class="mini-table">
+                <thead><tr><th>File Column</th><th>Sample Data</th><th>Map to Field</th><th class="center">Required</th></tr></thead>
+                <tbody>
+                  <tr *ngFor="let m of mappings | slice: 0 : overviewRows; let i = index" [style.--i]="i">
+                    <td>{{ m.column }}</td>
+                    <td class="ellipsis">{{ m.sample.split(', ')[0] }}</td>
+                    <td><app-dropdown [options]="fieldOptions" [(ngModel)]="m.field" placeholder="Select field"></app-dropdown></td>
+                    <td class="center"><input type="checkbox" class="check" [(ngModel)]="m.required" [attr.aria-label]="m.column + ' required'" /></td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+
+            <section class="ov-card">
+              <div class="ov-head">
+                <h3 class="ov-title"><span class="section-num sm">3</span> Preview &amp; Validate<small>Review the data and fix any validation errors before importing.</small></h3>
+                <button type="button" class="link-btn" (click)="goToStep(3)" [disabled]="!file || mappingIssues.length">View all {{ records.length }}</button>
+              </div>
+              <div class="mini-stats">
+                <div class="stat tone-green" style="--i: 0">
+                  <span class="stat-icon round"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 15 }"></ng-container></span>
+                  <div><strong>{{ countOf('valid') }}</strong><span>Valid Records</span></div>
+                </div>
+                <div class="stat tone-red" style="--i: 1">
+                  <span class="stat-icon round"><b>!</b></span>
+                  <div><strong>{{ countOf('invalid') }}</strong><span>Invalid Records</span></div>
+                </div>
+                <div class="stat tone-amber" style="--i: 2">
+                  <span class="stat-icon warn"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'alert', size: 22 }"></ng-container></span>
+                  <div><strong>{{ countOf('duplicate') }}</strong><span>Duplicates</span></div>
+                </div>
+              </div>
+              <div class="record-tools">
+                <span class="tool-label">Show</span>
+                <app-dropdown class="status-dd" [options]="statusFilters" [(ngModel)]="statusFilter" (ngModelChange)="onRecordFilterChange()"></app-dropdown>
+                <label class="search">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 14 }"></ng-container>
+                  <input type="text" placeholder="Search records..." [(ngModel)]="recordSearch" (ngModelChange)="onRecordFilterChange()" />
+                </label>
+              </div>
+              <table class="mini-table records-table">
+                <thead><tr><th>#</th><th>Device Name</th><th>Device Type</th><th>Location</th><th>Status</th><th>Remarks</th></tr></thead>
+                <tbody>
+                  <tr *ngFor="let r of filteredRecords | slice: 0 : overviewRows; let i = index; trackBy: trackRecord" [style.--i]="i" [attr.data-status]="r.status">
+                    <td>{{ r.index }}</td>
+                    <td>{{ r.name }}</td>
+                    <td>{{ r.type }}</td>
+                    <td class="ellipsis">{{ shortLocation(r) }}</td>
+                    <td><span class="pill" [attr.data-status]="r.status">{{ r.status | titlecase }}</span></td>
+                    <td class="ellipsis">{{ r.message || '-' }}</td>
+                  </tr>
+                  <tr *ngIf="!filteredRecords.length"><td colspan="6" class="empty">No records match</td></tr>
+                </tbody>
+              </table>
+            </section>
+          </div>
+        </div>
+
+        <!-- Step 2: Map columns -->
+        <div class="step-body" *ngSwitchCase="2">
+          <div class="file-strip" *ngIf="file">
+            <ng-container *ngTemplateOutlet="excel"></ng-container>
+            <div class="file-meta">
+              <strong>{{ file.name }}</strong>
+              <span>{{ file.sizeKb }} KB <i></i> {{ file.rows }} rows</span>
+            </div>
+            <button type="button" class="outline-btn" (click)="changeFile()">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'file', size: 15 }"></ng-container>
+              Change File
+            </button>
+          </div>
+
+          <div class="section-head">
+            <span class="section-num">2</span>
+            <div>
+              <h2>Map Columns</h2>
+              <p>Match the columns from your file to Environment360 fields.</p>
+            </div>
+            <div class="mapping-tools">
+              <span class="tool-label">Saved Mapping</span>
+              <app-dropdown class="saved-dd" [options]="savedMappings" [(ngModel)]="savedMapping" (ngModelChange)="applySavedMapping($event)"></app-dropdown>
+              <button type="button" class="outline-btn" (click)="saveMapping()">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'save', size: 15 }"></ng-container>
+                Save Mapping
+              </button>
+              <button type="button" class="outline-btn" (click)="clearMapping()" [disabled]="!mappedCount">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'trash', size: 15 }"></ng-container>
+                Clear Mapping
+              </button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="map-table">
+              <thead>
+                <tr>
+                  <th>Spreadsheet Column</th>
+                  <th>Sample Data (First 3 rows)</th>
+                  <th>Map to Environment360 Field</th>
+                  <th>Field Type</th>
+                  <th class="center">Required</th>
+                  <th>Transformation / Rules</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let m of mappings; let i = index" [style.--i]="i" [class.unmapped]="!m.field" [class.invalid]="(m.required && !m.field) || isDuplicate(m)">
+                  <td class="col-name">{{ m.column }}</td>
+                  <td class="sample">{{ m.sample }}</td>
+                  <td>
+                    <app-dropdown [options]="fieldOptions" [(ngModel)]="m.field" placeholder="Select field"></app-dropdown>
+                    <small class="cell-error" *ngIf="isDuplicate(m)">Mapped more than once</small>
+                  </td>
+                  <td class="type">{{ fieldType(m) }}</td>
+                  <td class="center">
+                    <input type="checkbox" class="check" [(ngModel)]="m.required" [attr.aria-label]="m.column + ' required'" />
+                  </td>
+                  <td [ngSwitch]="m.ruleKind">
+                    <input *ngSwitchCase="'input'" type="text" class="rule-input" [(ngModel)]="m.rule" placeholder="e.g. Trim spaces" />
+                    <app-dropdown *ngSwitchCase="'select'" [options]="m.ruleOptions || []" [(ngModel)]="m.rule"></app-dropdown>
+                    <span *ngSwitchDefault class="muted">-</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Step 3: Preview & validate -->
+        <div class="step-body" *ngSwitchCase="3">
+          <div class="stats-row">
+            <div class="stat tone-blue" style="--i: 0">
+              <span class="stat-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'sheet', size: 20 }"></ng-container></span>
+              <div><strong>{{ records.length }}</strong><span>Total Records</span></div>
+            </div>
+            <div class="stat tone-green" style="--i: 1">
+              <span class="stat-icon round"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 18 }"></ng-container></span>
+              <div><strong>{{ countOf('valid') }}</strong><span>Valid Records</span></div>
+            </div>
+            <div class="stat tone-red" style="--i: 2">
+              <span class="stat-icon round"><b>!</b></span>
+              <div><strong>{{ countOf('invalid') }}</strong><span>Invalid Records</span></div>
+            </div>
+            <div class="stat tone-amber" style="--i: 3">
+              <span class="stat-icon warn"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'alert', size: 26 }"></ng-container></span>
+              <div><strong>{{ countOf('duplicate') }}</strong><span>Duplicates</span></div>
+            </div>
+            <button type="button" class="outline-btn rules-btn" (click)="rulesOpen = true">
+              <span class="rules-dot"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'info', size: 16 }"></ng-container></span>
+              View Validation Rules
+            </button>
+          </div>
+
+          <div class="record-tools">
+            <span class="tool-label">Filter</span>
+            <app-dropdown class="filter-dd" [options]="recordFilters" [(ngModel)]="recordFilter" (ngModelChange)="onRecordFilterChange()"></app-dropdown>
+            <label class="search">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'search', size: 15 }"></ng-container>
+              <input type="text" placeholder="Search by device name, serial number, or error..." [(ngModel)]="recordSearch" (ngModelChange)="onRecordFilterChange()" />
+            </label>
+            <span class="tool-label">Status</span>
+            <app-dropdown class="status-dd" [options]="statusFilters" [(ngModel)]="statusFilter" (ngModelChange)="onRecordFilterChange()"></app-dropdown>
+            <button type="button" class="outline-btn" (click)="exportResults()">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'download', size: 15 }"></ng-container>
+              Export Results
+            </button>
+            <button type="button" class="outline-btn" (click)="downloadErrorReport()" [disabled]="!skippedCount">
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'report', size: 15 }"></ng-container>
+              Download Error Report
+            </button>
+            <div class="more-wrap">
+              <button type="button" class="outline-btn icon-only" (click)="moreOpen = !moreOpen" aria-label="more actions" [attr.aria-expanded]="moreOpen">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'more', size: 18 }"></ng-container>
+              </button>
+              <div class="menu" *ngIf="moreOpen">
+                <button type="button" (click)="revalidate()">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'refresh', size: 15 }"></ng-container>
+                  Re-validate
+                </button>
+                <button type="button" (click)="removeSelected()" [disabled]="!selected.size">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'trash', size: 15 }"></ng-container>
+                  Remove selected ({{ selected.size }})
+                </button>
+                <button type="button" (click)="removeIssues()" [disabled]="!skippedCount">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'error', size: 15 }"></ng-container>
+                  Remove records with issues
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-wrap records-wrap" [class.busy]="revalidating">
+            <table class="records-table">
+              <thead>
+                <tr>
+                  <th class="check-col"><input type="checkbox" class="check" [checked]="allPageSelected" (change)="toggleAllPage()" aria-label="select all on page" /></th>
+                  <th>#</th>
+                  <th>Device Name</th>
+                  <th class="sortable" (click)="sortBy('type')" [attr.aria-sort]="sortKey === 'type' ? (sortDir === 1 ? 'ascending' : 'descending') : null">
+                    Device Type <span class="sort" [class.on]="sortKey === 'type'" [class.desc]="sortKey === 'type' && sortDir === -1">↓</span>
+                  </th>
+                  <th>Model</th>
+                  <th>Serial Number</th>
+                  <th>Asset Tag</th>
+                  <th>Location (Site &gt; Building &gt; Space)</th>
+                  <th class="sortable" (click)="sortBy('status')" [attr.aria-sort]="sortKey === 'status' ? (sortDir === 1 ? 'ascending' : 'descending') : null">
+                    Status <span class="sort" [class.on]="sortKey === 'status'" [class.desc]="sortKey === 'status' && sortDir === -1">↓</span>
+                  </th>
+                  <th>Validation Message</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let r of pagedRecords; let i = index; trackBy: trackRecord" [style.--i]="i" [attr.data-status]="r.status" [class.selected]="selected.has(r.index)">
+                  <td class="check-col"><input type="checkbox" class="check" [checked]="selected.has(r.index)" (change)="toggleRecord(r)" [attr.aria-label]="'select ' + r.name" /></td>
+                  <td>{{ r.index }}</td>
+                  <td>{{ r.name }}</td>
+                  <td>{{ r.type }}</td>
+                  <td>{{ r.model }}</td>
+                  <td>{{ r.serial || '-' }}</td>
+                  <td>{{ r.assetTag || '-' }}</td>
+                  <td>{{ r.location }}</td>
+                  <td><span class="pill" [attr.data-status]="r.status">{{ r.status | titlecase }}</span></td>
+                  <td class="message">{{ r.message || '-' }}</td>
+                </tr>
+                <tr *ngIf="!pagedRecords.length"><td colspan="10" class="empty">No records match these filters</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="records-foot">
+            <div class="page-size">
+              <span>Show</span>
+              <app-dropdown class="size-dd" [options]="pageSizes" [(ngModel)]="pageSize" (ngModelChange)="onRecordFilterChange()"></app-dropdown>
+              <span>per page</span>
+              <span class="range">{{ rangeStart }} - {{ rangeEnd }} of {{ filteredRecords.length }} records</span>
+            </div>
+            <div class="pager">
+              <button type="button" (click)="goToPage(page - 1)" [disabled]="page === 1" aria-label="previous page">‹</button>
+              <ng-container *ngFor="let p of pageList">
+                <button *ngIf="p !== null; else gap" type="button" [class.active]="p === page" (click)="goToPage(p)">{{ p }}</button>
+                <ng-template #gap><span class="gap">…</span></ng-template>
+              </ng-container>
+              <button type="button" (click)="goToPage(page + 1)" [disabled]="page === totalPages" aria-label="next page">›</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Import -->
+        <div class="step-body" *ngSwitchCase="4">
+          <div class="import-top">
+            <section class="progress-card">
+              <h2>{{ importDone ? 'Import Completed' : 'Import in Progress' }}</h2>
+              <p>{{ importDone ? 'All valid records have been imported.' : 'Please wait while we import the valid records. This may take a few minutes.' }}</p>
+              <div class="progress-row">
+                <div class="progress" [class.done]="importDone"><span [style.width.%]="importProgress"></span></div>
+                <strong>{{ importProgress }}%</strong>
+              </div>
+              <div class="import-stats">
+                <div class="istat" style="--i: 0">
+                  <span class="istat-icon tone-blue"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'sheet', size: 15 }"></ng-container></span>
+                  <div><strong>{{ records.length }}</strong><span>Total Records</span></div>
+                </div>
+                <div class="istat" style="--i: 1">
+                  <span class="istat-icon tone-green round"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 13 }"></ng-container></span>
+                  <div><strong>{{ importCount }}</strong><span class="green">To Import</span></div>
+                </div>
+                <div class="istat" style="--i: 2">
+                  <span class="istat-icon tone-purple"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 13 }"></ng-container></span>
+                  <div><strong>{{ importedSoFar }}</strong><span>Imported</span></div>
+                </div>
+                <div class="istat" style="--i: 3">
+                  <span class="istat-icon ring-sm" [class.spin]="!importDone"></span>
+                  <div><strong>{{ importDone ? 0 : 1 }}</strong><span>In Progress</span></div>
+                </div>
+                <div class="istat" style="--i: 4">
+                  <span class="istat-icon tone-red round"><b>!</b></span>
+                  <div><strong>{{ countOf('invalid') }}</strong><span class="red">Failed</span></div>
+                </div>
+                <div class="istat" style="--i: 5">
+                  <span class="istat-icon tone-amber"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'alert', size: 18 }"></ng-container></span>
+                  <div><strong>{{ countOf('duplicate') }}</strong><span class="amber">Skipped (Duplicates)</span></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="status-card" [class.done]="importDone">
+              <ng-container *ngIf="!importDone; else doneStatus">
+                <span class="spinner" aria-hidden="true"></span>
+                <strong>Importing devices…</strong>
+                <span>Please do not close this page.</span>
+                <span>Estimated time remaining: {{ secondsRemaining }} second{{ secondsRemaining === 1 ? '' : 's' }}</span>
+              </ng-container>
+              <ng-template #doneStatus>
+                <span class="done-badge"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 26 }"></ng-container></span>
+                <strong>Import finished</strong>
+                <span>{{ importCount }} devices are now available.</span>
+              </ng-template>
+            </section>
+          </div>
+
+          <div class="import-main">
+            <div class="results">
+              <div class="results-bar">
+                <nav class="underline-tabs">
+                  <button type="button" [class.active]="resultTab === 'all'" (click)="setResultTab('all')">Import Results</button>
+                  <button type="button" [class.active]="resultTab === 'failed'" (click)="setResultTab('failed')">Failed Records ({{ countOf('invalid') }})</button>
+                  <button type="button" [class.active]="resultTab === 'skipped'" (click)="setResultTab('skipped')">Skipped Duplicates ({{ countOf('duplicate') }})</button>
+                </nav>
+              </div>
+
+              <div class="table-wrap records-wrap">
+                <table class="records-table results-table">
+                  <thead>
+                    <tr><th>#</th><th>Device Name</th><th>Device Type</th><th>Serial Number</th><th>Status</th><th>Message</th><th>Imported On</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let row of resultRows; let i = index; trackBy: trackResult" [style.--i]="i" [attr.data-state]="importState(row.record, row.position)">
+                      <td>{{ row.record.index }}</td>
+                      <td>{{ row.record.name }}</td>
+                      <td>{{ row.record.type }}</td>
+                      <td>{{ row.record.serial || '-' }}</td>
+                      <td>
+                        <span class="state" [attr.data-state]="importState(row.record, row.position)">
+                          <span class="state-dot"></span>{{ importState(row.record, row.position) | titlecase }}
+                        </span>
+                      </td>
+                      <td class="message">{{ resultMessage(row.record, row.position) }}</td>
+                      <td>{{ importedAt.get(row.record.index) ? (importedAt.get(row.record.index) | date: 'dd/MM/yyyy HH:mm') : '-' }}</td>
+                    </tr>
+                    <tr *ngIf="!resultRows.length"><td colspan="7" class="empty">No records</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="records-foot">
+                <div class="page-size">
+                  <span>Show</span>
+                  <app-dropdown class="size-dd" [options]="resultPageSizes" [(ngModel)]="resultPageSize" (ngModelChange)="goToResultPage(1)"></app-dropdown>
+                  <span>per page</span>
+                  <span class="range">{{ resultTotal ? (resultPage - 1) * resultPageSize + 1 : 0 }} - {{ resultPage * resultPageSize < resultTotal ? resultPage * resultPageSize : resultTotal }} of {{ resultTotal }} records</span>
+                </div>
+                <div class="pager">
+                  <button type="button" (click)="goToResultPage(resultPage - 1)" [disabled]="resultPage === 1" aria-label="previous page">‹</button>
+                  <ng-container *ngFor="let p of resultPageList">
+                    <button *ngIf="p !== null; else rgap" type="button" [class.active]="p === resultPage" (click)="goToResultPage(p)">{{ p }}</button>
+                    <ng-template #rgap><span class="gap">…</span></ng-template>
+                  </ng-container>
+                  <button type="button" (click)="goToResultPage(resultPage + 1)" [disabled]="resultPage === resultPages" aria-label="next page">›</button>
+                </div>
+              </div>
+            </div>
+
+            <aside class="import-side">
+              <div class="side-actions">
+                <button type="button" class="outline-btn" (click)="downloadImportLog()" [disabled]="!processed">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'download', size: 15 }"></ng-container>
+                  Download Import Log
+                </button>
+                <button type="button" class="outline-btn" (click)="downloadImportedData()" [disabled]="!importedSoFar">
+                  <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'report', size: 15 }"></ng-container>
+                  Download Imported Data
+                </button>
+              </div>
+
+              <div class="side-card">
+                <ng-container *ngIf="importDone; else pendingSummary">
+                  <div class="complete-banner">
+                    <span class="done-badge sm"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 18 }"></ng-container></span>
+                    <div>
+                      <strong>Import Completed</strong>
+                      <span>{{ importedSoFar }} devices imported successfully.</span>
+                      <span *ngIf="skippedCount">{{ countOf('invalid') }} records failed and {{ countOf('duplicate') }} duplicates were skipped.</span>
+                    </div>
+                  </div>
+                  <div class="outcome-row">
+                    <div class="outcome tone-green">
+                      <span class="istat-icon tone-green round"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 13 }"></ng-container></span>
+                      <div><strong>{{ importedSoFar }}</strong><span>Imported Successfully</span></div>
+                    </div>
+                    <div class="outcome tone-red">
+                      <span class="istat-icon tone-red round"><b>!</b></span>
+                      <div><strong>{{ countOf('invalid') }}</strong><span>Failed</span>
+                        <button type="button" class="mini-link" (click)="setResultTab('failed')">View Failed Records</button></div>
+                    </div>
+                    <div class="outcome tone-amber">
+                      <span class="istat-icon tone-amber"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'alert', size: 16 }"></ng-container></span>
+                      <div><strong>{{ countOf('duplicate') }}</strong><span>Duplicates Skipped</span>
+                        <button type="button" class="mini-link" (click)="setResultTab('skipped')">View Duplicates</button></div>
+                    </div>
+                  </div>
+                </ng-container>
+                <ng-template #pendingSummary>
+                  <div class="pending-summary">
+                    <span class="spinner sm" aria-hidden="true"></span>
+                    The import summary will appear here once all records are processed.
+                  </div>
+                </ng-template>
+              </div>
+
+              <div class="side-card next-steps" [class.locked]="!importDone">
+                <h4>Next Steps</h4>
+                <button type="button" class="next-step" (click)="viewDevices()" [disabled]="!importDone">
+                  <span class="ns-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'list', size: 17 }"></ng-container></span>
+                  <span><strong>View Imported Devices</strong><small>Open the device list to see the newly added devices.</small></span>
+                  <span class="ns-caret">›</span>
+                </button>
+                <button type="button" class="next-step" (click)="downloadImportLog()" [disabled]="!importDone">
+                  <span class="ns-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'report', size: 17 }"></ng-container></span>
+                  <span><strong>Download Import Report</strong><small>Get the detailed import log with success and error details.</small></span>
+                  <span class="ns-caret">›</span>
+                </button>
+                <button type="button" class="next-step" (click)="uploadAnother()" [disabled]="!importDone">
+                  <span class="ns-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'plusCircle', size: 17 }"></ng-container></span>
+                  <span><strong>Add More Devices</strong><small>Upload another file to add more devices.</small></span>
+                  <span class="ns-caret">›</span>
+                </button>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <footer class="panel-foot">
+        <div class="tips" *ngIf="step === 2; else issuesTpl">
+          <span class="tips-icon"><ng-container *ngTemplateOutlet="icon; context: { $implicit: 'info', size: 18 }"></ng-container></span>
+          <div>
+            <strong>Mapping Tips</strong>
+            <ul><li *ngFor="let t of tips">{{ t }}</li></ul>
+          </div>
+        </div>
+        <ng-template #issuesTpl>
+          <button type="button" class="outline-btn lg" *ngIf="step !== 2; else spacer" (click)="close()">Cancel</button>
+          <ng-template #spacer><span></span></ng-template>
+        </ng-template>
+
+        <div class="foot-right">
+          <p class="issues" *ngIf="step === 2 && mappingIssues.length">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'alert', size: 15 }"></ng-container>
+            {{ mappingIssues[0] }}
+          </p>
+          <div class="foot-actions">
+            <button type="button" class="outline-btn lg" (click)="back()" [disabled]="step === 1 || (step === 4 && !importDone)">Back</button>
+            <button type="button" class="primary-btn" *ngIf="step !== 4; else finishBtn" (click)="next()" [disabled]="!canContinue">
+              {{ nextLabel }}
+              <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'arrow', size: 18 }"></ng-container>
+            </button>
+            <ng-template #finishBtn>
+              <button type="button" class="primary-btn finish" (click)="finish()" [disabled]="!importDone">
+                <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 18 }"></ng-container>
+                Finish
+              </button>
+            </ng-template>
+          </div>
+        </div>
+      </footer>
+    </ng-template>
+  </section>
+
+  <!-- Validation rules -->
+  <div class="overlay" *ngIf="rulesOpen" (click)="rulesOpen = false">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="rules-title" (click)="$event.stopPropagation()">
+      <div class="dialog-head">
+        <h3 id="rules-title">Validation Rules</h3>
+        <button type="button" class="icon-btn" (click)="rulesOpen = false" aria-label="close">
+          <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'close', size: 18 }"></ng-container>
+        </button>
+      </div>
+      <p class="dialog-sub">Each record is checked against these rules. Only valid records are imported.</p>
+      <ol class="rule-list">
+        <li *ngFor="let r of rules; let i = index" [style.--i]="i">
+          <strong>{{ r.title }}</strong>
+          <span>{{ r.detail }}</span>
+        </li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="toast" *ngIf="toast" role="status">
+    <ng-container *ngTemplateOutlet="icon; context: { $implicit: 'check', size: 16 }"></ng-container>
+    {{ toast }}
+  </div>
+</div>

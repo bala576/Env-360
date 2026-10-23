@@ -11,6 +11,6 @@ import { DashboardTabs } from '../dashboard-tabs/dashboard-tabs';
   styleUrl: './main-layout.css',
 })
 export class MainLayout {
-    pageTitle = 'Environment 360';
+    pageTitle = '';
 
 }

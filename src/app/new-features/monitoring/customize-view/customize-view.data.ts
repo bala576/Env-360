@@ -5,7 +5,8 @@ import { MP_ICONS } from '../multi-parameter/multi-parameter.data';
 // full: whole row, wide: two columns (and two rows tall), single: one column
 export type WidgetSize = 'full' | 'wide' | 'single';
 export type PreviewDevice = 'desktop' | 'tablet' | 'mobile';
-export type Visibility = 'private' | 'team' | 'everyone';
+export type ShareMode = 'specific' | 'all' | 'public';
+export type ShareRole = 'viewer' | 'editor';
 
 export interface WidgetDef {
   key: string;
@@ -18,11 +19,157 @@ export interface WidgetDef {
 
 export interface ViewConfig {
   widgets: { key: string; enabled: boolean }[];
-  layout: { columns: 2 | 3; density: 'comfortable' | 'compact'; rounded: boolean };
-  filters: { site: string; range: number; summaryParams: string[] };
-  display: { chartType: 'line' | 'area'; thresholds: boolean; sparklines: boolean; unit: 'C' | 'F'; refresh: number };
-  sharing: { name: string; visibility: Visibility; makeDefault: boolean };
+  layout: { columns: 2 | 3; density: 'comfortable' | 'compact'; rounded: boolean; template: string };
+  filters: ViewFilters;
+  display: ViewDisplay;
+  sharing: {
+    enabled: boolean;
+    mode: ShareMode;
+    name: string;
+    makeDefault: boolean;
+    members: string[];
+    roles: Record<string, ShareRole>;
+    allowEdit: boolean;
+    allowReshare: boolean;
+  };
+  presets: FilterPreset[];
 }
+
+export interface ViewDisplay {
+  // Chart
+  chartType: 'line' | 'area';
+  yAxis: 'dual' | 'left' | 'right';
+  scheme: string;
+  interval: number; // minutes between samples, 0 = based on date range
+  dataPoints: boolean;
+  thresholds: boolean;
+  legend: boolean;
+  events: boolean;
+  grid: boolean;
+  smooth: boolean;
+  tooltips: boolean;
+  unit: 'C' | 'F';
+  refresh: number;
+  // KPI / summary cards
+  cardLayout: 'compact' | 'comfortable';
+  numberFormat: 'auto' | 'value' | 'precise';
+  cardStyle: 'default' | 'minimal' | 'detailed' | 'icon';
+  trendIndicator: boolean;
+  comparison: boolean;
+  minMax: boolean;
+  // Table
+  columns: string[];
+  density: 'compact' | 'standard' | 'comfortable';
+  sortBy: string;
+  miniTrend: boolean;
+  highlightAlarms: boolean;
+  pageSize: number;
+}
+
+export type DisplayToggle =
+  | 'dataPoints' | 'thresholds' | 'legend' | 'events' | 'grid' | 'smooth' | 'tooltips'
+  | 'trendIndicator' | 'comparison' | 'minMax' | 'miniTrend' | 'highlightAlarms';
+
+export interface DisplaySelect {
+  key: 'chartType' | 'yAxis' | 'interval' | 'cardLayout' | 'numberFormat' | 'sortBy' | 'pageSize';
+  label: string;
+  options: DropdownOption[];
+}
+
+export const DISPLAY_SELECTS: Record<DisplaySelect['key'], DisplaySelect> = {
+  chartType: { key: 'chartType', label: 'Default Chart Type', options: [{ label: 'Line Chart', value: 'line' }, { label: 'Area Chart', value: 'area' }] },
+  yAxis: { key: 'yAxis', label: 'Y-Axis Position', options: [{ label: 'Left & Right (Dual Axis)', value: 'dual' }, { label: 'Left Only', value: 'left' }, { label: 'Right Only', value: 'right' }] },
+  interval: { key: 'interval', label: 'Chart Time Interval', options: [{ label: 'Auto (Based on Date Range)', value: 0 }, { label: '15 Minutes', value: 15 }, { label: '1 Hour', value: 60 }, { label: '4 Hours', value: 240 }] },
+  cardLayout: { key: 'cardLayout', label: 'Card Layout', options: [{ label: 'Compact', value: 'compact' }, { label: 'Comfortable', value: 'comfortable' }] },
+  numberFormat: { key: 'numberFormat', label: 'Number Format', options: [{ label: 'Auto (with Unit)', value: 'auto' }, { label: 'Value Only', value: 'value' }, { label: 'Extra Decimal', value: 'precise' }] },
+  sortBy: { key: 'sortBy', label: 'Sort By (Default)', options: [{ label: 'Monitoring Point (A-Z)', value: 'name' }, { label: 'Space / Location (A-Z)', value: 'space' }, { label: 'Parameter (A-Z)', value: 'parameter' }, { label: 'Status (Critical first)', value: 'status' }] },
+  pageSize: { key: 'pageSize', label: 'Pagination', options: [{ label: '5 records per page', value: 5 }, { label: '10 records per page', value: 10 }, { label: '20 records per page', value: 20 }, { label: '50 records per page', value: 50 }] },
+};
+
+// Temperature / humidity line colours for each scheme
+export const COLOR_SCHEMES = [
+  { key: 'blue', label: 'Ocean', swatch: '#2563eb', temp: '#2563eb', hum: '#7c3aed' },
+  { key: 'purple', label: 'Violet', swatch: '#7c3aed', temp: '#7c3aed', hum: '#db2777' },
+  { key: 'green', label: 'Forest', swatch: '#16a34a', temp: '#16a34a', hum: '#0891b2' },
+  { key: 'amber', label: 'Sunset', swatch: '#f59e0b', temp: '#f59e0b', hum: '#2563eb' },
+  { key: 'red', label: 'Coral', swatch: '#ef4444', temp: '#ef4444', hum: '#7c3aed' },
+];
+
+export const CARD_STYLES: { key: ViewDisplay['cardStyle']; label: string }[] = [
+  { key: 'default', label: 'Default' },
+  { key: 'minimal', label: 'Minimal' },
+  { key: 'detailed', label: 'Detailed' },
+  { key: 'icon', label: 'Icon Only' },
+];
+
+export const TABLE_COLUMNS = [
+  { key: 'name', label: 'Monitoring Point' },
+  { key: 'space', label: 'Space / Location' },
+  { key: 'parameter', label: 'Parameter' },
+  { key: 'value', label: 'Current Value' },
+  { key: 'status', label: 'Status' },
+  { key: 'trend', label: 'Trend (24h)' },
+];
+
+export const ROW_DENSITIES: ViewDisplay['density'][] = ['compact', 'standard', 'comfortable'];
+
+export interface ViewFilters {
+  site: string;
+  building: string;
+  floor: string;
+  spaces: string[];
+  params: string[];
+  status: string;
+  aggregation: string;
+  // Date range shown on the trend chart; range is its length in days
+  dateFrom: string;
+  dateTo: string;
+  range: number;
+  quick: string[];
+  summaryParams: string[];
+  deviceStatus: string[];
+  models: string[];
+  excludeEstimated: boolean;
+  alarmsOnly: boolean;
+}
+
+export interface FilterPreset {
+  id: string;
+  name: string;
+  detail: string;
+  icon: string;
+  tone: string;
+  filters: Partial<ViewFilters>;
+}
+
+// Single fields hold a string ('' = all), multi fields a list of values
+export interface FilterField {
+  key: 'site' | 'building' | 'floor' | 'spaces' | 'params' | 'status' | 'aggregation';
+  label: string;
+  placeholder: string;
+  multi?: boolean;
+  clearable?: boolean;
+  options: DropdownOption[];
+}
+
+const opts = (values: string[]): DropdownOption[] => values.map(v => ({ label: v, value: v }));
+
+export const FILTER_FIELDS: FilterField[] = [
+  { key: 'site', label: 'Site', placeholder: 'All Sites', clearable: true, options: opts(['Dubai Mall Store', 'Mall of the Emirates Store']) },
+  { key: 'building', label: 'Building / Area', placeholder: 'All Areas', clearable: true, options: opts(['Retail Store - 101', 'Retail Store - 102', 'Service Room', 'Data Centre']) },
+  { key: 'floor', label: 'Floor', placeholder: 'All Floors', clearable: true, options: [{ label: 'All Floors', value: '' }, ...opts(['Ground Floor', 'Level 1', 'Basement 1'])] },
+  { key: 'spaces', label: 'Space / Monitoring Point', placeholder: 'All Points', multi: true, clearable: true, options: opts(['Cold Room 01', 'Refrigeration Area', 'Main DB', 'Data Hall A', 'Server Room - 1']) },
+  { key: 'params', label: 'Parameter Type', placeholder: 'All Parameters', multi: true, options: opts(['Temperature', 'Humidity', 'Energy', 'Water Leak', 'CO₂', 'Occupancy']) },
+  { key: 'status', label: 'Status', placeholder: 'All Status', options: [{ label: 'All Status', value: '' }, { label: 'Normal', value: 'normal' }, { label: 'Warning', value: 'warning' }, { label: 'Critical', value: 'critical' }, { label: 'Offline', value: 'offline' }] },
+  { key: 'aggregation', label: 'Aggregation', placeholder: 'Raw Data', options: opts(['Raw Data', '5 Minutes', '15 Minutes', '1 Hour', '1 Day']) },
+];
+
+export const FILTER_TABS = ['General Filters', 'Parameter Filters', 'Device Filters', 'Advanced Filters'] as const;
+export type FilterTab = (typeof FILTER_TABS)[number];
+
+export const QUICK_FILTERS = ['Today', 'Yesterday', 'Last 7 Days', 'Last 30 Days', 'This Month', 'Custom Range'];
+export const DEVICE_STATUSES = ['Online', 'Low Battery', 'Offline'];
+export const DEVICE_MODELS = ['Milesight EM500', 'Milesight AM307', 'Dragino LHT65', 'Elsys ERS CO2', 'Schneider PM5560'];
 
 export const WIDGETS: WidgetDef[] = [
   { key: 'summary', label: 'Summary Cards', description: 'Key parameter overview (Temperature, Humidity, etc.)', icon: 'grid', tone: 'purple', size: 'full' },
@@ -39,11 +186,11 @@ export const WIDGETS: WidgetDef[] = [
 ];
 
 export const SUMMARY_PARAMS = [
-  { key: 'temperature', label: 'Temperature', value: -18.2, unit: '°C', decimals: 1, delta: '-0.6 °C', up: false, good: true, icon: 'temperature', tone: 'red', color: '#2563eb' },
-  { key: 'humidity', label: 'Humidity', value: 82.4, unit: '%RH', decimals: 1, delta: '-2.1 %', up: false, good: true, icon: 'humidity', tone: 'purple', color: '#7c3aed' },
-  { key: 'co2', label: 'CO₂', value: 480, unit: 'ppm', decimals: 0, delta: '-12 ppm', up: false, good: true, icon: 'cloud', tone: 'green', color: '#16a34a' },
-  { key: 'energy', label: 'Energy', value: 310, unit: 'kWh', decimals: 0, delta: '+8 %', up: true, good: false, icon: 'energy', tone: 'amber', color: '#f59e0b' },
-  { key: 'pressure', label: 'Air Pressure', value: 12.4, unit: 'Pa', decimals: 1, delta: '+0.3 Pa', up: true, good: true, icon: 'gauge', tone: 'slate', color: '#db2777' },
+  { key: 'temperature', min: -19.4, max: -17.2, label: 'Temperature', value: -18.2, unit: '°C', decimals: 1, delta: '-0.6 °C', up: false, good: true, icon: 'temperature', tone: 'red', color: '#2563eb' },
+  { key: 'humidity', min: 78.6, max: 86.1, label: 'Humidity', value: 82.4, unit: '%RH', decimals: 1, delta: '-2.1 %', up: false, good: true, icon: 'humidity', tone: 'purple', color: '#7c3aed' },
+  { key: 'co2', min: 430, max: 560, label: 'CO₂', value: 480, unit: 'ppm', decimals: 0, delta: '-12 ppm', up: false, good: true, icon: 'cloud', tone: 'green', color: '#16a34a' },
+  { key: 'energy', min: 262, max: 318, label: 'Energy', value: 310, unit: 'kWh', decimals: 0, delta: '+8 %', up: true, good: false, icon: 'energy', tone: 'amber', color: '#f59e0b' },
+  { key: 'pressure', min: 11.2, max: 13.6, label: 'Air Pressure', value: 12.4, unit: 'Pa', decimals: 1, delta: '+0.3 Pa', up: true, good: true, icon: 'gauge', tone: 'slate', color: '#db2777' },
 ];
 
 export const ALARM_SUMMARY = [
@@ -79,8 +226,48 @@ export const REFRESH_OPTIONS: DropdownOption[] = [
   { label: 'Manual only', value: 0 },
 ];
 
-export const PANEL_TABS = ['Widgets', 'Layout', 'Filters', 'Display', 'Sharing'] as const;
+export const PANEL_TABS = ['Widgets', 'Layouts', 'Filters', 'Display', 'Sharing'] as const;
 export type PanelTab = (typeof PANEL_TABS)[number];
+
+// Prebuilt layouts: which widgets show, in what order, and any size overrides
+export interface LayoutTemplate {
+  id: string;
+  name: string;
+  widgets: string[];
+  sizes?: Partial<Record<string, WidgetSize>>;
+}
+
+export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
+  { id: 'default', name: 'Default Layout', widgets: ['summary', 'trend', 'points', 'alarms', 'insights'] },
+  { id: 'overview', name: 'Overview Layout', widgets: ['summary', 'trend', 'points', 'alarms', 'devices', 'energy'] },
+  { id: 'trend', name: 'Trend Analysis Layout', widgets: ['trend', 'energy', 'comparison', 'correlation'] },
+  { id: 'multi', name: 'Multi-Parameter Layout', widgets: ['summary', 'trend', 'energy', 'comparison', 'alarms'], sizes: { energy: 'wide' } },
+  { id: 'map', name: 'Map Centered Layout', widgets: ['map', 'alarms', 'insights', 'points'], sizes: { map: 'wide', points: 'full' } },
+  { id: 'list', name: 'List & Detail Layout', widgets: ['points', 'alarms', 'insights', 'devices'], sizes: { points: 'full' } },
+];
+
+export interface SharePerson {
+  id: string;
+  name: string;
+  sub: string;
+  group?: boolean;
+  initials?: string;
+  tone: string;
+}
+
+export const SHARE_PEOPLE: SharePerson[] = [
+  { id: 'ops-team', name: 'Operations Team', sub: 'Group · 12 Members', group: true, tone: 'purple' },
+  { id: 'facilities-team', name: 'Facilities Team', sub: 'Group · 8 Members', group: true, tone: 'purple' },
+  { id: 'john', name: 'John Mathew', sub: 'john.mathew@purpleiq.ai', initials: 'JM', tone: 'violet' },
+  { id: 'sarah', name: 'Sarah Khan', sub: 'sarah.khan@purpleiq.ai', initials: 'SK', tone: 'mint' },
+  { id: 'ahmed', name: 'Ahmed Raza', sub: 'ahmed.raza@purpleiq.ai', initials: 'AR', tone: 'slate' },
+  { id: 'priya', name: 'Priya Nair', sub: 'priya.nair@purpleiq.ai', initials: 'PN', tone: 'rose' },
+];
+
+export const SHARE_ROLES: DropdownOption[] = [
+  { label: 'Viewer', value: 'viewer' },
+  { label: 'Editor', value: 'editor' },
+];
 
 export const VIEW_STORAGE_KEY = 'env360.monitoring.customView';
 
@@ -89,7 +276,7 @@ export const DEFAULT_VIEW: ViewConfig = {
     { key: 'summary', enabled: true },
     { key: 'points', enabled: true },
     { key: 'trend', enabled: true },
-    { key: 'comparison', enabled: true },
+    { key: 'comparison', enabled: false },
     { key: 'map', enabled: false },
     { key: 'alarms', enabled: true },
     { key: 'correlation', enabled: false },
@@ -98,10 +285,68 @@ export const DEFAULT_VIEW: ViewConfig = {
     { key: 'environment', enabled: false },
     { key: 'energy', enabled: false },
   ],
-  layout: { columns: 3, density: 'comfortable', rounded: true },
-  filters: { site: 'all', range: 7, summaryParams: ['temperature', 'humidity', 'co2', 'energy'] },
-  display: { chartType: 'line', thresholds: true, sparklines: true, unit: 'C', refresh: 60 },
-  sharing: { name: 'My Monitoring View', visibility: 'private', makeDefault: true },
+  layout: { columns: 3, density: 'comfortable', rounded: true, template: 'default' },
+  filters: {
+    site: 'Dubai Mall Store',
+    building: 'Retail Store - 101',
+    floor: '',
+    spaces: ['Cold Room 01', 'Refrigeration Area', 'Main DB'],
+    params: ['Temperature', 'Humidity', 'Energy', 'Water Leak'],
+    status: '',
+    aggregation: '15 Minutes',
+    dateFrom: '2026-10-01',
+    dateTo: '2026-10-07',
+    range: 7,
+    quick: [...QUICK_FILTERS],
+    summaryParams: ['temperature', 'humidity', 'co2', 'energy'],
+    deviceStatus: [...DEVICE_STATUSES],
+    models: [...DEVICE_MODELS],
+    excludeEstimated: false,
+    alarmsOnly: false,
+  },
+  display: {
+    chartType: 'line',
+    yAxis: 'dual',
+    scheme: 'blue',
+    interval: 0,
+    dataPoints: true,
+    thresholds: true,
+    legend: true,
+    events: true,
+    grid: true,
+    smooth: true,
+    tooltips: true,
+    unit: 'C',
+    refresh: 60,
+    cardLayout: 'compact',
+    numberFormat: 'auto',
+    cardStyle: 'default',
+    trendIndicator: true,
+    comparison: true,
+    minMax: true,
+    columns: ['name', 'space', 'parameter', 'value', 'status', 'trend'],
+    density: 'compact',
+    sortBy: 'name',
+    miniTrend: true,
+    highlightAlarms: true,
+    pageSize: 20,
+  },
+  sharing: {
+    enabled: true,
+    mode: 'specific',
+    name: 'My Monitoring View',
+    makeDefault: true,
+    members: ['ops-team', 'facilities-team', 'john'],
+    roles: { 'ops-team': 'viewer', 'facilities-team': 'editor', john: 'viewer', sarah: 'editor', ahmed: 'viewer', priya: 'viewer' },
+    allowEdit: true,
+    allowReshare: false,
+  },
+  presets: [
+    { id: 'all-dubai', name: 'All Parameters - Dubai Mall', detail: 'Dubai Mall Store | All Parameters | Last 7 Days', icon: 'grid', tone: 'purple', filters: { site: 'Dubai Mall Store', params: [], range: 7 } },
+    { id: 'energy', name: 'Energy Monitoring', detail: 'Dubai Mall Store | Energy | Last 30 Days', icon: 'energy', tone: 'red', filters: { site: 'Dubai Mall Store', params: ['Energy'], range: 30 } },
+    { id: 'environment', name: 'Environmental Quality', detail: 'All Sites | Temperature, Humidity, CO₂ | Last 7 Days', icon: 'leaf', tone: 'green', filters: { site: '', params: ['Temperature', 'Humidity', 'CO₂'], range: 7 } },
+    { id: 'critical', name: 'Critical Devices', detail: 'All Sites | Alarm / Fault Status | Last 24 Hours', icon: 'alert', tone: 'red', filters: { site: '', status: 'critical', range: 1 } },
+  ],
 };
 
 export const CUSTOMIZE_ICONS: Record<string, string[]> = {
@@ -119,4 +364,9 @@ export const CUSTOMIZE_ICONS: Record<string, string[]> = {
   reset: ['M4 12a8 8 0 108-8 8.5 8.5 0 00-6 2.5L4 8', 'M4 3v5h5'],
   check: ['M5 12l5 5 9-10'],
   copy: ['M9 9h11v11H9z', 'M5 15H4V4h11v1'],
+  plus: ['M12 5v14M5 12h14'],
+  bookmark: ['M6 3h12v18l-6-4-6 4z'],
+  trash: ['M4 7h16', 'M9 7V4h6v3', 'M6 7l1 13h10l1-13'],
+  users: ['M9 11a4 4 0 100-8 4 4 0 000 8z', 'M2 21a7 7 0 0114 0', 'M16 3.5a4 4 0 010 7.5', 'M18 21a7 7 0 00-2.6-5.5'],
+  eye: ['M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z', 'M12 15a3 3 0 100-6 3 3 0 000 6z'],
 };
